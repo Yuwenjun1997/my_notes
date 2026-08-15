@@ -1,0 +1,209 @@
+/* =====================================================
+   小鱼开发笔记 · 赛博朋克主题 (Cyberpunk Theme)
+   ===================================================== */
+
+/* ---------- 滚动条：青→品红霓虹渐变 ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--vp-c-bg-alt);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: linear-gradient(180deg, #00ffff, #ff00cc);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00e5e5, #e600b8);
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #00ffff var(--vp-c-bg-alt);
+}
+
+/* ---------- 浅色模式：收敛霓虹，保证可读性 ---------- */
+:root {
+  /* 品牌色：偏深青色，保证白底对比度 */
+  --vp-c-brand-1: #0086c8;
+  --vp-c-brand-2: #00a5b8;
+  --vp-c-brand-3: #00c4d4;
+  --vp-c-brand-soft: rgba(0, 176, 200, 0.16);
+
+  /* 背景：轻微冷调 */
+  --vp-c-bg: #f6f8fb;
+  --vp-c-bg-alt: #edf1f7;
+  --vp-c-bg-soft: #edf1f7;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-safe: #f0f4f8;
+
+  --vp-c-border: #c9d4e1;
+  --vp-c-divider: #dee7f0;
+
+  /* Hero 名称渐变（hero 实际为 force-dark，此为浅色兜底） */
+  --vp-bg-home-hero-name: linear-gradient(90deg, #00a5c8, #0086c8 50%, #7a5cff);
+  --vp-home-hero-name-background: linear-gradient(90deg, #00a5c8, #0086c8 50%, #7a5cff);
+
+  /* 品牌按钮 */
+  --vp-button-brand-bg: #0086c8;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-bg: #00a5b8;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-active-bg: #0070a8;
+  --vp-button-brand-active-text: #ffffff;
+}
+
+/* ---------- 暗色模式：赛博朋克主视觉 ---------- */
+[data-theme='dark'] {
+  /* 霓虹青 */
+  --vp-c-brand-1: #00ffff;
+  --vp-c-brand-2: #00d9d9;
+  --vp-c-brand-3: #00b8cc;
+  --vp-c-brand-soft: rgba(0, 255, 255, 0.15);
+
+  /* 深空背景 */
+  --vp-c-bg: #0a0a12;
+  --vp-c-bg-alt: #0e0e18;
+  --vp-c-bg-soft: #12121e;
+  --vp-c-bg-elv: #151522;
+  --vp-c-bg-safe: #10101a;
+
+  --vp-c-border: #252538;
+  --vp-c-divider: #1b1b2a;
+  --vp-c-gutter: #000000;
+
+  /* Hero 名称：青 → 品红 → 紫 */
+  --vp-bg-home-hero-name: linear-gradient(90deg, #00ffff, #ff00cc 50%, #7a5cff);
+  --vp-home-hero-name-background: linear-gradient(90deg, #00ffff, #ff00cc 50%, #7a5cff);
+
+  /* Hero 文字 */
+  --vp-c-home-hero-tagline: #7affff;
+  --vp-c-home-hero-text: #c9d1ff;
+
+  /* 品牌按钮：霓虹青底 + 深色文字 */
+  --vp-button-brand-bg: #00ffff;
+  --vp-button-brand-text: #000914;
+  --vp-button-brand-hover-bg: #00e5e5;
+  --vp-button-brand-hover-text: #000914;
+  --vp-button-brand-active-bg: #00cccc;
+  --vp-button-brand-active-text: #000914;
+
+  /* 次要按钮：青色描边 + 青色文字 */
+  --vp-button-alt-bg: rgba(0, 255, 255, 0.08);
+  --vp-button-alt-text: #00ffff;
+  --vp-button-alt-border: rgba(0, 255, 255, 0.45);
+  --vp-button-alt-hover-bg: rgba(0, 255, 255, 0.16);
+  --vp-button-alt-hover-text: #7affff;
+  --vp-button-alt-hover-border: rgba(0, 255, 255, 0.8);
+  --vp-button-alt-active-bg: rgba(0, 255, 255, 0.06);
+  --vp-button-alt-active-text: #7affff;
+}
+
+/* ---------- force-dark：force-dark 不会翻转 data-theme，需单独兜底 ----------
+   保证浅色模式访问首页时，黑色画布上的 hero 文字/按钮仍为霓虹可读 */
+html.force-dark {
+  --vp-bg-home-hero-name: linear-gradient(90deg, #00ffff, #ff00cc 50%, #7a5cff);
+  --vp-home-hero-name-background: linear-gradient(90deg, #00ffff, #ff00cc 50%, #7a5cff);
+  --vp-c-home-hero-tagline: #7affff;
+  --vp-c-home-hero-text: #c9d1ff;
+}
+
+/* ---------- Hero：名称霓虹光晕 ---------- */
+.vp-home-hero .hero-name {
+  filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.45));
+}
+
+/* ---------- 首页网格背景 + 霓虹辉光 ---------- */
+[data-theme='dark'] .vp-home {
+  background-color: var(--vp-c-bg);
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(0, 255, 255, 0.07), transparent 45%),
+    radial-gradient(circle at 85% 35%, rgba(255, 0, 204, 0.06), transparent 40%),
+    linear-gradient(rgba(0, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+}
+
+/* ---------- Features 卡片 ---------- */
+.vp-home-features .vp-home-feature {
+  transition: border-color 0.25s, background-color 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+
+[data-theme='dark'] .vp-home-features .vp-home-feature {
+  border-color: rgba(0, 255, 255, 0.18);
+  background: linear-gradient(180deg, rgba(0, 255, 255, 0.06), rgba(255, 0, 204, 0.03));
+}
+
+[data-theme='dark'] .vp-home-features .vp-home-feature .icon {
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.16), rgba(255, 0, 204, 0.12));
+}
+
+.vp-home-features .vp-home-feature:hover {
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.25), 0 0 36px rgba(255, 0, 204, 0.15);
+  transform: translateY(-3px);
+}
+
+[data-theme='dark'] .vp-home-features .vp-home-feature .title,
+[data-theme='dark'] .vp-home-features .vp-home-feature .details {
+  color: #7affff;
+}
+
+[data-theme='dark'] .vp-home-features .vp-home-feature .title {
+  text-shadow: 0 0 14px rgba(0, 255, 255, 0.35);
+}
+
+[data-theme='dark'] .vp-home-features .description {
+  color: var(--vp-c-text-2);
+}
+
+/* ---------- Text-Image 区块 ---------- */
+[data-theme='dark'] .vp-home-text-image .title {
+  color: #7affff;
+  text-shadow: 0 0 14px rgba(0, 255, 255, 0.35);
+}
+
+[data-theme='dark'] .vp-home-text-image .content-image img {
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.35));
+}
+
+.vp-home-text-image .content-text ul h3 a {
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+  transition: color 0.25s;
+}
+
+.vp-home-text-image .content-text ul h3 a:hover {
+  color: var(--vp-c-brand-2);
+  text-decoration: underline;
+}
+
+/* ---------- Text-Image 三块：图片与内容两端对齐（space-between） ---------- */
+.vp-home-box.vp-home-text-image .container {
+  justify-content: space-between;
+}
+
+@media (min-width: 768px) {
+  .vp-home-text-image .content-image .vp-image {
+    margin-right: 24px;
+    margin-left: 24px;
+  }
+}
+
+@media (min-width: 960px) {
+  .vp-home-text-image .content-image .vp-image {
+    max-width: 220px;
+    margin-right: 24px;
+    margin-left: 24px;
+  }
+}
+
+/* ---------- 关于本站 ---------- */
+.vp-home-custom .vp-doc h2 {
+  color: var(--vp-c-brand-1);
+}
