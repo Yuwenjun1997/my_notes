@@ -118,6 +118,13 @@ html.force-dark {
   filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.45));
 }
 
+/* ---------- Hero：柔和青紫辉光，衬托点阵网格 ---------- */
+[data-theme='dark'] .vp-home-hero {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 255, 255, 0.10), transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(255, 0, 204, 0.08), transparent 60%);
+}
+
 /* ---------- 首页网格背景 + 霓虹辉光 ---------- */
 [data-theme='dark'] .vp-home {
   background-color: var(--vp-c-bg);
@@ -206,4 +213,9 @@ html.force-dark {
 /* ---------- 关于本站 ---------- */
 .vp-home-custom .vp-doc h2 {
   color: var(--vp-c-brand-1);
+}
+
+/* ---------- Navbar：放大 logo（40px），不改导航栏高度 ---------- */
+:root {
+  --vp-nav-logo-height: 40px;
 }

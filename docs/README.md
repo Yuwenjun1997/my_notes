@@ -6,12 +6,16 @@ config:
   -
     type: hero
     full: true
-    effect: lightning
+    effect: dot-grid
     forceDark: true
     effectConfig:
-      hue: 180
-      speed: 1
-      intensity: 0.8
+      dotSize: 4
+      gap: 16
+      baseColor: '#274a57'
+      activeColor: '#00ffff'
+      proximity: 140
+      shockRadius: 260
+      shockStrength: 6
     hero:
       name: 小鱼开发笔记
       tagline: 大鱼吃小鱼
@@ -238,5 +242,6 @@ config:
 
 ### 更新记录
 
+- 2026-08-16：首页 hero 特效由闪电背景改为交互点阵
 - 2026-08-15：首页升级为赛博朋克风格
 - 2026-08-15：迁移 Java / Linux / LangChain / Python 学习路线
