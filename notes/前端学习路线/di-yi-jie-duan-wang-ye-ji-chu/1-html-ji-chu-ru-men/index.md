@@ -1,0 +1,147 @@
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/1-html-ji-chu-ru-men/index.md
+---
+# HTML 基础入门
+
+HTML（HyperText Markup Language）是网页的骨架，用标签描述内容的结构与含义。浏览器加载 HTML 后结合 CSS 与 JavaScript 渲染出完整页面。
+
+## 文档骨架
+
+一个最小 HTML 文档由 `<!DOCTYPE html>` 声明和 `<html>` 根元素构成：
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>页面标题</title>
+  </head>
+  <body>
+    <h1>标题</h1>
+    <p>段落文本</p>
+  </body>
+</html>
+```
+
+* `head`：不显示的元信息，包括字符集、视口、标题、样式与脚本引用。
+* `body`：页面可见内容。
+* `meta` 标签使用自闭合写法 `<meta ... />`（XML 风格，HTML5 中也可省略斜杠）。
+
+## 常用标签
+
+### 标题与段落
+
+```html
+<h1>一级标题</h1>
+<h2>二级标题</h2>  <!-- 直到 h6，语义上有层级，不要跳级 -->
+<p>段落文本，浏览器会自动换行。</p>
+```
+
+### 文本格式化
+
+```html
+<strong>加粗强调</strong>、<em>斜体强调</em>、<br />换行、<hr />水平分隔线
+```
+
+### 列表
+
+```html
+<ul>          <!-- 无序列表 -->
+  <li>项目一</li>
+  <li>项目二</li>
+</ul>
+
+<ol>          <!-- 有序列表 -->
+  <li>第一步</li>
+  <li>第二步</li>
+</ol>
+```
+
+### 链接与图片
+
+```html
+<a href="https://example.com" target="_blank" rel="noopener">外部链接</a>
+<a href="#section1">页内锚点</a>
+<img src="./images/logo.png" alt="Logo 描述文本" width="200" />
+```
+
+`alt` 属性在图片加载失败时显示，也被屏幕阅读器朗读，务必填写。
+
+### 表格
+
+```html
+<table>
+  <thead>
+    <tr><th>姓名</th><th>分数</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>张三</td><td>90</td></tr>
+    <tr><td>李四</td><td>85</td></tr>
+  </tbody>
+</table>
+```
+
+`thead` / `tbody` / `th` 提供语义；`colspan` / `rowspan` 可合并单元格。
+
+## 语义化标签
+
+HTML5 提供有明确含义的块级容器，便于搜索引擎与辅助工具理解页面结构：
+
+```html
+<header>页面头部</header>
+<nav>导航区</nav>
+<main>
+  <article>
+    <section>独立章节</section>
+  </article>
+</main>
+<aside>侧栏/补充内容</aside>
+<footer>页面底部</footer>
+```
+
+优先使用语义化标签，而不是所有区域都用 `div`。语义化带来的好处：可读性、SEO、无障碍（屏幕阅读器）。
+
+## 块级与行内元素
+
+* **块级元素**：独占一行，宽度占满父容器（如 `div`、`p`、`h1-h6`、`ul`、`table`）。
+* **行内元素**：不换行，宽度由内容决定（如 `span`、`a`、`strong`、`em`、`img`）。
+
+`display` 可在 CSS 中改变元素的盒类型，但语义不变。
+
+## 属性
+
+标签可携带属性，格式为 `属性名="值"`：
+
+| 属性 | 作用 |
+|:-----|:-----|
+| `id` | 页面内唯一标识，用于锚点定位与 JS 选取 |
+| `class` | 样式类名，可重复，CSS 按类选择 |
+| `style` | 内联样式，优先级最高，尽量避免 |
+| `data-*` | 自定义数据属性，供 JS 读取（`dataset`） |
+| `title` | 悬停提示文本（少数标签为其它含义，如 `<title>` 是文档标题） |
+
+## HTML5 常用新增
+
+```html
+<audio src="music.mp3" controls></audio>
+<video src="movie.mp4" controls poster="cover.png"></video>
+<details>
+  <summary>点击展开</summary>
+  折叠起来的详细内容
+</details>
+```
+
+## 注释与字符实体
+
+```html
+<!-- 这是注释，浏览器不显示 -->
+<p>小于号 &lt;、大于号 &gt;、与号 &amp;、版权符 &copy;</p>
+```
+
+特殊字符使用实体名称或编号转义，避免与标签语法冲突。
+
+## 用 DevTools 初见 HTML
+
+按 `F12` 打开浏览器开发者工具，在 **Elements 面板**中：元素结构树、选中元素看盒模型与样式、双击直接改内容即时预览。这是前端调试的第一站。

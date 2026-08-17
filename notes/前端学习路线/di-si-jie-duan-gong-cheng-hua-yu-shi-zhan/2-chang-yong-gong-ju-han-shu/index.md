@@ -1,0 +1,589 @@
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/2-chang-yong-gong-ju-han-shu/index.md
+---
+# 日常开发工具函数
+
+## 随机 ID 值
+
+```js
+const randomId = function () {
+	const n = Math.random()
+	return n.toString(36).substring(2)
+}
+```
+
+## 随机 uuid
+
+```js
+const uuid = function (len = 8, radix = 16) {
+	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')
+	const value = []
+	let i = 0
+	radix = radix || chars.length
+	if (len) {
+		for (i = 0; i < len; i++) value[i] = chars[0 | (Math.random() * radix)]
+	} else {
+		let r
+		value[8] = value[13] = value[18] = value[23] = '-'
+		value[14] = '4'
+		for (i = 0; i < 36; i++) {
+			if (!value[i]) {
+				r = 0 | (Math.random() * 16)
+				value[i] = chars[i === 19 ? (r & 0x3) | 0x8 : r]
+			}
+		}
+	}
+	return value.join('')
+}
+```
+
+## 生成一个范围内的随机数
+
+```js
+const rangeRandomNum = function (min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min
+}
+```
+
+## delay 延迟
+
+```js
+const delay = function (delayTime = 25) {
+	return new Promise((resolve) => {
+		setTimeout(() => {
+			resolve()
+		}, delayTime)
+	})
+}
+```
+
+## 倒计时
+
+```js
+/**
+ * 倒计时
+ * @param diff 倒计时时间(s)
+ * @param loadTime 运行时的当前时间(s)
+ * @param item 倒计时对象 默认：{ speed: 1000 }
+ * @param callback 回调
+ */
+const countDown = function (diff, loadTime, item, callback) {
+	function round($diff) {
+		let dd = parseInt($diff / 1000 / 60 / 60 / 24, 10) // 计算剩余的天数
+		let hh = parseInt(($diff / 1000 / 60 / 60) % 24, 10) // 计算剩余的小时数
+		let mm = parseInt(($diff / 1000 / 60) % 60, 10) // 计算剩余的分钟数
+		let ss = parseInt(($diff / 1000) % 60, 10) // 计算剩余的秒数
+		function checkTime(_a) {
+			let a = _a
+			if (a < 10) {
+				a = '0' + a
+			}
+			return a.toString()
+		}
+		item.conttainer = {
+			ddhh: checkTime(dd * 24 + hh),
+			dd: checkTime(dd),
+			hh: checkTime(hh),
+			mm: checkTime(mm),
+			ss: checkTime(ss),
+		}
+		if (item.conttainer.dd > 0 || item.conttainer.hh > 0 || item.conttainer.mm > 0 || item.conttainer.ss > 0) {
+			item.t = setTimeout(function () {
+				round($diff - (item.speed || 1000))
+			}, item.speed || 1000)
+		}
+		// 回调
+		callback && callback(item)
+	}
+	round(diff - loadTime)
+}
+```
+
+## 时间日期格式化
+
+```js
+/** 时间格式化
+ * @param {dateTime} date 标准时间格式 -> new Date()
+ * @param {string} format 时间格式化的格式 'yyyy-MM-dd hh:mm:ss'
+ * @returns {string} 格式化后的时间  '2017-01-01 01:00:00'
+ */
+const dateFormat = function (date = new Date(), format = 'yyyy-MM-dd hh:mm:ss') {
+	var o = {
+		'M+': date.getMonth() + 1, // month
+		'd+': date.getDate(), // day
+		'h+': date.getHours(), // hour
+		'm+': date.getMinutes(), // minute
+		's+': date.getSeconds(), // second
+		'q+': Math.floor((date.getMonth() + 3) / 3), // quarter
+		S: date.getMilliseconds(), // millisecond
+	}
+	if (/(y+)/.test(format)) {
+		format = format.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
+	}
+	for (var k in o) {
+		if (new RegExp('(' + k + ')').test(format)) {
+			format = format.replace(RegExp.$1, RegExp.$1.length === 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length))
+		}
+	}
+	return format
+}
+```
+
+## url 参数(k-v)的序列化及反序列化
+
+```js
+/*
+ * 反序列化URL参数
+ * { age: "25", name: "Tom" }
+ */
+const parseUrlSearch = function (location) {
+	return location.search
+		.replace(/(^\?)|(&$)/g, '')
+		.split('&')
+		.reduce((t, v) => {
+			const [key, val] = v.split('=')
+			t[key] = decodeURIComponent(val)
+			return t
+		}, {})
+}
+/*
+ * getQueryParams('id')
+ * 获取url上某个key的值
+ */
+const getParam = function (param) {
+	// 获取浏览器参数
+	const r = new RegExp(`\\?(?:.+&)?${param}=(.*?)(?:&.*)?$`)
+	const m = window.location.toString().match(r)
+	return m ? decodeURI(m[1]) : ''
+}
+/*
+ * queryStringify
+ * 将k-v的对象序列化转成 url?k=v&k1=v1;
+ */
+const queryStringify = function (search = {}) {
+	return Object.entries(search)
+		.reduce((t, v) => `${t}${v[0]}=${encodeURIComponent(v[1])}&`, Object.keys(search).length ? '?' : '')
+		.replace(/&$/, '')
+}
+```
+
+## 判断浏览器 UserAgent
+
+```js
+const browser = function () {
+	const u = navigator.userAgent.toLowerCase()
+	return {
+		txt: u, // userAgent 信息
+		version: (u.match(/.+(?:rv|it|ra|ie)[\/: ]([\d.]+)/) || [])[1], // 版本号
+		msie: /msie/.test(u) && !/opera/.test(u), // IE内核
+		mozilla: /mozilla/.test(u) && !/(compatible|webkit)/.test(u), // 火狐浏览器
+		safari: /safari/.test(u) && !(u.indexOf('android') > -1) && !/chrome/.test(u), //是否为safair
+		chrome: /chrome/.test(u), //是否为chrome
+		opera: /opera/.test(u), //是否为oprea
+		presto: u.indexOf('presto/') > -1, //opera内核
+		webKit: u.indexOf('applewebkit/') > -1, //苹果、谷歌内核
+		gecko: u.indexOf('gecko/') > -1 && u.indexOf('khtml') == -1, //火狐内核
+		mobile: !!u.match(/applewebkit.*mobile.*/), //是否为移动终端
+		ios: !!u.match(/\(i[^;]+;( u;)? cpu.+mac os x/), //ios终端
+		android: u.indexOf('android') > -1, //android终端
+		iPhone: u.indexOf('iphone') > -1, //是否为iPhone
+		iPad: u.indexOf('ipad') > -1, //是否为iPad
+		weixin: /micromessenger/.test(u), //微信
+		QQBrowse: u.indexOf(' QQ') > -1 || u.indexOf(' qq') > -1, // QQ浏览器
+		isApp: u.indexOf('jscp/ios') > -1 || u.indexOf('jscp/android') > -1 || getParamsCode('source') == 'app',
+	}
+}
+```
+
+## 封装 ajax 请求
+
+```js
+class Request {
+	options = {
+		responseType: 'json',
+	}
+	constructor(method = 'GET', url, data = null, options) {
+		this.method = method
+		this.url = url
+		this.data = this.formatData(data)
+		Object.assign(this.options, options)
+	}
+	formatData(data) {
+		if (typeof data != 'object' || data == null) data = {}
+		let form = new FormData()
+		for (const [name, value] of Object.entries(data)) {
+			form.append(name, value)
+		}
+		return form
+	}
+	static get(url, options) {
+		return new this('GET', url, null, options).xhr()
+	}
+	static post(url, data, options) {
+		return new this('POST', url, data, options).xhr()
+	}
+	xhr() {
+		return new Promise((resolve, reject) => {
+			const xhr = new XMLHttpRequest()
+			xhr.open(this.method, this.url)
+			xhr.responseType = this.options.responseType
+			xhr.send(this.data)
+			xhr.onload = function () {
+				if (xhr.status != 200) {
+					reject({ status: xhr.status, error: xhr.statusText })
+				} else {
+					resolve(xhr.response)
+				}
+			}
+			xhr.onerror = function (error) {
+				reject(error)
+			}
+		})
+	}
+}
+```
+
+## 防抖&&节流
+
+防抖
+
+```js
+/**
+ * 防抖
+ * @param {Function} func 需要包装的函数
+ * @param {string} wait 等待执行时间
+ * @param {string} immediate 是否是立即执行 默认不立即执行
+ * @returns {Function} 返回包装后的函数
+ */
+const debounce = function (func, wait, immediate) {
+	let timeout, result
+	return function () {
+		const context = this
+		const args = arguments
+		if (timeout) clearTimeout(timeout)
+		if (immediate) {
+			const callNow = !timeout
+			timeout = setTimeout(function () {
+				timeout = null
+			}, wait)
+			if (callNow) result = func.apply(context, args)
+		} else {
+			timeout = setTimeout(function () {
+				func.apply(context, args)
+			}, wait)
+		}
+		return result
+	}
+}
+```
+
+节流
+
+```js
+// 使用时间戳
+/**
+ * 防抖
+ * @param {Function} func 需要包装的函数
+ * @param {string} wait 间隔时间
+ * @returns {Function} 返回包装后的函数
+ */
+const throttle = function (func, wait) {
+	let context, args
+	let previous = 0
+	return function () {
+		let now = +new Date()
+		context = this
+		args = arguments
+		if (now - previous > wait) {
+			func.apply(context, args)
+			previous = now
+		}
+	}
+}
+// 使用定时器
+/**
+ * 防抖
+ * @param {Function} func 需要包装的函数
+ * @param {string} wait 间隔时间
+ * @returns {Function} 返回包装后的函数
+ */
+const throttle = function (func, wait) {
+	let timeout
+	return function () {
+		const context = this
+		const args = arguments
+		if (!timeout) {
+			timeout = setTimeout(function () {
+				timeout = null
+				func.apply(context, args)
+			}, wait)
+		}
+	}
+}
+```
+
+## 深拷贝
+
+```js
+function deepClone(obj, cache = new WeakMap()) {
+	if (typeof obj !== 'object') return obj // 普通类型，直接返回
+	if (obj === null) return obj
+	if (cache.get(obj)) return cache.get(obj) // 防止循环引用，程序进入死循环
+	if (obj instanceof Date) return new Date(obj)
+	if (obj instanceof RegExp) return new RegExp(obj)
+
+	// 找到所属原型上的constructor，所属原型上的constructor指向当前对象的构造函数
+	let cloneObj = new obj.constructor()
+	cache.set(obj, cloneObj) // 缓存拷贝的对象，用于处理循环引用的情况
+	for (let key in obj) {
+		if (obj.hasOwnProperty(key)) {
+			cloneObj[key] = deepClone(obj[key], cache) // 递归拷贝
+		}
+	}
+	return cloneObj
+}
+```
+
+## 常用验证方法
+
+```js
+/**
+ * 是否是外部调用链接
+ * @param {string} path
+ * @returns {Boolean}
+ */
+export function isExternal(path) {
+	return /^(https?:|mailto:|tel:)/.test(path)
+}
+/**
+ * 是否是URL链接
+ * @param {string} url
+ * @returns {Boolean}
+ */
+export function validURL(url) {
+	const reg =
+		/^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/
+	return reg.test(url)
+}
+/**
+ * 是否是小写字母
+ * @returns {Boolean}
+ */
+export function validLowerCase(str) {
+	const reg = /^[a-z]+$/
+	return reg.test(str)
+}
+/**
+ * 是否是大写字母
+ * @param {string} str
+ * @returns {Boolean}
+ */
+export function validUpperCase(str) {
+	const reg = /^[A-Z]+$/
+	return reg.test(str)
+}
+/**
+ * 是否是英文
+ * @param {string} str
+ * @returns {Boolean}
+ */
+export function validAlphabets(str) {
+	const reg = /^[A-Za-z]+$/
+	return reg.test(str)
+}
+/**
+ * 是否是邮箱
+ * @param {string} email
+ * @returns {Boolean}
+ */
+export function validEmail(email) {
+	const reg =
+		/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+	return reg.test(email)
+}
+/**
+ * 是否是手机号
+ * @param {string} mobile
+ * @returns {Boolean}
+ */
+export function validMobile(mobile) {
+	const reg = /^(13[0-9]|14[5|7]|15[0|1|2|3|4|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$/
+	return reg.test(mobile)
+}
+/**
+ * 是否是座机号
+ * @param {string} phoneNum
+ * @returns {Boolean}
+ */
+export function validPhoneNum(phoneNum) {
+	const reg = /^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$/
+	return reg.test(phone)
+}
+/**
+ * 是否是域名
+ * @param {string} domain
+ * @returns {Boolean}
+ */
+export function validDomain(domain) {
+	const reg = /[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?/
+	return reg.test(domain)
+}
+/**
+ * 是否是字符串
+ * @param {string} str
+ * @returns {Boolean}
+ */
+export function isString(str) {
+	if (typeof str === 'string' || str instanceof String) {
+		return true
+	}
+	return false
+}
+/**
+ * 是否是数组
+ * @param {Array} arg
+ * @returns {Boolean}
+ */
+export function isArray(arg) {
+	if (typeof Array.isArray === 'undefined') {
+		return Object.prototype.toString.call(arg) === '[object Array]'
+	}
+	return Array.isArray(arg)
+}
+```
+
+## 进入/离开动画过渡封装
+
+```js
+class Aniamte {
+	constructor(options) {
+		this.animateStatus = false
+		this.mergeOptions(options)
+		this.init()
+	}
+	/* 合并配置 */
+	mergeOptions(options) {
+		if (!options.el) {
+			throw new Error('options.el 必须为一个query选择器')
+		}
+		this.options = {
+			el: '', // 动画元素选择器(必要的)
+			animateRoot: '', // 可能需要一个公用的class 例如animate.css
+			entry: '', // 定义进入过渡的开始状态
+			enterActive: '', // 定义进入过渡生效时的状态
+			enterTo: '', // 定义进入过渡的结束状态
+			leave: '', // 定义离开过渡的开始状态
+			leaveActive: '', // 定义离开过渡生效时的状态
+			leaveTo: '', //定义离开过渡的结束状态
+		}
+		Object.assign(this.options, options)
+	}
+	/* 初始化 */
+	init() {
+		this.elements = this.queryAll(this.options.el)
+		this.elements.forEach((element) => {
+			element.addEventListener('animationend', (e) => this.animationend(e))
+		})
+	}
+	/* 动画执行结束 */
+	animationend(e) {
+		const { animateRoot, entry, enterActive, enterTo, leave, leaveActive, leaveTo } = this.options
+		const element = e.target
+		const { classList, className, afterCallback } = e.target
+		// 移除渡状态
+		this.removeClass(element, [animateRoot, leaveActive, enterActive, entry, leave])
+		// 添加离开过渡的结束状态
+		if (element.transitionType === 'entry' && enterTo) {
+			classList.add(enterTo)
+		} else if (element.transitionType === 'leave' && leaveTo) {
+			classList.add(leaveTo)
+		}
+		// 执行结束的回调
+		afterCallback && afterCallback.apply(element)
+		element.transitionType = 'none'
+	}
+	/* 进入 */
+	enter(el, before, after) {
+		const element = typeof el === 'string' ? this.query(el) : el
+		if (element.transitionType !== 'none') return
+		element.afterCallback = after
+		// 设置元素过度状态为entry
+		element.transitionType = 'entry'
+		const { animateRoot, enterActive, entry, leaveTo } = this.options
+		// 过渡开始前的回调
+		before && before.apply(element)
+		if (leaveTo && element.className.indexOf(leaveTo)) element.classList.remove(leaveTo)
+		if (entry) element.classList.add(entry)
+		if (animateRoot) element.classList.add(animateRoot)
+		if (enterActive) element.classList.add(enterActive)
+	}
+	/* 离开 */
+	leave(el, before, after) {
+		const element = typeof el === 'string' ? this.query(el) : el
+		if (element.transitionType !== 'none') return
+		element.afterCallback = after
+		// 设置元素过度状态为leave
+		element.transitionType = 'leave'
+		const { animateRoot, leaveActive, leave, enterTo } = this.options
+		// 过渡开始前的回调
+		before && before.apply(element)
+		if (enterTo && element.className.indexOf(enterTo)) element.classList.remove(enterTo)
+		if (leave) element.classList.add(leave)
+		if (animateRoot) element.classList.add(animateRoot)
+		if (leaveActive) element.classList.add(leaveActive)
+	}
+	queryAll(el) {
+		return document.querySelectorAll(el)
+	}
+	query(el) {
+		return document.querySelector(el)
+	}
+	removeClass(element, classList) {
+		classList.forEach((className) => {
+			if (className && [...element.classList].includes(className)) {
+				element.classList.remove(className)
+			}
+		})
+	}
+}
+/******************使用******************/
+// 这里使用了animate.css库
+const animate = new Aniamte({
+	el: '.box',
+	animateRoot: 'animate__animated',
+	enterTo: 'show',
+	enterActive: 'animate__fadeInRightBig',
+	leaveActive: 'animate__fadeOutRightBig',
+	leaveTo: 'hide',
+})
+const btn = document.querySelector('#btn')
+let status = true
+btn.addEventListener('click', (e) => {
+	if (status) {
+		animate.leave(
+			'.box1',
+			function () {
+				// TODO 过渡开始前要做的事
+				console.log('leave')
+			},
+			function () {
+				// TODO 过渡结束后要做的事
+				status = false
+			}
+		)
+	} else {
+		animate.enter(
+			'.box1',
+			function () {
+				// TODO 过渡开始前要做的事
+				console.log('enter')
+			},
+			function () {
+				// TODO 过渡结束后要做的事
+				status = true
+			}
+		)
+	}
+})
+```

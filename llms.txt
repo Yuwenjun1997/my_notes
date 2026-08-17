@@ -4,33 +4,41 @@
 
 ## Table of Contents
 
-### CSS 笔记
+### 前端学习路线
 
-- [CSS 笔记](/my_notes/notes/前端开发/css/index.md)
-- [常用样式](/my_notes/notes/前端开发/css/chang-yong-yang-shi/index.md)
-
-### JavaScript 笔记
-
-- [JavaScript 笔记](/my_notes/notes/前端开发/js/index.md)
-- [Excel表格解析](/my_notes/notes/前端开发/js/excel-biao-ge-jie-xi/index.md)
-- [工具函数](/my_notes/notes/前端开发/js/gong-ju-han-shu/index.md)
-- [JavaScript数组](/my_notes/notes/前端开发/js/java-script-shu-zu/index.md)
-- [可折叠的列表](/my_notes/notes/前端开发/js/ke-zhe-die-de-lie-biao/index.md)
-- [上传图片及预览](/my_notes/notes/前端开发/js/shang-chuan-tu-pian-ji-yu-lan/index.md)
-- [上拉加载](/my_notes/notes/前端开发/js/shang-la-jia-zai/index.md)
-- [生成二维码](/my_notes/notes/前端开发/js/sheng-cheng-er-wei-ma/index.md)
-
-### TypeScript 笔记
-
-- [TypeScript 笔记](/my_notes/notes/前端开发/ts/index.md)
-- [编译第一个ts程序](/my_notes/notes/前端开发/ts/bian-yi-di-yi-ge-ts-cheng-xu/index.md)
-- [泛型](/my_notes/notes/前端开发/ts/fan-xing/index.md)
-- [函数相关知识点梳理](/my_notes/notes/前端开发/ts/han-shu-xiang-guan-zhi-shi-dian-shu-li/index.md)
-- [接口](/my_notes/notes/前端开发/ts/jie-kou/index.md)
-- [类和接口的关系](/my_notes/notes/前端开发/ts/lei-he-jie-kou-de-guan-xi/index.md)
-- [类型基础](/my_notes/notes/前端开发/ts/lei-xing-ji-chu/index.md)
-- [类](/my_notes/notes/前端开发/ts/lei/index.md)
-- [枚举类型](/my_notes/notes/前端开发/ts/mei-ju-lei-xing/index.md)
+- [前端学习路线](/my_notes/notes/前端学习路线/index.md)
+- [第一阶段 · 网页基础](/my_notes/notes/前端学习路线/第一阶段-网页基础/index.md)
+- [第三阶段 · TypeScript](/my_notes/notes/前端学习路线/第三阶段-TypeScript/index.md)
+- [第二阶段 · JavaScript核心](/my_notes/notes/前端学习路线/第二阶段-JavaScript核心/index.md)
+- [第四阶段 · 工程化与实战](/my_notes/notes/前端学习路线/第四阶段-工程化与实战/index.md)
+- [JavaScript语言基础](/my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/1-java-script-yu-yan-ji-chu/index.md)
+- [函数、作用域与闭包](/my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/2-han-shu-zuo-yong-yu-yu-bi-bao/index.md)
+- [原型、this与继承](/my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/3-yuan-xing-this-yu-ji-cheng/index.md)
+- [异步编程与事件循环](/my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/4-yi-bu-bian-cheng-yu-shi-jian-xun-huan/index.md)
+- [ES6+核心特性](/my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/5-es-6-he-xin-te-xing/index.md)
+- [DOM操作与事件](/my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/6-dom-cao-zuo-yu-shi-jian/index.md)
+- [JavaScript数组](/my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/7-java-script-shu-zu/index.md)
+- [编译第一个ts程序](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/1-bian-yi-di-yi-ge-ts-cheng-xu/index.md)
+- [类型基础](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/2-lei-xing-ji-chu/index.md)
+- [枚举类型](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/3-mei-ju-lei-xing/index.md)
+- [接口](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/4-jie-kou/index.md)
+- [类](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/5-lei/index.md)
+- [泛型](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/6-fan-xing/index.md)
+- [函数相关知识点梳理](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/7-han-shu-xiang-guan-zhi-shi-dian/index.md)
+- [类和接口的关系](/my_notes/notes/前端学习路线/di-san-jie-duan-type-script/8-lei-he-jie-kou-de-guan-xi/index.md)
+- [构建工具Vite入门](/my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/1-gou-jian-gong-ju-vite-ru-men/index.md)
+- [工具函数](/my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/2-chang-yong-gong-ju-han-shu/index.md)
+- [上传图片及预览](/my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/3-shang-chuan-tu-pian-ji-yu-lan/index.md)
+- [生成二维码](/my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/4-sheng-cheng-er-wei-ma/index.md)
+- [上拉加载](/my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/5-shang-la-jia-zai/index.md)
+- [可折叠的列表](/my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/6-ke-zhe-die-de-lie-biao/index.md)
+- [Excel表格解析](/my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/7-excel-biao-ge-jie-xi/index.md)
+- [HTML基础入门](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/1-html-ji-chu-ru-men/index.md)
+- [HTML表单](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/2-html-biao-dan/index.md)
+- [CSS基础与盒模型](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/3-css-ji-chu-yu-he-mo-xing/index.md)
+- [CSS布局（flex与grid）](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/4-css-bu-ju-flex-yu-grid/index.md)
+- [响应式与动画](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/5-xiang-ying-shi-yu-dong-hua/index.md)
+- [常用样式](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/6-css-chang-yong-yang-shi/index.md)
 
 ### Java 学习路线
 

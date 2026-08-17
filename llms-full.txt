@@ -11,9 +11,7 @@ description: 小鱼知识库 —— 技术知识、学习路线与参考文档�
 
 ### 快速导航
 
-* [CSS 笔记](/notes/前端开发/css/)
-* [JavaScript 笔记](/notes/前端开发/js/)
-* [TypeScript 笔记](/notes/前端开发/ts/)
+* [前端学习路线](/notes/前端学习路线/)
 * [Java 学习路线](/notes/JAVA学习路线/)
 * [Python 学习路线](/notes/Python学习路线/)
 * [Linux 学习路线](/notes/Linux学习路线/)
@@ -22,6 +20,7 @@ description: 小鱼知识库 —— 技术知识、学习路线与参考文档�
 
 ### 更新记录
 
+* 2026-08-17：前端开发重构为「前端学习路线」，按四阶段系统化组织
 * 2026-08-17：站点更名为「小鱼知识库」，定位调整为个人知识库
 * 2026-08-16：首页 hero 特效由闪电背景改为交互点阵
 * 2026-08-15：首页升级为赛博朋克风格
@@ -30,823 +29,985 @@ description: 小鱼知识库 —— 技术知识、学习路线与参考文档�
 ---
 
 ---
-url: /my_notes/notes/前端开发/css/index.md
+url: /my_notes/notes/前端学习路线/index.md
 ---
-# CSS 笔记
+# 🌐 前端开发学习路线
 
-日常开发中常用到的 CSS 样式类与技巧。
+> 一份面向 Web 初学者的系统化前端学习指南，涵盖 **网页基础 → JavaScript 核心 → TypeScript → 工程化与实战** 四个阶段，从零到能独立搭建并维护一个现代前端项目。
 
----
+***
 
----
-url: /my_notes/notes/前端开发/css/chang-yong-yang-shi/index.md
----
-# 日常开发 CSS 样式类
+## 📋 目录索引
 
-## 文本超出显示省略号
+* [第一阶段：网页基础](#-第一阶段网页基础)
+* [第二阶段：JavaScript 核心](#-第二阶段javascript核心)
+* [第三阶段：TypeScript](#-第三阶段typescript)
+* [第四阶段：工程化与实战](#-第四阶段工程化与实战)
+* [学习路线总览](#-学习路线总览)
 
-```scss
-.ellipsis {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	display: -webkit-box;
-	-webkit-line-clamp: 1; // 这里控制几行显示省略号
-	-webkit-box-orient: vertical;
-}
-/* scss中可以用mixin来扩展 */
-@mixin ellipsis($line: 1) {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	display: -webkit-box;
-	-webkit-line-clamp: $line;
-	-webkit-box-orient: vertical;
-}
-```
+***
 
-## 三角形
+## 🎨 第一阶段：网页基础
 
-```scss
-.triangle {
-	width: 0;
-	height: 0;
-	border-style: solid;
-	border-width: 0 25px 40px 25px;
-	border-color: transparent transparent red transparent;
-}
-/* mixin混入 */
-@use 'sass:meta'; // 注意这一句不要忘了
-@mixin triangle($width, $rest...) {
-	display: inline-block;
-	width: 0;
-	height: 0;
-	vertical-align: middle;
-	border: $width solid transparent;
-	@each $key, $color in meta.keywords($rest) {
-		border-#{$key}-color: $color;
-	}
-}
-.triangle {
-	@include triangle(15px, $top: red);
-}
-```
+> **学习周期**：1-2 周 | **每日建议**：2-3 小时
+> **目标**：掌握 HTML 结构、表单与 CSS 盒模型/布局/响应式，能写出语义化、可适配的静态页面。
 
-## 滚动条
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **1.1 HTML 基础入门** | 文档骨架、常用标签、语义化、块级/行内、属性、HTML5 新标签 | [📖 查看](./第一阶段-网页基础/1.1-HTML基础入门.md) |
+| **1.2 HTML 表单** | form/input 类型、select/textarea、label 关联、fieldset 分组、原生校验与提交 | [📖 查看](./第一阶段-网页基础/1.2-HTML表单.md) |
+| **1.3 CSS 基础与盒模型** | 引入方式与优先级、选择器与权重、盒模型与 box-sizing、单位、层叠继承重置 | [📖 查看](./第一阶段-网页基础/1.3-CSS基础与盒模型.md) |
+| **1.4 CSS 布局（flex/grid）** | flex 主轴/交叉轴、flex 伸缩、grid 模板与占位、position 定位、选型 | [📖 查看](./第一阶段-网页基础/1.4-CSS布局flex与grid.md) |
+| **1.5 响应式与动画** | 媒体查询、移动优先、rem/vw 与 clamp、transition 与 @keyframes、transform | [📖 查看](./第一阶段-网页基础/1.5-响应式与动画.md) |
+| **1.6 CSS 常用样式** | 文本省略、三角形、滚动条美化等 SCSS 代码片段 | [📖 查看](./第一阶段-网页基础/1.6-CSS常用样式.md) |
 
-```css
-::-webkit-scrollbar    //滚动条整体部分
-::-webkit-scrollbar-button   //滚动条两端的按钮
-::-webkit-scrollbar-track   // 外层轨道
-::-webkit-scrollbar-track-piece    //内层轨道，滚动条中间部分（除去）
-::-webkit-scrollbar-thumb //滚动条里面可以拖动的那个
-::-webkit-scrollbar-corner   //边角
-::-webkit-resizer   ///定义右下角拖动块的样式
-/*定义滚动条高宽及背景
- 高宽分别对应横竖滚动条的尺寸*/
-::-webkit-scrollbar {
-	width: 16px;
-	height: 16px;
-	background-color: #f5f5f5;
-}
-/*定义滚动条轨道
- 内阴影+圆角*/
-::-webkit-scrollbar-track {
-	-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-	border-radius: 10px;
-	background-color: #f5f5f5;
-}
-/*定义滑块
- 内阴影+圆角*/
-::-webkit-scrollbar-thumb {
-	border-radius: 10px;
-	-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-	background-color: #555;
-}
-```
+***
 
----
+## 🔤 第二阶段：JavaScript 核心
 
----
-url: /my_notes/notes/前端开发/js/index.md
----
-# JavaScript 笔记
+> **学习周期**：3-4 周 | **每日建议**：2-3 小时
+> **目标**：建立扎实的语言功底——从语法、作用域、原型到异步与 DOM，能独立编写可维护的交互逻辑。
 
-日常开发中使用的 JavaScript 工具函数、数组、上传、二维码、表格解析等技巧。
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **2.1 JavaScript 语言基础** | let/const/var、数据类型与 typeof、类型转换、运算符、流程控制 | [📖 查看](./第二阶段-JavaScript核心/2.1-JavaScript语言基础.md) |
+| **2.2 函数、作用域与闭包** | 参数高级用法、作用域链、闭包本质与场景、IIFE、循环+var 陷阱 | [📖 查看](./第二阶段-JavaScript核心/2.2-函数作用域与闭包.md) |
+| **2.3 原型、this 与继承** | 原型链、new 流程、this 四种绑定、class 与 extends、instanceof | [📖 查看](./第二阶段-JavaScript核心/2.3-原型this与继承.md) |
+| **2.4 异步编程与事件循环** | 回调地狱、Promise 状态机、async/await、宏任务与微任务、经典输出顺序题 | [📖 查看](./第二阶段-JavaScript核心/2.4-异步编程与事件循环.md) |
+| **2.5 ES6+ 核心特性** | 解构、模板字符串、展开/剩余、Symbol/Map/Set、ES Module、可选链/空值合并 | [📖 查看](./第二阶段-JavaScript核心/2.5-ES6+核心特性.md) |
+| **2.6 DOM 操作与事件** | 节点查询/增删改、classList、事件捕获冒泡、事件委托、常用事件速查 | [📖 查看](./第二阶段-JavaScript核心/2.6-DOM操作与事件.md) |
+| **2.7 JavaScript 数组** | 创建/转换、元素管理、查找/排序/遍历、迭代器、filter/map/reduce 等 | [📖 查看](./第二阶段-JavaScript核心/2.7-JavaScript数组.md) |
 
----
+***
 
----
-url: /my_notes/notes/前端开发/js/excel-biao-ge-jie-xi/index.md
----
-# Excel表格解析
+## ↔️ 第三阶段：TypeScript
 
-## 说明
+> **学习周期**：2-3 周 | **每日建议**：2-3 小时
+> **目标**：用类型系统加固 JavaScript，理解接口、类、泛型等核心抽象，具备 TS 工程化开发能力。
 
-使用技术：xlsx.js
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **3.1 编译第一个 TS 程序** | tsc、tsconfig.json、webpack 集成（较旧配置，与 Vite 对照参考） | [📖 查看](./第三阶段-TypeScript/3.1-编译第一个TS程序.md) |
+| **3.2 类型基础** | 基础类型、类型标注、数组/元组、函数/对象类型、void/any/never | [📖 查看](./第三阶段-TypeScript/3.2-类型基础.md) |
+| **3.3 枚举类型** | 数字/字符串/异构枚举、枚举成员分类、const 枚举、枚举即类型 | [📖 查看](./第三阶段-TypeScript/3.3-枚举类型.md) |
+| **3.4 接口** | 对象接口、函数接口、索引类型、接口合并与可选/只读属性 | [📖 查看](./第三阶段-TypeScript/3.4-接口.md) |
+| **3.5 类** | 继承、成员修饰符、抽象类、多态、this 类型 | [📖 查看](./第三阶段-TypeScript/3.5-类.md) |
+| **3.6 泛型** | 泛型函数/接口/类、泛型约束 | [📖 查看](./第三阶段-TypeScript/3.6-泛型.md) |
+| **3.7 函数相关知识点** | 函数定义方式、参数规则、函数重载 | [📖 查看](./第三阶段-TypeScript/3.7-函数相关知识点.md) |
+| **3.8 类和接口的关系** | 类实现接口、接口继承、接口继承类 | [📖 查看](./第三阶段-TypeScript/3.8-类和接口的关系.md) |
 
-基于webpack模块化开发，利用`xlsx.js`的`utils.sheet_to_json()`方法可以将工作表转为以第一行为key的json数组对象，然后通过`formatSheetsJsonToArray()`方法将json对象处理为后端接口可用数组对象。`xlsx.js`也提供了很多其它对Excel文件操作的方法。
+***
 
-链接：https://github.com/SheetJS/sheetjs
+## 🛠️ 第四阶段：工程化与实战
 
-npm安装
+> **学习周期**：3-4 周 | **每日建议**：3-4 小时
+> **目标**：了解现代构建工具与开发流程，并掌握高频开发场景的实用技巧，能独立解决日常业务需求。
+
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **4.1 构建工具 Vite 入门** | 构建工具动机、Vite vs Webpack、创建项目、常用命令、集成 TS/Sass、目录与配置 | [📖 查看](./第四阶段-工程化与实战/4.1-构建工具Vite入门.md) |
+| **4.2 常用工具函数** | 随机ID/uuid、延迟/倒计时、日期格式化、URL 参数、防抖节流、深拷贝等 | [📖 查看](./第四阶段-工程化与实战/4.2-常用工具函数.md) |
+| **4.3 上传图片及预览** | 图片上传、本地预览回显、大文件切片（前后端） | [📖 查看](./第四阶段-工程化与实战/4.3-上传图片及预览.md) |
+| **4.4 生成二维码** | qrcode 库绘制并下载二维码 | [📖 查看](./第四阶段-工程化与实战/4.4-生成二维码.md) |
+| **4.5 上拉加载** | 滚动监听、分页加载的封装思路 | [📖 查看](./第四阶段-工程化与实战/4.5-上拉加载.md) |
+| **4.6 可折叠的列表** | jQuery + ES6 折叠组件（历史技术栈，保留参考） | [📖 查看](./第四阶段-工程化与实战/4.6-可折叠的列表.md) |
+| **4.7 Excel 表格解析** | 前端解析 Excel 并转换为后端友好的数据结构 | [📖 查看](./第四阶段-工程化与实战/4.7-Excel表格解析.md) |
+
+***
+
+## 📐 学习路线总览
 
 ```
-npm i xlsx -S
+第一阶段：网页基础（1-2周）
+    │  HTML → HTML表单 → CSS盒模型 → flex/grid布局 → 响应式动画 → 常用样式
+    ▼
+第二阶段：JavaScript 核心（3-4周）
+    │  语言基础 → 函数与闭包 → 原型与this → 异步与事件循环 → ES6+ → DOM → 数组
+    ▼
+第三阶段：TypeScript（2-3周）
+    │  编译 → 类型基础 → 枚举 → 接口 → 类 → 泛型 → 函数 → 类与接口
+    ▼
+第四阶段：工程化与实战（3-4周）
+    Vite构建工具 → 工具函数 → 上传图片 → 二维码 → 上拉加载 → 可折叠列表 → Excel解析
 ```
 
-## 代码
+### 💡 学习建议
 
-formatSheetsJsonToArray.js
+1. **动手优先**：每个知识点都要在浏览器里实际写一遍，只看文档是记不住的。用 CodePen 或本地 Vite 项目练手。
+2. **善用 DevTools**：按 `F12` 打开开发者工具，Elements 改样式、Console 跑 JS、Network 看请求、Sources 断点调试。
+3. **以 MDN 为第一参考**：遇到 API 用法先查 [MDN Web Docs](https://developer.mozilla.org/)（MDN 也比多数中文博客准确）。
+4. **每章留小练习**：学完一个模块，给自己出一个小题目（如写一个轮播、一个卡片列表），检验是否真的会了。
+5. **建立自己的代码库**：把常用工具函数、样式片段（见 1.6、4.2）沉淀成自己的片段库，日后事半功倍。
 
-```js
-const keysMap = {
-	name: '姓名',
-	age: '年龄',
-	grade: '年级',
-	other: '其他',
-}
+### 🔧 推荐工具与资源
 
-/**
- * 将工作表JSON对象数组为合法的数组
- * @param {*} sheetJson 工作表JSON对象数组
- * @returns 工作表数据数组
- */
-const formatSheetsJsonToArray = function (sheetJson) {
-	const sheetArrayList = []
-	for (const key in sheetJson) {
-		sheetArrayList[key] = transformObjectKeys(sheetJson[key])
-	}
-	return sheetArrayList
-}
+| 类别 | 工具/资源 | 说明 |
+|:-----|:----------|:-----|
+| 浏览器 | Chrome / Edge + DevTools | 前端调试标配 |
+| 编辑器 | VS Code + Prettier / ESLint | 格式化与代码检查 |
+| 文档 | [MDN Web Docs](https://developer.mozilla.org/) | 权威 API 参考 |
+| 兼容性 | [Can I Use](https://caniuse.com/) | 查询特性兼容情况 |
+| 练习 | CodePen / CodeSandbox / StackBlitz | 在线写与分享示例 |
+| 构建 | Vite / npm | 见 4.1 |
+| 版本管理 | Git + 任意 GUI（如 VS Code 内置） | 配合部署流程使用 |
 
-/**
- * 将对象中的key按照keysMap中的关系进行转换
- * @param {object} obj 需要被处理对象
- */
-const transformObjectKeys = function (obj) {
-	let newObj = Object.create(null)
-	for (const key in keysMap) {
-		newObj[key] = obj[keysMap[key]] || ''
-	}
-	return newObj
-}
-
-export default formatSheetsJsonToArray
-```
-
-index.js
-
-```js
-import { read, utils } from 'xlsx'
-import formatSheetsJsonToArray from './formatSheetsToArray'
-
-const handleFile = function (e) {
-	let files = e.target.files,
-		f = files[0]
-	let reader = new FileReader()
-	reader.onload = function (e) {
-		let workbook = read(e.target.result)
-		doSomething(workbook)
-	}
-	reader.readAsArrayBuffer(f)
-}
-
-/**
- * 读取工作表成功后要做的事
- * @param {*} workbook 工作表对象
- */
-const doSomething = function (workbook) {
-	let sheet = null
-    const allSheetArrayList = []
-	for (const key in workbook.Sheets) {
-		sheet = workbook.Sheets[key]
-		if (!sheet['!ref']) continue
-		const json = utils.sheet_to_json(workbook.Sheets[key])
-		console.log(utils.sheet_to_html(workbook.Sheets[key]))
-		const sheetArrayList = formatSheetsJsonToArray(json)
-        allSheetArrayList.push(...sheetArrayList)
-	}
-    // TODO获取到数组对象后要做的事
-    // ...
-    console.log(allSheetArrayList)
-}
-
-const input_dom_element = document.querySelector('#input_dom_element')
-input_dom_element.addEventListener('change', handleFile, false)
-```
-
-index.html
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Document</title>
-	</head>
-	<body>
-		<input type="file" name="file" id="input_dom_element" />
-		<script src="/assets/bundle.js"></script>
-	</body>
-</html>
-```
+***
 
 ---
 
 ---
-url: /my_notes/notes/前端开发/js/gong-ju-han-shu/index.md
+url: /my_notes/notes/前端学习路线/第一阶段-网页基础/index.md
 ---
-# 日常开发工具函数
+# 第一阶段 · 网页基础
 
-## 随机 ID 值
+从 HTML 结构到 CSS 样式，掌握网页的骨架与外观。
+
+* [HTML基础入门](./1.1-HTML基础入门.md)
+* [HTML表单](./1.2-HTML表单.md)
+* [CSS基础与盒模型](./1.3-CSS基础与盒模型.md)
+* [CSS布局（flex与grid）](./1.4-CSS布局flex与grid.md)
+* [响应式与动画](./1.5-响应式与动画.md)
+* [CSS常用样式](./1.6-CSS常用样式.md)
+
+---
+
+---
+url: /my_notes/notes/前端学习路线/第三阶段-TypeScript/index.md
+---
+# 第三阶段 · TypeScript
+
+通过类型系统加固 JavaScript，掌握工程化开发中的类型思维。
+
+* [编译第一个TS程序](./3.1-编译第一个TS程序.md)
+* [类型基础](./3.2-类型基础.md)
+* [枚举类型](./3.3-枚举类型.md)
+* [接口](./3.4-接口.md)
+* [类](./3.5-类.md)
+* [泛型](./3.6-泛型.md)
+* [函数相关知识点](./3.7-函数相关知识点.md)
+* [类和接口的关系](./3.8-类和接口的关系.md)
+
+---
+
+---
+url: /my_notes/notes/前端学习路线/第二阶段-JavaScript核心/index.md
+---
+# 第二阶段 · JavaScript核心
+
+从语言基础到异步与 DOM，建立扎实的 JavaScript 语言功底。
+
+* [JavaScript语言基础](./2.1-JavaScript语言基础.md)
+* [函数、作用域与闭包](./2.2-函数作用域与闭包.md)
+* [原型、this与继承](./2.3-原型this与继承.md)
+* [异步编程与事件循环](./2.4-异步编程与事件循环.md)
+* [ES6+核心特性](./2.5-ES6+核心特性.md)
+* [DOM操作与事件](./2.6-DOM操作与事件.md)
+* [JavaScript数组](./2.7-JavaScript数组.md)
+
+---
+
+---
+url: /my_notes/notes/前端学习路线/第四阶段-工程化与实战/index.md
+---
+# 第四阶段 · 工程化与实战
+
+了解构建工具与现代开发流程，并用常用实战技巧解决开发中的具体问题。
+
+* [构建工具Vite入门](./4.1-构建工具Vite入门.md)
+* [常用工具函数](./4.2-常用工具函数.md)
+* [上传图片及预览](./4.3-上传图片及预览.md)
+* [生成二维码](./4.4-生成二维码.md)
+* [上拉加载](./4.5-上拉加载.md)
+* [可折叠的列表](./4.6-可折叠的列表.md)
+* [Excel表格解析](./4.7-Excel表格解析.md)
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/1-java-script-yu-yan-ji-chu/index.md
+---
+# JavaScript 语言基础
+
+JavaScript（简称 JS）是浏览器的原生脚本语言，也是 Node.js 的底层语言。先掌握语法与数据类型，再进入函数、原型、异步等更深的概念。
+
+## 变量声明：let / const / var
 
 ```js
-const randomId = function () {
-	const n = Math.random()
-	return n.toString(36).substring(2)
+let count = 0;        // 可变变量，块级作用域
+const PI = 3.14;      // 常量，不可重新赋值，块级作用域
+var old = 1;          // 旧式声明，函数级作用域 + 变量提升，日常不推荐
+```
+
+* **优先 const**，需要重新赋值时才用 let。
+* `const` 保证的是「绑定不可变」，对象/数组内部仍可修改（除非冻结）。
+* `let/const` 有**暂时性死区（TDZ）**：声明前访问会抛错；`var` 会被提升为 `undefined`。
+
+```js
+console.log(typeof x); // undefined（var 提升）
+let y = 1; // 若在声明前写 console.log(y) 会报 ReferenceError
+```
+
+## 数据类型
+
+**7 种原始类型 + 1 种引用类型：**
+
+| 类型 | typeof 结果 | 示例 |
+|:-----|:-----------|:-----|
+| `string` | `"string"` | `"hi"`（建议用单引号或反引号） |
+| `number` | `"number"` | `42`、`3.14`、`NaN`、`Infinity` |
+| `boolean` | `"boolean"` | `true` / `false` |
+| `undefined` | `"undefined"` | 未赋值 |
+| `null` | `"object"`（历史遗留 bug） | 显式的「空」 |
+| `symbol` | `"symbol"` | `Symbol()` |
+| `bigint` | `"bigint"` | `9007199254740991n` |
+| `object`（引用类型） | `"object"` | 对象、数组、函数、日期等 |
+
+**判断类型的坑：**
+
+```js
+typeof null           // "object" —— 需要 null 判断用 === null
+Array.isArray([])     // true —— 判断数组用这个，typeof [] 是 "object"
+typeof (() => {})     // "function" —— 函数是特殊的对象
+```
+
+## 类型转换
+
+```js
+Number("42");      // 42
+Number("abc");     // NaN
+String(42);        // "42"
+Boolean(0);        // false
+!!"hello";         // true
+parseInt("42px");  // 42
+```
+
+**真值 / 假值**：假值仅 6 个——`false`、`0`、`""`、`null`、`undefined`、`NaN`，其余全是真值。
+
+## 运算符
+
+```js
+// 算术
+5 + 3; 5 - 3; 5 * 3; 5 / 2; 5 % 2; 2 ** 3; // 8
+
+// 比较；=== 严格相等（不转换类型），== 宽松相等（会转换，尽量别用）
+1 === "1";  // false
+1 == "1";   // true（隐式转换）
+null === undefined; // false
+
+// 逻辑：短路求值
+true && doSomething();
+false || "默认值";
+const v = maybeNull ?? "兜底值";   // ?? 仅当左侧为 null/undefined 时取右侧
+
+// 可选链
+user?.profile?.name;  // 链上任意一层为 null/undefined 返回 undefined
+```
+
+`??`（空值合并）与 `||` 的关键区别：`0 || "x"` 得 `"x"`，`0 ?? "x"` 得 `0`。
+
+## 流程控制
+
+```js
+if (score >= 90) {
+  // ...
+} else if (score >= 60) {
+  // ...
+} else {
+  // ...
+}
+
+const grade = score >= 60 ? 'pass' : 'fail';  // 三元
+
+switch (action) {
+  case 'add': break;
+  case 'del': break;
+  default:
+}
+
+for (let i = 0; i < 10; i++) { /* ... */ }
+let i = 0;
+while (i < 10) { i++; }
+do { /* 至少执行一次 */ } while (false);
+
+for (const item of items) { /* 遍历可迭代对象（数组等） */ }
+```
+
+## 函数基础
+
+```js
+// 函数声明（有提升，可提前调用）
+function add(a, b) {
+  return a + b;
+}
+
+// 函数表达式
+const sub = function (a, b) {
+  return a - b;
+};
+
+// 箭头函数（无自己的 this/arguments，见 2.3）
+const mul = (a, b) => a * b;
+const greet = name => `hello ${name}`;
+```
+
+函数相关进阶（参数默认值、剩余参数、作用域、闭包）见 `2.2-函数作用域与闭包`。
+
+## 严格模式
+
+```js
+'use strict';   // 文件或函数顶部声明
+```
+
+严格模式禁用了若干历史遗留的坏行为（如未声明直接赋值、给只读属性赋值、`delete` 不可删除属性等），模块与 class 内部默认就是严格模式。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/2-han-shu-zuo-yong-yu-yu-bi-bao/index.md
+---
+# 函数、作用域与闭包
+
+函数是 JS 的一等公民。理解作用域链与闭包，才能真正看懂函数式写法、框架源码与各种「看似魔法」的写法。
+
+## 参数进阶
+
+```js
+function f(a = 1, b = 2) {      // 默认参数
+  return a + b;
+}
+
+function g(...rest) {           // 剩余参数：收集所有实参为数组
+  return rest.length;
+}
+
+function h() {
+  return arguments.length;      // arguments：类数组，箭头函数里没有
 }
 ```
 
-## 随机 uuid
+* 默认参数在传入 `undefined` 时生效；传 `null` 不会触发默认值。
+* `arguments` 不是真数组，需要用 `Array.from(arguments)` 或剩余参数代替。
+
+## 词法作用域与作用域链
+
+JS 采用**词法作用域**：函数能访问的变量在「写代码的位置」就已确定，不随调用位置变化。
 
 ```js
-const uuid = function (len = 8, radix = 16) {
-	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')
-	const value = []
-	let i = 0
-	radix = radix || chars.length
-	if (len) {
-		for (i = 0; i < len; i++) value[i] = chars[0 | (Math.random() * radix)]
-	} else {
-		let r
-		value[8] = value[13] = value[18] = value[23] = '-'
-		value[14] = '4'
-		for (i = 0; i < 36; i++) {
-			if (!value[i]) {
-				r = 0 | (Math.random() * 16)
-				value[i] = chars[i === 19 ? (r & 0x3) | 0x8 : r]
-			}
-		}
-	}
-	return value.join('')
+const x = 1;
+
+function outer() {
+  const x = 2;
+  function inner() {
+    console.log(x); // 2：从内向外逐层查找，最近一层生效
+  }
+  inner();
 }
+outer();
 ```
 
-## 生成一个范围内的随机数
+**作用域链**：每层函数向外找变量的链条就是作用域链。查找不到时抛 `ReferenceError`。
+
+## 闭包：函数 + 词法环境
+
+闭包指「函数与其创建时的词法环境的组合」。函数即使在定义它的作用域之外执行，仍能记住并访问外层变量：
 
 ```js
-const rangeRandomNum = function (min, max) {
-	return Math.floor(Math.random() * (max - min + 1)) + min
+function counter() {
+  let count = 0;
+  return function () {
+    count += 1;
+    return count;
+  };
 }
+
+const inc = counter();
+inc(); // 1
+inc(); // 2   // count 没有被回收，被 inc 记住
 ```
 
-## delay 延迟
+**内存认知**：闭包会让被引用的外层变量常驻内存，不被垃圾回收。合理的闭包省事，滥用会造成内存泄漏——不再需要时把引用置空或解除事件监听。
+
+## 闭包典型场景
+
+### 私有变量
 
 ```js
-const delay = function (delayTime = 25) {
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			resolve()
-		}, delayTime)
-	})
-}
+const wallet = (() => {
+  let balance = 0;
+  return {
+    deposit(n) { balance += n; },
+    query() { return balance; },
+  };
+})();
+wallet.deposit(100);
+wallet.query(); // 100，balance 外部拿不到
 ```
 
-## 倒计时
+### 柯里化
 
 ```js
-/**
- * 倒计时
- * @param diff 倒计时时间(s)
- * @param loadTime 运行时的当前时间(s)
- * @param item 倒计时对象 默认：{ speed: 1000 }
- * @param callback 回调
- */
-const countDown = function (diff, loadTime, item, callback) {
-	function round($diff) {
-		let dd = parseInt($diff / 1000 / 60 / 60 / 24, 10) // 计算剩余的天数
-		let hh = parseInt(($diff / 1000 / 60 / 60) % 24, 10) // 计算剩余的小时数
-		let mm = parseInt(($diff / 1000 / 60) % 60, 10) // 计算剩余的分钟数
-		let ss = parseInt(($diff / 1000) % 60, 10) // 计算剩余的秒数
-		function checkTime(_a) {
-			let a = _a
-			if (a < 10) {
-				a = '0' + a
-			}
-			return a.toString()
-		}
-		item.conttainer = {
-			ddhh: checkTime(dd * 24 + hh),
-			dd: checkTime(dd),
-			hh: checkTime(hh),
-			mm: checkTime(mm),
-			ss: checkTime(ss),
-		}
-		if (item.conttainer.dd > 0 || item.conttainer.hh > 0 || item.conttainer.mm > 0 || item.conttainer.ss > 0) {
-			item.t = setTimeout(function () {
-				round($diff - (item.speed || 1000))
-			}, item.speed || 1000)
-		}
-		// 回调
-		callback && callback(item)
-	}
-	round(diff - loadTime)
-}
+const add = a => b => a + b;
+const add5 = add(5);
+add5(3); // 8
 ```
 
-## 时间日期格式化
+### 防抖/节流雏形（完整实现见第四阶段「常用工具函数」）
 
 ```js
-/** 时间格式化
- * @param {dateTime} date 标准时间格式 -> new Date()
- * @param {string} format 时间格式化的格式 'yyyy-MM-dd hh:mm:ss'
- * @returns {string} 格式化后的时间  '2017-01-01 01:00:00'
- */
-const dateFormat = function (date = new Date(), format = 'yyyy-MM-dd hh:mm:ss') {
-	var o = {
-		'M+': date.getMonth() + 1, // month
-		'd+': date.getDate(), // day
-		'h+': date.getHours(), // hour
-		'm+': date.getMinutes(), // minute
-		's+': date.getSeconds(), // second
-		'q+': Math.floor((date.getMonth() + 3) / 3), // quarter
-		S: date.getMilliseconds(), // millisecond
-	}
-	if (/(y+)/.test(format)) {
-		format = format.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
-	}
-	for (var k in o) {
-		if (new RegExp('(' + k + ')').test(format)) {
-			format = format.replace(RegExp.$1, RegExp.$1.length === 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length))
-		}
-	}
-	return format
+function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
 }
+window.addEventListener('resize', debounce(handler, 200));
 ```
 
-## url 参数(k-v)的序列化及反序列化
+## IIFE：立即执行函数表达式
 
 ```js
-/*
- * 反序列化URL参数
- * { age: "25", name: "Tom" }
- */
-const parseUrlSearch = function (location) {
-	return location.search
-		.replace(/(^\?)|(&$)/g, '')
-		.split('&')
-		.reduce((t, v) => {
-			const [key, val] = v.split('=')
-			t[key] = decodeURIComponent(val)
-			return t
-		}, {})
-}
-/*
- * getQueryParams('id')
- * 获取url上某个key的值
- */
-const getParam = function (param) {
-	// 获取浏览器参数
-	const r = new RegExp(`\\?(?:.+&)?${param}=(.*?)(?:&.*)?$`)
-	const m = window.location.toString().match(r)
-	return m ? decodeURI(m[1]) : ''
-}
-/*
- * queryStringify
- * 将k-v的对象序列化转成 url?k=v&k1=v1;
- */
-const queryStringify = function (search = {}) {
-	return Object.entries(search)
-		.reduce((t, v) => `${t}${v[0]}=${encodeURIComponent(v[1])}&`, Object.keys(search).length ? '?' : '')
-		.replace(/&$/, '')
-}
+(function () {
+  // 立即执行，形成独立作用域，不污染全局
+})();
+
+// 箭头函数版本
+(() => {
+  const privateVar = 'x';
+})();
 ```
 
-## 判断浏览器 UserAgent
+ES Module 出现前，IIFE 是模拟模块隔离的主要手段；如今模块化（见 2.5）已能替代大部分场景，但 IIFE 在「立即初始化 + 内置私有状态」时仍很常用。
+
+## 循环 + var 的闭包陷阱
 
 ```js
-const browser = function () {
-	const u = navigator.userAgent.toLowerCase()
-	return {
-		txt: u, // userAgent 信息
-		version: (u.match(/.+(?:rv|it|ra|ie)[\/: ]([\d.]+)/) || [])[1], // 版本号
-		msie: /msie/.test(u) && !/opera/.test(u), // IE内核
-		mozilla: /mozilla/.test(u) && !/(compatible|webkit)/.test(u), // 火狐浏览器
-		safari: /safari/.test(u) && !(u.indexOf('android') > -1) && !/chrome/.test(u), //是否为safair
-		chrome: /chrome/.test(u), //是否为chrome
-		opera: /opera/.test(u), //是否为oprea
-		presto: u.indexOf('presto/') > -1, //opera内核
-		webKit: u.indexOf('applewebkit/') > -1, //苹果、谷歌内核
-		gecko: u.indexOf('gecko/') > -1 && u.indexOf('khtml') == -1, //火狐内核
-		mobile: !!u.match(/applewebkit.*mobile.*/), //是否为移动终端
-		ios: !!u.match(/\(i[^;]+;( u;)? cpu.+mac os x/), //ios终端
-		android: u.indexOf('android') > -1, //android终端
-		iPhone: u.indexOf('iphone') > -1, //是否为iPhone
-		iPad: u.indexOf('ipad') > -1, //是否为iPad
-		weixin: /micromessenger/.test(u), //微信
-		QQBrowse: u.indexOf(' QQ') > -1 || u.indexOf(' qq') > -1, // QQ浏览器
-		isApp: u.indexOf('jscp/ios') > -1 || u.indexOf('jscp/android') > -1 || getParamsCode('source') == 'app',
-	}
+// 经典坑：var 是函数级作用域，所有 setTimeout 读到的都是同一个 i
+for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0);  // 输出 3 3 3
 }
-```
 
-## 封装 ajax 请求
+// 用 let 修复（块级作用域，每轮独立绑定）
+for (let i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0);  // 输出 0 1 2
+}
 
-```js
-class Request {
-	options = {
-		responseType: 'json',
-	}
-	constructor(method = 'GET', url, data = null, options) {
-		this.method = method
-		this.url = url
-		this.data = this.formatData(data)
-		Object.assign(this.options, options)
-	}
-	formatData(data) {
-		if (typeof data != 'object' || data == null) data = {}
-		let form = new FormData()
-		for (const [name, value] of Object.entries(data)) {
-			form.append(name, value)
-		}
-		return form
-	}
-	static get(url, options) {
-		return new this('GET', url, null, options).xhr()
-	}
-	static post(url, data, options) {
-		return new this('POST', url, data, options).xhr()
-	}
-	xhr() {
-		return new Promise((resolve, reject) => {
-			const xhr = new XMLHttpRequest()
-			xhr.open(this.method, this.url)
-			xhr.responseType = this.options.responseType
-			xhr.send(this.data)
-			xhr.onload = function () {
-				if (xhr.status != 200) {
-					reject({ status: xhr.status, error: xhr.statusText })
-				} else {
-					resolve(xhr.response)
-				}
-			}
-			xhr.onerror = function (error) {
-				reject(error)
-			}
-		})
-	}
+// 或再用一层闭包捕获 i
+for (var i = 0; i < 3; i++) {
+  ((j) => setTimeout(() => console.log(j), 0))(i);  // 0 1 2
 }
-```
-
-## 防抖&&节流
-
-防抖
-
-```js
-/**
- * 防抖
- * @param {Function} func 需要包装的函数
- * @param {string} wait 等待执行时间
- * @param {string} immediate 是否是立即执行 默认不立即执行
- * @returns {Function} 返回包装后的函数
- */
-const debounce = function (func, wait, immediate) {
-	let timeout, result
-	return function () {
-		const context = this
-		const args = arguments
-		if (timeout) clearTimeout(timeout)
-		if (immediate) {
-			const callNow = !timeout
-			timeout = setTimeout(function () {
-				timeout = null
-			}, wait)
-			if (callNow) result = func.apply(context, args)
-		} else {
-			timeout = setTimeout(function () {
-				func.apply(context, args)
-			}, wait)
-		}
-		return result
-	}
-}
-```
-
-节流
-
-```js
-// 使用时间戳
-/**
- * 防抖
- * @param {Function} func 需要包装的函数
- * @param {string} wait 间隔时间
- * @returns {Function} 返回包装后的函数
- */
-const throttle = function (func, wait) {
-	let context, args
-	let previous = 0
-	return function () {
-		let now = +new Date()
-		context = this
-		args = arguments
-		if (now - previous > wait) {
-			func.apply(context, args)
-			previous = now
-		}
-	}
-}
-// 使用定时器
-/**
- * 防抖
- * @param {Function} func 需要包装的函数
- * @param {string} wait 间隔时间
- * @returns {Function} 返回包装后的函数
- */
-const throttle = function (func, wait) {
-	let timeout
-	return function () {
-		const context = this
-		const args = arguments
-		if (!timeout) {
-			timeout = setTimeout(function () {
-				timeout = null
-				func.apply(context, args)
-			}, wait)
-		}
-	}
-}
-```
-
-## 深拷贝
-
-```js
-function deepClone(obj, cache = new WeakMap()) {
-	if (typeof obj !== 'object') return obj // 普通类型，直接返回
-	if (obj === null) return obj
-	if (cache.get(obj)) return cache.get(obj) // 防止循环引用，程序进入死循环
-	if (obj instanceof Date) return new Date(obj)
-	if (obj instanceof RegExp) return new RegExp(obj)
-
-	// 找到所属原型上的constructor，所属原型上的constructor指向当前对象的构造函数
-	let cloneObj = new obj.constructor()
-	cache.set(obj, cloneObj) // 缓存拷贝的对象，用于处理循环引用的情况
-	for (let key in obj) {
-		if (obj.hasOwnProperty(key)) {
-			cloneObj[key] = deepClone(obj[key], cache) // 递归拷贝
-		}
-	}
-	return cloneObj
-}
-```
-
-## 常用验证方法
-
-```js
-/**
- * 是否是外部调用链接
- * @param {string} path
- * @returns {Boolean}
- */
-export function isExternal(path) {
-	return /^(https?:|mailto:|tel:)/.test(path)
-}
-/**
- * 是否是URL链接
- * @param {string} url
- * @returns {Boolean}
- */
-export function validURL(url) {
-	const reg =
-		/^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/
-	return reg.test(url)
-}
-/**
- * 是否是小写字母
- * @returns {Boolean}
- */
-export function validLowerCase(str) {
-	const reg = /^[a-z]+$/
-	return reg.test(str)
-}
-/**
- * 是否是大写字母
- * @param {string} str
- * @returns {Boolean}
- */
-export function validUpperCase(str) {
-	const reg = /^[A-Z]+$/
-	return reg.test(str)
-}
-/**
- * 是否是英文
- * @param {string} str
- * @returns {Boolean}
- */
-export function validAlphabets(str) {
-	const reg = /^[A-Za-z]+$/
-	return reg.test(str)
-}
-/**
- * 是否是邮箱
- * @param {string} email
- * @returns {Boolean}
- */
-export function validEmail(email) {
-	const reg =
-		/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-	return reg.test(email)
-}
-/**
- * 是否是手机号
- * @param {string} mobile
- * @returns {Boolean}
- */
-export function validMobile(mobile) {
-	const reg = /^(13[0-9]|14[5|7]|15[0|1|2|3|4|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$/
-	return reg.test(mobile)
-}
-/**
- * 是否是座机号
- * @param {string} phoneNum
- * @returns {Boolean}
- */
-export function validPhoneNum(phoneNum) {
-	const reg = /^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$/
-	return reg.test(phone)
-}
-/**
- * 是否是域名
- * @param {string} domain
- * @returns {Boolean}
- */
-export function validDomain(domain) {
-	const reg = /[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?/
-	return reg.test(domain)
-}
-/**
- * 是否是字符串
- * @param {string} str
- * @returns {Boolean}
- */
-export function isString(str) {
-	if (typeof str === 'string' || str instanceof String) {
-		return true
-	}
-	return false
-}
-/**
- * 是否是数组
- * @param {Array} arg
- * @returns {Boolean}
- */
-export function isArray(arg) {
-	if (typeof Array.isArray === 'undefined') {
-		return Object.prototype.toString.call(arg) === '[object Array]'
-	}
-	return Array.isArray(arg)
-}
-```
-
-## 进入/离开动画过渡封装
-
-```js
-class Aniamte {
-	constructor(options) {
-		this.animateStatus = false
-		this.mergeOptions(options)
-		this.init()
-	}
-	/* 合并配置 */
-	mergeOptions(options) {
-		if (!options.el) {
-			throw new Error('options.el 必须为一个query选择器')
-		}
-		this.options = {
-			el: '', // 动画元素选择器(必要的)
-			animateRoot: '', // 可能需要一个公用的class 例如animate.css
-			entry: '', // 定义进入过渡的开始状态
-			enterActive: '', // 定义进入过渡生效时的状态
-			enterTo: '', // 定义进入过渡的结束状态
-			leave: '', // 定义离开过渡的开始状态
-			leaveActive: '', // 定义离开过渡生效时的状态
-			leaveTo: '', //定义离开过渡的结束状态
-		}
-		Object.assign(this.options, options)
-	}
-	/* 初始化 */
-	init() {
-		this.elements = this.queryAll(this.options.el)
-		this.elements.forEach((element) => {
-			element.addEventListener('animationend', (e) => this.animationend(e))
-		})
-	}
-	/* 动画执行结束 */
-	animationend(e) {
-		const { animateRoot, entry, enterActive, enterTo, leave, leaveActive, leaveTo } = this.options
-		const element = e.target
-		const { classList, className, afterCallback } = e.target
-		// 移除渡状态
-		this.removeClass(element, [animateRoot, leaveActive, enterActive, entry, leave])
-		// 添加离开过渡的结束状态
-		if (element.transitionType === 'entry' && enterTo) {
-			classList.add(enterTo)
-		} else if (element.transitionType === 'leave' && leaveTo) {
-			classList.add(leaveTo)
-		}
-		// 执行结束的回调
-		afterCallback && afterCallback.apply(element)
-		element.transitionType = 'none'
-	}
-	/* 进入 */
-	enter(el, before, after) {
-		const element = typeof el === 'string' ? this.query(el) : el
-		if (element.transitionType !== 'none') return
-		element.afterCallback = after
-		// 设置元素过度状态为entry
-		element.transitionType = 'entry'
-		const { animateRoot, enterActive, entry, leaveTo } = this.options
-		// 过渡开始前的回调
-		before && before.apply(element)
-		if (leaveTo && element.className.indexOf(leaveTo)) element.classList.remove(leaveTo)
-		if (entry) element.classList.add(entry)
-		if (animateRoot) element.classList.add(animateRoot)
-		if (enterActive) element.classList.add(enterActive)
-	}
-	/* 离开 */
-	leave(el, before, after) {
-		const element = typeof el === 'string' ? this.query(el) : el
-		if (element.transitionType !== 'none') return
-		element.afterCallback = after
-		// 设置元素过度状态为leave
-		element.transitionType = 'leave'
-		const { animateRoot, leaveActive, leave, enterTo } = this.options
-		// 过渡开始前的回调
-		before && before.apply(element)
-		if (enterTo && element.className.indexOf(enterTo)) element.classList.remove(enterTo)
-		if (leave) element.classList.add(leave)
-		if (animateRoot) element.classList.add(animateRoot)
-		if (leaveActive) element.classList.add(leaveActive)
-	}
-	queryAll(el) {
-		return document.querySelectorAll(el)
-	}
-	query(el) {
-		return document.querySelector(el)
-	}
-	removeClass(element, classList) {
-		classList.forEach((className) => {
-			if (className && [...element.classList].includes(className)) {
-				element.classList.remove(className)
-			}
-		})
-	}
-}
-/******************使用******************/
-// 这里使用了animate.css库
-const animate = new Aniamte({
-	el: '.box',
-	animateRoot: 'animate__animated',
-	enterTo: 'show',
-	enterActive: 'animate__fadeInRightBig',
-	leaveActive: 'animate__fadeOutRightBig',
-	leaveTo: 'hide',
-})
-const btn = document.querySelector('#btn')
-let status = true
-btn.addEventListener('click', (e) => {
-	if (status) {
-		animate.leave(
-			'.box1',
-			function () {
-				// TODO 过渡开始前要做的事
-				console.log('leave')
-			},
-			function () {
-				// TODO 过渡结束后要做的事
-				status = false
-			}
-		)
-	} else {
-		animate.enter(
-			'.box1',
-			function () {
-				// TODO 过渡开始前要做的事
-				console.log('enter')
-			},
-			function () {
-				// TODO 过渡结束后要做的事
-				status = true
-			}
-		)
-	}
-})
 ```
 
 ---
 
 ---
-url: /my_notes/notes/前端开发/js/java-script-shu-zu/index.md
+url: >-
+  /my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/3-yuan-xing-this-yu-ji-cheng/index.md
+---
+# 原型、this 与继承
+
+JS 的对象通过「原型链」实现复用与继承，`this` 的绑定规则与其它语言差别很大。掌握这两块，很多面试高频题与源码困惑都会迎刃而解。
+
+## 原型与原型链
+
+每个对象都有隐藏的 `[[Prototype]]`，指向另一个对象（其原型）。访问属性时，先找自身，找不到就沿着 `__proto__` 逐层向上找：
+
+```js
+const parent = { name: 'parent' };
+const child = Object.create(parent);  // child 的原型是 parent
+child.age = 3;
+
+console.log(child.name);      // 'parent'：自身没有，沿原型链找到
+console.log(child.hasOwnProperty('name')); // false，是原型上的属性
+```
+
+链的终点是 `Object.prototype`，再往上为 `null`。数组、函数等内置对象的原型链更复杂，例如数组 `[]` 的原型是 `Array.prototype`，其上定义了 `push/map` 等方法。
+
+## constructor 与 new
+
+```js
+function Person(name) {
+  this.name = name;
+}
+Person.prototype.say = function () {
+  return `Hi, I am ${this.name}`;
+};
+```
+
+`new Person('Tom')` 的四个步骤：
+
+1. 创建一个新对象。
+2. 新对象的原型指向 `Person.prototype`。
+3. 以新对象为 `this` 执行构造函数。
+4. 若构造函数返回对象则用之，否则返回新对象。
+
+`instanceof` 沿原型链判断：`tom instanceof Person` 为 true。
+
+## this 的四种绑定
+
+`this` 在**调用时**决定（箭头函数除外），不是定义时：
+
+| 场景 | 调用方式 | this 指向 |
+|:-----|:---------|:----------|
+| 默认绑定 | `fn()` 直接调用 | 非严格模式 globalThis / 严格模式 undefined |
+| 隐式绑定 | `obj.method()` | 点号前的对象（obj） |
+| 显式绑定 | `call/apply/bind` | 显式传入的对象 |
+| 新绑定 | `new Fn()` | 新创建的对象 |
+
+```js
+const user = {
+  name: 'Tom',
+  hello() { return `Hi ${this.name}`; },
+};
+user.hello();                       // 隐式：this = user
+const fn = user.hello;
+fn();                               // 丢失绑定：this 不是 user
+fn.call(user);                      // 显式：this = user
+const bound = fn.bind(user);        // 永久绑定
+bound();                            // this = user
+```
+
+**箭头函数**：没有自己的 this，沿外层词法作用域取 this，也不能被 call/bind 改变。常用于回调、事件处理里保留外层 this。
+
+```js
+const timer = {
+  count: 0,
+  start() {
+    setInterval(() => {
+      this.count++;     // 箭头函数：this 是 start 外层的 timer
+    }, 1000);
+  },
+};
+```
+
+## class 语法糖
+
+ES6 的 `class` 本质是原型机制的语法糖，底层仍是构造函数 + prototype：
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+  speak() {               // 挂在 Animal.prototype 上
+    return `${this.name} speaks`;
+  }
+}
+
+class Dog extends Animal {
+  constructor(name) {
+    super(name);          // 调用父类构造函数，先于 this 使用
+    this.species = 'dog';
+  }
+  speak() {               // 覆盖父类方法
+    return `${super.speak()} woof!`;   // super 调用父类方法
+  }
+}
+```
+
+* `extends` 建立继承关系：`Dog.prototype` 的原型是 `Animal.prototype`。
+* `static` 静态成员挂在类本身：`Animal.create()`。
+* 私有字段：`#secret`，真正的外部不可访问。
+
+## 组合与继承的选择
+
+继承适合清晰的「is-a」关系；多数场景用**组合**（对象包含对象、mixin 混入）更灵活。JS 中「组合优于继承」是常态，不必强行造一层类层级。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/4-yi-bu-bian-cheng-yu-shi-jian-xun-huan/index.md
+---
+# 异步编程与事件循环
+
+JS 在浏览器中是**单线程**的：同一时间只能执行一段代码。异步编程让耗时操作（网络请求、定时器、文件读取）不阻塞页面，配合事件循环（Event Loop）调度执行顺序。
+
+## 为什么需要异步
+
+```js
+// 同步代码会阻塞：下面的 setTimeout 之前的阻塞操作会让页面卡死
+console.log(1);
+setTimeout(() => console.log(2), 0);
+console.log(3);
+// 输出：1 3 2
+```
+
+`setTimeout(..., 0)` 只是「尽快排在任务队列后面」，不是立即执行。输出顺序取决于事件循环的调度。
+
+## 回调函数与回调地狱
+
+回调是最原始的异步写法：
+
+```js
+fetchData(id, (data) => {
+  save(data, () => {
+    notify(() => {
+      // 嵌套一层套一层，难读难维护 —— 回调地狱
+    });
+  });
+});
+```
+
+回调地狱的三大问题：可读性差、错误处理分散、难以组合。Promise 与 async/await 正是为此而生。
+
+## Promise：状态机
+
+Promise 代表一个「进行中→成功/失败」的异步结果，有三种状态：`pending`（进行中）、`fulfilled`（已成功）、`rejected`（已失败），状态一旦确定不可逆转。
+
+```js
+const p = new Promise((resolve, reject) => {
+  fetch('/api/user')
+    .then(res => res.json())
+    .then(data => resolve(data))
+    .catch(err => reject(err));
+});
+```
+
+### 链式调用
+
+`then` 返回新的 Promise，可串联；`catch` 捕获链上任意一处的错误：
+
+```js
+fetchUser(id)
+  .then(user => fetchProfile(user.id))
+  .then(profile => render(profile))
+  .catch(err => console.error('出错了', err));
+```
+
+### 常用静态方法
+
+```js
+Promise.all([p1, p2])             // 全部成功才 resolve，任一失败即 reject
+Promise.allSettled([p1, p2])      // 全部结束（成功或失败）后才 resolve，不因某个失败中断
+Promise.race([p1, p2])            // 谁先完成（成功或失败）就采用谁 —— 常用于超时控制
+Promise.any([p1, p2])             // 第一个成功；全部失败才 reject
+```
+
+## async / await
+
+`async` 函数返回 Promise；`await` 等待 Promise 结果，让异步代码像同步一样书写：
+
+```js
+async function loadUser() {
+  try {
+    const res = await fetch('/api/user');
+    const user = await res.json();
+    return user;
+  } catch (err) {
+    console.error('加载失败', err);
+    return null;
+  }
+}
+```
+
+* `await` 只能在 `async` 函数内使用。
+* 错误用 `try/catch` 捕获，等价于 promise 的 `.catch`。
+* 多个无依赖的 await 可以并行：`await Promise.all([a(), b()])`，避免串行等待。
+
+## 事件循环：宏任务与微任务
+
+浏览器的事件循环持续从任务队列中取出任务执行。任务分两类：
+
+* **宏任务（macrotask）**：整体脚本、`setTimeout`、`setInterval`、I/O、事件回调、UI 渲染。
+* **微任务（microtask）**：`Promise.then/catch/finally`、`queueMicrotask`、`MutationObserver`。
+
+**调度规则**：每轮循环先执行一个宏任务 → 清空所有微任务 → 渲染 UI → 取下一个宏任务。微任务永远先于下一个宏任务执行。
+
+```js
+console.log('A');
+setTimeout(() => console.log('B'), 0);   // 宏任务
+Promise.resolve().then(() => console.log('C')); // 微任务
+console.log('D');
+// 输出：A D C B
+```
+
+经典输出顺序推理题，按两套队列+循环规则即可推导，不必死记。
+
+## 常见异步场景小结
+
+| 场景 | 推荐工具 |
+|:-----|:---------|
+| 一次网络请求 | `fetch` + async/await + try/catch |
+| 多个请求并行 | `Promise.all` / `Promise.allSettled` |
+| 请求超时控制 | `Promise.race` + `setTimeout` |
+| 定时轮询 | `setInterval` 或递归 `setTimeout` |
+| 高频事件限流 | 防抖/节流（见第四阶段「常用工具函数」） |
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/5-es-6-he-xin-te-xing/index.md
+---
+# ES6+ 核心特性
+
+ES6+ 是对现代 JS 的集大成改革。本书它语言基础之外的高频语法，配合 `2.1` 的基础知识点构成完整的语言全貌。
+
+## 解构赋值
+
+```js
+// 数组解构
+const [a, b, ...rest] = [1, 2, 3, 4];
+// a=1, b=2, rest=[3,4]
+
+// 对象解构
+const { name, age, level = 1 } = user;  // 默认值
+
+// 重命名 + 解构函数参数
+const { name: uname } = user;
+function draw({ x = 0, y = 0 } = {}) { /* ... */ }
+```
+
+## 模板字符串与字符串扩展
+
+```js
+const name = 'Tom';
+const msg = `你好，${name}！`;       // 插值
+const multi = `
+  多行
+  字符串
+`;
+
+"hello".includes("ell");   // true
+"abc".repeat(2);           // "abcabc"
+"  x ".trim();             // "x"
+str.startsWith("a");       // true
+```
+
+## 展开与剩余运算符
+
+```js
+// 展开：把数组/对象拆开
+const arr = [1, 2, 3];
+const copy = [...arr];            // 浅拷贝
+const merged = [...arr, 4, 5];    // 拼接
+const obj2 = { ...obj1, age: 20 }; // 浅拷贝并覆盖字段
+
+// 剩余：收集（与展开同一符号，方向相反）
+function sum(...nums) { return nums.reduce((a, b) => a + b, 0); }
+const [head, ...tail] = [1, 2, 3];
+```
+
+展开是**浅拷贝**：嵌套对象仍共享引用，深拷贝方案见第四阶段「常用工具函数」。
+
+## Symbol、Map、Set、WeakMap/WeakSet
+
+### Symbol
+
+```js
+const s1 = Symbol('desc');     // 唯一且不可变
+const s2 = Symbol('desc');
+s1 === s2;                     // false
+
+const KEY = Symbol();
+obj[KEY] = 42;                 // 对象私有/安全的键
+```
+
+### Map：任意类型可作键
+
+```js
+const m = new Map();
+m.set('a', 1).set({}, 2);
+m.get('a');            // 1
+m.has('a');            // true
+m.size;                // 2
+m.delete('a');
+m.forEach((v, k) => console.log(k, v));
+```
+
+### Set：去重集合
+
+```js
+const set = new Set([1, 2, 2, 3]);
+[...set];              // [1, 2, 3]
+set.add(4);
+set.has(2);            // true
+```
+
+### WeakMap/WeakSet：弱引用
+
+键只接受对象（WeakMap）且不对键产生强引用，对象可被垃圾回收，适合缓存、DOM 节点关联数据，避免内存泄漏。
+
+## 模块化： import / export
+
+现代项目以 ES Module 组织代码（浏览器与 Node 均支持）：
+
+```js
+// utils.js
+export const VERSION = '1.0';
+export function formatDate(d) { /* ... */ }
+export default function log(msg) { /* ... */ }   // 默认导出（一个文件一个）
+
+// main.js
+import log, { VERSION, formatDate } from './utils.js';
+import * as utils from './utils.js';
+```
+
+* 命名导出：花括号引入，名字必须一致（可 `as` 重命名）。
+* 默认导出：`import xxx from`，名字随意。
+* 循环依赖、动态导入：`import('./mod.js').then(m => m.run())`。
+
+## 可选链与空值合并
+
+```js
+const street = user?.address?.street ?? '未知地址';
+// == 
+// user != null && user.address != null ? user.address.street : 兜底
+items?.[0]?.name;      // 数组/索引访问也可以
+fn?.();                // 函数存在才调用
+```
+
+## 其它常用语法糖
+
+```js
+// 逻辑赋值
+let n = 0;
+n ||= 10;      // n 为假值才赋 10
+n ??= 20;      // n 为 null/undefined 才赋 20
+n &&= fn();    // n 为真值才执行
+
+// 数组 find/filter/map 等常用方法见 2.7-JavaScript数组
+
+// 对象简写与计算属性
+const k = 'key';
+const obj = { name, [k]: 1, method() {} };
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/6-dom-cao-zuo-yu-shi-jian/index.md
+---
+# DOM 操作与事件
+
+DOM（Document Object Model）把 HTML 文档映射为内存中的树结构，JS 通过操作这棵树实现动态内容与交互。本节覆盖「查、增、改、删」与事件的捕获/冒泡机制。
+
+## 文档对象模型
+
+浏览器解析 HTML 生成 DOM 树：`document` 是根，`<html>`、`<body>`、具体标签依次成为节点。`window` 是全局对象，`document` 指当前文档。
+
+## 查询元素
+
+```js
+document.getElementById('app');               // 按 id
+document.querySelector('#app .btn');          // 任意 CSS 选择器，返回第一个
+document.querySelectorAll('.item');           // 返回 NodeList（可用 forEach / 展开为数组）
+element.querySelector('p');                   // 在子树内查找
+element.closest('.card');                     // 从自身向上找最近匹配祖先
+```
+
+`querySelectorAll` 返回的是 NodeList 而非数组，可用 `Array.from()` 或 `[...nodes]` 转为数组后再用 map/filter。
+
+## 创建、插入、删除节点
+
+```js
+const div = document.createElement('div');
+div.textContent = '新内容';
+div.className = 'card';
+div.dataset.id = 123;               // 相当于 data-id="123"
+
+container.appendChild(div);         // 追加到末尾
+container.prepend(div);             // 插入到开头
+container.insertBefore(div, ref);   // 插到 ref 前
+container.insertAdjacentHTML('beforeend', '<span>HTML 片段</span>');
+
+node.remove();                      // 删除自身
+container.removeChild(node);        // 删除子节点
+```
+
+* 插入 HTML 片段用 `insertAdjacentHTML` 便捷但注意 XSS（内容来自用户时先转义）。
+* 频繁插入大量节点建议先用 `DocumentFragment` 或字符串拼接后一次性插入，减少重排。
+
+## 修改样式与类
+
+```js
+element.style.color = 'red';        // 内联样式
+element.style.background = '#333';
+element.style.cssText = 'top:0;left:0;';
+
+element.classList.add('active');    // 增
+element.classList.remove('active'); // 删
+element.classList.toggle('active'); // 切换
+element.classList.contains('active'); // 判断
+
+element.setAttribute('disabled', '');
+element.getAttribute('data-id');
+element.removeAttribute('disabled');
+```
+
+优先用 `classList` 配合 CSS 类控制样式，避免大量内联样式。
+
+## 事件：捕获与冒泡
+
+事件传播分三阶段：**捕获（capture）→ 目标（target）→ 冒泡（bubble）**。默认监听在冒泡阶段触发。
+
+```
+捕获阶段：window → document → ... → 目标元素
+冒泡阶段：目标元素 → ... → document → window  （默认监听在这里触发）
+```
+
+```js
+element.addEventListener('click', handler);
+element.addEventListener('click', handler, true);  // true 表示在捕获阶段触发
+```
+
+### 阻止传播与默认行为
+
+```js
+child.addEventListener('click', (e) => {
+  e.stopPropagation();   // 阻止继续冒泡（父级收不到）
+  // e.stopImmediatePropagation();  // 还阻止同元素上其它监听
+});
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();    // 阻止默认行为（表单提交、链接跳转、复选框切换等）
+});
+```
+
+## 事件委托
+
+把监听器挂在共同父级上，利用冒泡处理所有子节点事件——动态新增的子元素也能被覆盖，且监听器数量少：
+
+```js
+list.addEventListener('click', (e) => {
+  const item = e.target.closest('li');
+  if (!item) return;                 // 点击的不是 li 就忽略
+  console.log('点到：', item.dataset.id);
+});
+```
+
+`event.target` 是实际触发元素，`event.currentTarget` 是挂监听的元素（list）。
+
+## 常见事件速查
+
+| 事件 | 触发时机 |
+|:-----|:---------|
+| `click` / `dblclick` | 单击/双击 |
+| `mouseenter` / `mouseleave` | 鼠标进入/离开（不冒泡） |
+| `input` | 输入内容变化（即时） |
+| `change` | 失焦或确认后取值变化 |
+| `focus` / `blur` | 聚焦/失焦（blur 不冒泡，用 focusout 可委托） |
+| `submit` | 表单提交 |
+| `keydown` / `keyup` | 键盘按下/抬起 |
+| `scroll` | 滚动（注意高频，配防抖/节流） |
+| `DOMContentLoaded` | DOM 树构建完成（图片等资源未加载完） |
+| `load` | 所有资源加载完成 |
+
+页面脚本尽量放在 `<body>` 末尾，或在 `DOMContentLoaded` 后再操作 DOM，避免「元素还没解析」的报错。
+
+## 与框架的关系
+
+Vue/React 等框架内部封装了 DOM 操作与事件系统，日常开发很少直接碰 DOM。但理解 DOM/事件机制，对调试框架渲染问题、写自定义指令/原生于组件依然至关重要。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-er-jie-duan-java-script-he-xin/7-java-script-shu-zu/index.md
 ---
 # JavaScript数组
 
@@ -2143,698 +2304,8 @@ console.log(filterArr); // [1,2,6]
 ---
 
 ---
-url: /my_notes/notes/前端开发/js/ke-zhe-die-de-lie-biao/index.md
----
-# 可折叠的列表
-
-## 说明
-
-使用技术：jquery + es6
-
-只需要将HTML按照指定的布局排列（可参考[HTML布局](#HTML布局)），并指定对应的配置信息即可实现列表的折叠，可用于文章，商品楼层等。本项目自动获取内容的高度，并按照布局将内容划分成多屏，每次点击展开时会自动向下追加展开，点击收起时会恢复至初始化的状态（只有一屏的状态）。
-
-注意：HTML布局不可更改，使用float布局，页面可同时存在多个布局，已提供默认的标签选择器，用户可在配置项中自定义。没有对列表进行下拉加载的处理，只是简单的`overflow：hidden`和`height`实现的隐藏，因此如果列表中的数据量过大，会存在性能问题，解决思路：第一次获取两屏的数据，然后再在每次点击展开按钮时预先获取下一屏的数据，并重新获取当前元素的数量（callback函数即为每次点击按钮的回调函数，会将当前点击数据信息返回）。更新列表状态信息：在callback函数中执行实例方法`updateCount(res)`重新获取元素的数量和可展开次数。
-
-## 源码
-
-```js
-class Collapse {
-	constructor(options) {
-		this.collapseInfo = []
-		this.options = this.mergeOptions(options)
-		const root = $(this.options.root)
-		if (!root.length) {
-			throw new Error('[.collapse-container]:root element is not found')
-		}
-		root.each((index, el) => {
-			const selector = (this.collapseInfo[index] = Object.create(null))
-			selector.root = $(el)
-			this.init(selector.root, selector)
-		})
-	}
-
-	// 合并配置项
-	mergeOptions(options) {
-		// 默认配置
-		const defaultOptions = {
-			root: '.collapse-container', //根节点元素
-			collapse: '.collapse', // 内容存放节点元素
-			section: '.section', // 内容块元素
-			touch: '.toggle-btn', // 触发按钮元素
-			gap: 0, //上或下间距
-			row: 2, //一屏多少行 必须与css布局相同
-			col: 3, //一屏多少列 必须与css布局相同
-			callback: function (res) {
-				console.log(res)
-			},
-		}
-		return Object.assign(defaultOptions, options)
-	}
-
-	/**
-	 * 初始化页面全部可折叠容器状态信息
-	 * @param {*} el 根节点元素
-	 * @param {*} selector 节点信息对象
-	 */
-	init(el, selector) {
-		selector.collapse = el.find(this.options.collapse)
-		selector.sections = el.find(this.options.section)
-		selector.touchs = el.find(this.options.touch)
-		selector.count = selector.sections.length
-		// 获取元素高度
-		const { row, col, gap } = this.options
-		selector.sHeight = selector.sections.height() + gap
-		// 设置collapse元素初始高度
-		if (selector.count <= row) {
-			selector.height = selector.sHeight
-			selector.collapse.height(selector.height)
-		} else {
-			selector.height = selector.sHeight * row
-			selector.collapse.height(selector.height)
-		}
-		// 计算可展开的次数
-		selector.step = 0
-		if (selector.count > row * col) {
-			selector.step = Math.ceil(selector.count / (row * col))
-		}
-		selector.current = 1
-		if (selector.step <= 0) {
-			selector.touch.hide()
-		}
-		// 绑定事件
-		selector.touchs.on('click', this.toggle(selector))
-	}
-	/**
-	 * 返回一个收起|折叠的函数
-	 * @param {*} selector 节点信息对象
-	 * @returns {Function} result
-	 */
-	toggle(selector) {
-		let addHeight = 0
-		const { row, col, callback } = this.options
-		return function () {
-			if (selector.current < selector.step) {
-				const overage = selector.count - selector.current * row * col
-				// 剩余的section不够一屏时
-				if (overage <= col * row) {
-					addHeight = Math.ceil(overage / col) * selector.sHeight
-				} else {
-					addHeight = row * selector.sHeight
-				}
-				selector.current++
-				// 增加高度
-				selector.height = selector.height + addHeight
-				selector.collapse.height(selector.height)
-			} else {
-				selector.current = 1
-				// 恢复初始高度
-				if (selector.count <= col) {
-					selector.height = selector.sHeight
-					selector.collapse.height(selector.height)
-				} else {
-					selector.height = selector.sHeight * row
-					selector.collapse.height(selector.height)
-				}
-			}
-			// 执行回调
-			callback(selector)
-		}
-	}
-    /**
-	 * 更新列表状态信息
-	 * @param {*} selector 需要更新的collapseInfo
-	 */
-	updateCount(selector) {
-		const { section, row, col } = this.options
-		selector.sections = selector.root.find(section)
-		selector.count = selector.sections.length
-		if (selector.count > row * col) {
-			selector.step = Math.ceil(selector.count / (row * col))
-		}else {
-            selector.step = 0
-        }
-	}
-}
-```
-
-## HTML布局
-
-```html
-<div class="floor">
-	<div class="collapse-container clearfix">
-		<div class="clearfix collapse">
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-			<div class="section"></div>
-		</div>
-		<div class="toggle-btn">展开</div>
-	</div>
-</div>
-<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script>
-$(function () {
-	new Collapse({
-		gap: 24,
-		callback: function (res) {
-			console.log(res)
-		},
-	})
-})
-</script>
-```
-
----
-
----
-url: /my_notes/notes/前端开发/js/shang-chuan-tu-pian-ji-yu-lan/index.md
----
-# 上传图片及预览
-
-## 说明
-
-使用技术：原生 js 上传图片的方法
-
-原生 js 构造函数：
-
-1. FormData
-2. XMLHttpRequest
-3. fileReader
-
-## 上传图片
-
-```html
-<input type="file" id="fileInput" />
-<button onclick="uploadFile()">上传</button>
-
-<script>
-	function uploadFile() {
-		//获取图片
-		var file = document.querySelector('#fileInput').files[0]
-		//创建formData对象，并将图片添加到formData中
-		var formData = new FormData()
-		formData.append('file', file)
-		// 利用xhr方式上传
-		var xhr = new XMLHttpRequest()
-		xhr.open('POST', '/upload')
-		xhr.onreadystatechange = function() {
-			if (xhr.status === 200 && xhr.readyState == 4) {
-				//文件上传成功
-			}
-		}
-		xhr.send(formData)
-	}
-</script>
-```
-
-## 图片预览
-
-```html
-<input type="file" id="fileInput" />
-<img id="echoImage" />
-<button>上传</button>
-
-<script>
-	//获取文件上传控件和预览图片的控件
-	var echoImage = document.querySelector('#echoImage')
-	var fileInput = document.querySelector('#fileInput')
-
-	//为文件上传控件添加onchanges事件
-	fileInput.onchange = function() {
-		//创建读取文件的对象
-		var fileReader = new FileReader()
-		//读取文件为base64格式
-		fileReader.readAsDataURL(this.files[0])
-		//文件读取成功
-		fileReader.onload = function(event) {
-			//读取到的文件放入img控件
-			echoImage.src = event.target.result
-		}
-	}
-</script>
-```
-
-## 大文件切片上传
-
-前端上传文件时如果文件很大，上传时会出现各种问题，比如连接超时了，网断了，都会导致上传失败。
-
-为了避免上传大文件时上传超时，就需要用到切片上传，工作原理是：我们将大文件切割为小文件，然后将切割的若干小文件上传到服务器端，服务器端接收到被切割的小文件，然后按照一定的顺序将小文件拼接合并成一个大文件。
-
-相较于单独上传一个文件而言，大文件上传在前端层面，多了一步切割的步骤，后端多了一步合并的步骤，只有前后端配合才能完成大文件切片上传。
-
-\*\*技术包括：\*\*H5（前端使用）和nodejs（后端使用）
-
-### 前端代码
-
-```js
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>upload</title>
-    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
-    <script src="./uuid.js"></script>
-</head>
-<body>
-    <input type="file" name="file" id="file">
-    <button id="upload">上传</button>
-    <script type="text/javascript">
-        var bytesPerPiece = 1024 * 1024; // 每个文件切片大小定为1MB .
-        var totalPieces;   //切片总数
-        //发送请求
-        $("#upload").click(upload)
-        function upload() {
-            var blob = document.getElementById("file").files[0];
-            // 文件唯一标识符号，防止多个用户一起上传文件时切片混乱
-            var uuidfolder = uuidv1();
-            // 开始切割的位置
-            var start = 0;
-            // 切割的结束位置
-            var end;
-            // 切片的索引
-            var index = 0;
-            // 回调计数器
-            var count = 0;
-            // 文件的大小
-            var filesize = blob.size;
-            // 文件的名称
-            var filename = blob.name;
-            //计算文件切片总数
-            totalPieces = Math.ceil(filesize / bytesPerPiece);
-            // 启动while循环对文件切片
-            while(start < filesize) {
-                // 设置切片的结束位置
-                end = start + bytesPerPiece;
-                // 对最后一片数据进行处理（可以省略）
-                if(end > filesize) {
-                    end = filesize;
-                }
-                // 切割文件
-                var chunk = blob.slice(start,end);//切割文件
-                // 给每一片切片设置名字，名字的值为原始名称加索引，这样做是为了让后端可以按照索引顺序合并图片。
-                var sliceIndex= blob.name + index;
-                // 利用formData来传递数据
-                var formData = new FormData();
-                formData.append("file", chunk, sliceIndex);
-                formData.append("uuidfolder", uuidfolder);
-                formData.append("imgorder", index);
-                $.ajax({
-                    url: '/upload3',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,  // 不处理数据
-                    contentType: false,  // 不设置内容类型
-                }).done(function(res){ 
-                    count++;
-                    if(count==totalPieces){
-                        console.log("上传结束,请求拼接接口，将切片信息拼接完整，返回图片url");
-                        $.post('/merge',{id:uuidfolder},function(data){
-                            console.log(data);
-                        })
-                    }
-
-                }).fail(function(res) {
-                    console.log("上传失败")
-                });
-                start = end;
-                index++;
-            }
-        }
-    </script>
-</body>
-</html>
-```
-
-上面的代码启动了一个while循环，在这个循环中，每次截取固定大小的切片，然后用ajax上传到后端服务器，并且会附加一些比较重要的信息，这些信息主要包括：图片的唯一标识符（这里用到了uuid.js来生成唯一的id），切片的索引（为了后端按照切片顺序将切片合并），ajax每次上传完成后都要检查所有切片是否上传完成，全部上传完成后，请求合并接口，这个接口返回合并后的图片的url。
-
-前端将切片信息传递到后端，后端用过nodejs接受切片，然后按照索引将切片拼接成完整的文件，这里用到了两个工具包multer和concat-files，前一个是负责接收切片信息，后一个负责合并切片。
-
-这里一般的做法是设置两个接口，一个接口负责接收图片的切片信息，将其保存，另外一个接口负责拼接切片信息。这样做的原因是，如果用一个接口来操作的话，每张切片接收完成后都要去检查所有切片是否都接收完成，而只有当所有切片完成才能将切片合并，这样比较耗费服务端的性能。
-
-### 后端代码
-
-接口处理代码如下：
-
-```js
-// 接收切片信息接口
-router.post('/upload3', upload.single('file'), function (req, res, next) {
-  console.log(req.body)
-  // 接受图片唯一标识符号
-    let imgname = req.body.uuidfolder;
-    // 接受切片索引
-    let imgorder = req.body.imgorder;
-    // 建立图片存储目录
-    let imgpath = path.join(__dirname,'..','public/mult',imgname);
-    // 判断目录是否存在，存在的话直接使用并存储切片，不存在的话就新建。
-    if (fs.existsSync(imgpath)) {
-      fs.readFile(req.file.path, function (err, data) {
-        fs.writeFile(path.join(imgpath, imgorder), data, (err) => {
-          if (!err) {
-            res.send("写入后面的文件")
-          }
-        })
-      })
-    } else {
-      fs.mkdirSync(imgpath);
-      fs.readFile(req.file.path, function (err, data) {
-        fs.writeFile(path.join(imgpath, imgorder), data, (err) => {
-          if (!err) {
-            res.send("第一次写入并新建文件夹")
-          }
-        })
-      })
-    }
-})
-
-
-// 合并图片接口：
-router.post('/merge',function(req,res){
-  let id = req.body.id;
-  let folderpath = path.join(__dirname,"..",'public/mult',id);
-  let destinpath = path.join(__dirname,"..",'public/img',id+'.jpg');
-  let dist = '/img/'+id+'.jpg'
-  fs.readdir(folderpath,function(err,arr){
-    let arr2 = arr.map(e=>path.join(folderpath,e));
-    concat(arr2, destinpath, function(err) {
-      if (err) throw err
-      res.send(dist);
-    });
-  })
-})
-```
-
----
-
----
-url: /my_notes/notes/前端开发/js/shang-la-jia-zai/index.md
----
-# 上拉加载
-
-## 分析
-
-首先要考虑 html 的结构
-
-1. 一般上拉加载不会直接监听 window 的滚动事件，应该选择一个 div 作为滚动的容器，这里命名为 root
-2. 还需要在 root 中添加一个存放具体内容的 div，方便获取内容区域的整体高度，这里命名为 content
-3. 为 root 元素注册 scroll 事件，通过滚动来获取 root 元素的 scrollTop 的值，然后根据 scrollTop 的值和内容的高度来判断是否执行加载操作
-4. 主要就是以上三点，具体思路往下看
-
-## 开始封装-过程
-
-这里我使用了 class 来创建 scrollView 对象
-
-1. 首先我们需要把这个对象内可能用到的属性先给添加上去，（ps：能想到的、用到的、不会用到的全放上去就完事）
-
-```javascript
-//创建scrollView对象
-class ScrollView {
-	constructor(option) {} // 肯定是需要一个构造函数来初始化相关配置
-	option: {} // 定义一个用来存放配置信息的对象
-	root: null // 用来保存根元素
-	content: null // 用来保存内容容器元素
-	timeout: null // 保存定时器
-	scrollTop: 0 // 保存root元素的scrollTop值
-	refreshHeight: 0 // 保存content元素的高度
-	isLoading: false // 是否可以触发加载的状态 true:可以加载  false:不可以加载
-}
-```
-
-2. 还需要定义一些初始化属性的方法（有哪些属性需要初始化呢？）
-
-```javascript
-//我习惯定义一个初始化的入口函数
-init(){}
-
-//初始化root元素的方法
-initRoot(){}
-
-//初始化content的方法
-initContent(){}
-
-/*-------------------------------------*/
-//还需要定义一些可能用到的工具函数 如：
-
-//获取dom的方法
-querySelector(){}
-
-//设置scrollTop的方法
-setScrollTop(){}
-
-//获取高度的方法
-getRefreshHeight(){}
-
-//暂时就先这么多....后面应该还会有
-```
-
-3. 整个类的结构大概就这样，开始码代码啦！
-
-```javascript
-//创建scrollView对象
-class ScrollView {
-	// 构造函数，用来初始化配置，以及调用init对属性进行初始化
-	constructor(option) {
-		Object.assign(this.option, option)
-		this.init()
-	}
-	// 默认样式
-	style = {
-		width: '100%',
-		height: '300px',
-		overflowY: 'scroll',
-	}
-	// 默认配置
-	option = {
-		el: '', // 根容器绑定的元素
-		content: '', // 子容器绑定的元素
-		delay: 200, // 防抖延迟 定时器执行的时间
-		offset: 0, // 偏移量
-		loading: null, // 用来接收一个匿名函数
-		style: null, // 调用者传进来的样式
-	}
-	root = null // 根容器元素
-	content = null // 内容容器元素 所有的内容都应该放在这个容器里面
-	timeout = null // 定时器
-	scrollTop = 0 // 滚动距离
-	isLoading = false // 是否可加载
-	refreshHeight = 0 // 可刷新的高度
-
-	// 初始化
-	init() {
-		this.initRoot()
-		this.initContent()
-	}
-	// 初始化根元素
-	initRoot() {
-		this.root = this.querySelector(this.option.el)
-		Object.assign(this.style, this.option.style)
-		Object.assign(this.root.style, this.style)
-		this.root.addEventListener('scroll', this.scrollHandle(this)) // 为root元素添加滚动监听 需要传递一个匿名函数
-	}
-	// 初始化子元素
-	initContent() {
-		const el = this.option.children
-		this.content = el ? this.querySelector(el) : this.root.children[0]
-		console.dir(this.content)
-		this.setRefreshHeight()
-	}
-	// dom选择器
-	querySelector(el) {
-		return document.querySelector(el)
-	}
-	// 返回scroll事件触发的函数
-	scrollHandle(self) {
-		return function() {
-			// 一个简单的防抖
-			clearTimeout(self.timeout)
-			self.timeout = setTimeout(function() {
-				// 事件每触发一次都会重新获取scrollTop值
-				self.setScrollTop()
-				// 事件没触发一次也要重新过去content的高度
-				self.setRefreshHeight()
-				// 判断是否需要执行加载操作
-				self.isLoadingHandle()
-				// 执行loading
-				self.loading(self.option.loading)
-			}, self.option.delay)
-		}
-	}
-	// 获取root元素的scrollTop值
-	setScrollTop() {
-		this.scrollTop = this.root.scrollTop
-	}
-	// 处理是否加载
-	isLoadingHandle() {
-		const height = this.refreshHeight - this.root.offsetHeight - this.option.offset
-		if (this.scrollTop >= height) {
-			this.isLoading = true
-		} else {
-			this.isLoading = false
-		}
-	}
-	// 获取content的高度
-	setRefreshHeight() {
-		this.refreshHeight = this.content.offsetHeight
-	}
-	// 加载 传递一个回调函数
-	loading(callback) {
-		console.log('is scrolling....')
-		//如果传递进来的参数是一个函数,就执行函数
-		if (this.isLoading && callback instanceof Function) {
-			callback(this.root, this.content)
-		}
-	}
-}
-```
-
-## 使用
-
-* 在 html 中使用
-
-```html
-<div class="root">
-	<div class="content">
-		<div>...内容</div>
-	</div>
-</div>
-
-<!--引入scrollView.js-->
-<script src="./js/scrollView.js"></script>
-<script>
-	new ScrollView({
-		el: '.root',
-		content: '.content', //默认为.root内的第一个子元素
-		style: {
-			height: '500px',
-		},
-		delay: 200, //加载延迟
-		offset: 100, //滚动偏移
-		loading: function(root, content) {
-			console.log('is loading')
-			//上拉加载逻辑写在这里
-		},
-	})
-</script>
-```
-
-## 总结
-
-以上只是最简单的上拉加载的实现，还有很多问题和需要完善的地方，在写这个 demo 时，对 JavaScript 的对象了解的其实并不是很透彻，包括利用 class 创建对象的规范不是很明确，以后再回来优化...
-
----
-
----
-url: /my_notes/notes/前端开发/js/sheng-cheng-er-wei-ma/index.md
----
-# 生成二维码
-
-## 说明
-
-使用技术：canvas 绘制，第三方类库
-
-第三方类库：
-
-1. [qrcode.js](http://davidshimjs.github.io/qrcodejs/)
-
-## 绘制二维码，下载二维码
-
-```html
-<body>
-	<script src="./js/qrcode.min.js"></script>
-	<!--创建二维码的按钮-->
-	<button id="submit">生成二维码</button>
-	<!-- 下载二维码按钮 -->
-	<button id="downQrcode">下载二维码</button>
-	<!--存放生成的二维码的容器-->
-	<div id="qrcode"></div>
-	<!--二次绘制的画板-->
-	<canvas id="canvas"></canvas>
-
-	<!-- 引入qrcode -->
-	<script src="./js/qrcode.min.js"></script>
-	<script>
-		// 获取按钮
-		var submit = document.getElementById('submit')
-		//下载按钮
-		var downQrcode = document.getElementById('downQrcode')
-		// 获取二维码容器
-		var codeCon = document.getElementById('qrcode')
-		// 隐藏容器
-		codeCon.style.display = 'none'
-		//二次绘制二维码的画布
-		var canvas = document.getElementById('canvas')
-		//定义要生成二维码的内容
-		var qrcodeText = 'https://www.baidu.com/'
-		// 二维码配置
-		var option = {
-			width: 150,
-			height: 150,
-			colorDark: '#000000',
-			colorLight: '#ffffff',
-			margin: 10,
-			correctLevel: QRCode.CorrectLevel.H,
-		}
-		// 创建QRCode实例对象
-		var qrcode = new QRCode(codeCon, option)
-		// 绘制二维码
-		submit.onclick = function() {
-			// 生成二维码
-			qrcode.makeCode(qrcodeText)
-			canvas.width = 200
-			canvas.height = 200
-
-			// 二维码背景图片
-			var codeBg = document.createElement('img')
-			// 获取二维码
-			var codeImg = codeCon.getElementsByTagName('img')[0]
-			//设置背景图片
-			codeBg.src = './img/avatar.jpg'
-			//背景图片加载完成后就开始二次绘制
-			codeBg.onload = function() {
-				if (canvas.getContext) {
-					//绘制流程
-					var ctx = canvas.getContext('2d')
-					ctx.fillRect(0, 0, 200, 200)
-					ctx.drawImage(this, 0, 0) //绘制背景
-					ctx.fillStyle = 'white'
-					ctx.fillRect(10, 10, 180, 180) //绘制二维码白底
-					ctx.drawImage(codeImg, 25, 25) //绘制二维码
-				}
-			}
-		}
-		// 下载二维码
-		downQrcode.onclick = function() {
-			var a = document.createElement('a')
-			a.setAttribute('href', canvas.toDataURL())
-			a.setAttribute('download', '下载二维码')
-			a.click()
-		}
-	</script>
-</body>
-```
-
----
-
----
-url: /my_notes/notes/前端开发/ts/index.md
----
-# TypeScript 笔记
-
-TypeScript 编译、类型基础、接口、类、泛型、枚举等知识梳理。
-
----
-
----
-url: /my_notes/notes/前端开发/ts/bian-yi-di-yi-ge-ts-cheng-xu/index.md
+url: >-
+  /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/1-bian-yi-di-yi-ge-ts-cheng-xu/index.md
 ---
 # 编译第一个ts程序
 
@@ -3037,796 +2508,7 @@ app.js 是 webpack 压缩好的输出文件，并且已经自动嵌入到 index.
 ---
 
 ---
-url: /my_notes/notes/前端开发/ts/fan-xing/index.md
----
-# 泛型
-
-## 什么是泛型？
-
-很多时候我们希望一个函数或者一个类可以支持多种数据类型，提高灵活性。下面有一个例子：
-
-```typescript
-function log(value: string): string {
-    console.log(value)
-    return value;
-}
-```
-
-如果希望 log 函数能够接收一个字符串数组，该怎么实现呢？结合之前的内容，我们会想到函数重载：
-
-```typescript
-function log(value:string):string;
-function log(value:string[]):string[];
-function log(value:any){
-    console.log(value)
-    return value;
-}
-```
-
-或者联合类型：
-
-```typescript
-function log(value: string | string[]): string | string[]{
-    console.log(value)
-    return value;
-}
-```
-
-现在我们希望更进一步，log 函数能够接收任何类型的参数，我们很自然地想到 any 类型：
-
-```typescript
-function log(value: any) {
-    console.log(value)
-    return value;
-}
-```
-
-到此为止，这个函数似乎满足了我们的所有需求。但是这产生了另外一个问题，就是 any 类型丢失了一些信息，也就是类型之间的约束关系，它忽略了参数类型和返回值类型必须是一致的。当调用者看到 any 的时候，他无法获知这种约束关系。这时候，就需要用到 \*\*泛型 \*\*了。
-
-* 那么什么时泛型呢？
-
-> 泛型：不预先确定的数据类型，具体的类型在使用的时候才能确定。
-
-## 泛型函数
-
-现在用泛型改造上面的函数。
-
-```typescript
-function log<T>(value: T): T {
-  return value;
-}
-```
-
-改造之后，类型 T 不需要预先指定，就相当于 any 类型。另一方面可以保证输入参数和返回值的类型是一致的。定义泛型函数后，有两种方式调用泛型函数：
-
-1. 直接指明泛型函数的类型，那么输入参数就必须和该类型相同
-
-   ```typescript
-   log<string[]>(["a", "b", "c"]);
-   ```
-
-2. 利用 TS 的类型推断，省略泛型类型参数
-
-   ```typescript
-   log(["a", "b", "c"])
-   ```
-
-我们不仅可以使用泛型定义一个函数，还可以定义一个类型。例如定义一个泛型函数类型:
-
-```typescript
-type Log = <T>(value: T) => T;
-
-//泛型函数的具体实现
-let myLog: Log = value => value;
-```
-
-## 泛型接口
-
-泛型同样可以用在接口中。我们依然使用上面的例子。它和类型别名的方式是完全等价的。
-
-```typescript
-interface LogInterface {
-  <T>(value: T): T;
-}
-```
-
-在上面的例子中，泛型仅仅用来约束了一个函数，我们也可以用泛型来约束整个接口的所有成员。这里需要注意一点，当泛型变量约束了整个接口之后，我们必须指定一个类型。
-
-```typescript
-interface LogInterface<T> {
-  (value: T): T;
-}
-//在具体实现时指定类型
-let myLog2: LogInterface<number> = value => value;
-```
-
-或者在定义时使用默认类型
-
-```typescript
-interface LogInterface<T = number> {
-  (value: T): T;
-}
-let myLog2: LogInterface = value => value;
-```
-
-## 泛型类
-
-与泛型接口非常类似，泛型也可以约束类。下面定义了一个泛型类。同样，我们把泛型变量放在类名后面，就可以约束整个类。
-
-```typescript
-class Car<T> {
-  run(value: T) {
-    return value;
-  }
-}
-```
-
-注意，泛型不能应用于类的静态成员。
-
-```typescript
-class Car<T> {
-  static run(value: T) {
-    return value;
-  }
-}
-==========================
-#静态成员不能引用类类型参数。
-```
-
-在实例化泛型类的时候，我们可以显式地指定 T 的类型。那么实例的方法就会受到泛型的约束。run() 的参数只能是 string 类型，否则编辑器会报错。
-
-```typescript
-let car =  new Car<string>()
-car.run('fast'); // √
-
-car.run(1);
-===========
-#类型“1”的参数不能赋给类型“string”的参数。
-```
-
-此外也可以不指定类型参数。这个时候该实例就不受泛型的约束，value 可以为任意类型。
-
-```typescript
-let car2 = new Car();
-
-car2.run("fast");	// √
-car2.run(1);		// √
-```
-
-## 泛型约束
-
-现在我们再定义 log 函数，但返回的是参数的属性。编译器会报错，提示 T 类型不存在该属性。
-
-```typescript
-function log2<T>(value: T): T {
-  console.log(value.length)
-  return value;
-}
-===============================
-#类型“T”上不存在属性“length”。
-```
-
-此时就需要 **泛型约束** 这个概念。我们先预定义一个含有 length 属性的接口，然后让 T 继承这个接口，T 就拥有了 length 属性，从而可以通过类型检查。
-
-```typescript
-interface Length {
-  length: number;
-}
-function log2<T extends Length>(value: T): T {
-  console.log(value.length);
-  return value;
-}
-```
-
-T 继承了 length 接口，就表示 T 受到了约束，不再是可以接受任何类型。输入的参数不管是什么类型，但必须具有 length 属性。例如数组、字符串、或含有 length 属性的对象。
-
-```typescript
-log2([1]);			 //√
-log2("a");			 //√
-log2({ length: 1 }); //√
-```
-
-## 小结
-
-泛型的好处：
-
-1. 函数和类可以轻松地支持多种类型，增强程序的扩展性
-2. 不必谢多条函数重载，冗长的联合类型声明，增强代码可读性
-3. 灵活控制类型之间的约束
-
----
-
----
-url: /my_notes/notes/前端开发/ts/han-shu-xiang-guan-zhi-shi-dian-shu-li/index.md
----
-# 函数相关知识点梳理
-
-## 如何定义一个函数？
-
-1. 通过 function 关键字定义函数
-
-   需要明确指出函数参数的类型，而返回值的类型可以通过 TS 的类型推断省去。
-
-```typescript
-function add1(x: number, y: number) {
-  return x + y;
-}
-```
-
-2. 通过变量定义函数类型
-
-```typescript
-let add2: (x: number, y: number) => number;
-```
-
-3. 通过 type 类型别名定义函数类型
-
-```typescript
-type add3 = (x: number, y: number) => number;
-```
-
-4. 通过类型接口定义函数类型
-
-```typescript
-interface add4 {
-  (x: number, y: number): number;
-}
-```
-
-注意后三种只是函数类型的定义，并没有具体的函数实现。真正需要调用的话，需要书写函数体。
-
-## 函数的参数
-
-### 参数个数
-
-JavaScript 中对函数参数的个数没有限制。TypeScript 中的形参和实参都必须一一对应，多一个或少一个都不行。
-
-```typescript
-add1(1);
-========
-#应有 2 个参数，但获得 1 个。
-```
-
-```typescript
-add1(1,2,3);
-============
-#应有 2 个参数，但获得 3 个。
-```
-
-### 参数可选
-
-有时候需要函数的参数是可选的，可传可不传。这就用到可选参数。
-
-```typescript
-function add5(x: number, y?: number) {
-  return y ? x + y : x;
-}
-add5(1);	// 1
-add5(1,2);	// 3
-```
-
-必须要注意的是，可选参数必须位于必选参数之后，否则编译器会报错。
-
-```typescript
-function add5(x: number, y?: number, z: number) {
-  return y ? x + y : x;
-}
-=================================================
-#必选参数不能位于可选参数后。
-```
-
-### 参数默认值
-
-可以像 ES6 那样，为参数定义默认值。
-
-```typescript
-function add6(x: number, y = 1, z: number, q = 1) {
-  return x + y + z + q;
-}
-```
-
-调用的时候，我们需要注意一下：在必选参数前的默认参数是不能省略的，必须明确地传入 undefined 来获取默认值。但非必选参数前的默认参数，这里是参数 q ，是可以省略的。
-
-```typescript
-add6(1, undefined, 1); // 4
-```
-
-### 剩余参数
-
-当参数个数不确定的时候，可以使用剩余参数。剩余参数的类型是以数组形式存在。
-
-```typescript
-function add7(x: number, ...rest: number[]) {
-  return x + rest.reduce((pre, cur) => pre + cur);
-}
-add7(1, 1, 1);	//3
-```
-
-## 函数重载
-
-在静态类型语言中，如C、C++、Java都有函数重载的概念。它的含义是：两个函数，如果他们的函数名相同，参数个数或参数类型不同，那么就实现了函数重载。函数重载的好处是无需为功能相似的函数选用不同的函数名称，这样增强了函数的可读性。
-
-在TypeScript 中，函数重载的定义方式有些不同。它要求我们先定义一个函数名相同但参数不同的声明列表，然后在一个类型最宽泛的版本中，实现函数重载。
-
-```typescript
-//声明列表
-function add8(...rest: number[]): number;
-function add8(...rest: stringp[]): string;
-//函数重载
-function add8(...rest: any[]): any {
-  let first = rest[0];
-  if (typeof first === "string") {
-    return rest.join("");
-  }
-  if (typeof first === "number") {
-    return rest.reduce((pre, cur) => pre + cur);
-  }
-}
-add8(1, 2, 3);			// 6
-add8("a", "b", "c");	// abc
-```
-
-TypeScript 编译器在编译重载的时候，会去查找声明列表，并按照列表顺序尝试各个定义。如果匹配的话，就使用该定义，否则继续往下查找。所以应该把最容易匹配的放在最前面。
-
----
-
----
-url: /my_notes/notes/前端开发/ts/jie-kou/index.md
----
-# 接口
-
-接口是 TS 的一个重要概念。它可以用来约束对象、函数以及类的结构和类型。这是一种代码协作的契约，我们必须遵守，不能改变。
-
-## 对象类的型接口
-
-### 定义和使用
-
-下面我们用 interface 关键字定义两个接口。
-
-```typescript
-interface List {
-  id: number;
-  name: string;
-}
-interface Result {
-  data: List[];
-}
-```
-
-然后定义一个渲染函数，它接收一个 Result 接口类型的参数，遍历 List 类型数组的 成员 id 和 value。
-
-```typescript
-function render(result: Result) {
-  result.data.forEach(value => {
-    console.log(value.id, value.name);
-  });
-}
-```
-
-最后模拟一个符合接口定义的数据，并执行渲染函数。可以看到结果符合预期。
-
-```typescript
-let result = {
-  data: [
-    { id: 1, name: "A" },
-    { id: 2, name: "B" }
-  ]
-};
-render(result);
-// 1 "A"
-// 2 "B"
-```
-
-### 类型检查
-
-#### 传参时的类型检查
-
-如果模拟数据包含约定之外的字段，编译器并不会报错。因为 TS 采用了一种鸭式变形法。你一定听过它的形象描述：一只鸟如果看起来像鸭子，游起来像鸭子，叫起来像鸭子，那么这只鸟就可以被认为是一只鸭子。这是一种动态语言风格。
-
-回到 TS，我们只要传入的对象满足接口的必要条件，即使还有多余属性，也是被允许的。
-
-```typescript
-let result2 = {
-  data: [
-    { id: 1, name: "A", age: 18 },
-    { id: 2, name: "B" }
-  ]
-};
-render(result2);
-// 1 "A"
-// 2 "B"
-```
-
-但是，如果我们直接以字面量的形式传入，TS 就会对额外的字段进行类型检查，编译器会报错。
-
-```typescript
-render({
-  data: [
-    { id: 1, name: "A", age: 18 },
-    { id: 2, name: "B" }
-  ]
-});
-===================================
-#不能将类型“{ id: number; name: string; age: number; }”分配给类型“List”。对象文字可以只指定已知属性，并且“age”不在类型“List”中。
-```
-
-#### 绕过类型检查的三种方式
-
-有三种方式：
-
-##### 1.使用变量赋值
-
-如上面例子那样，把对象字面量赋值给一个变量
-
-##### 2.使用类型断言
-
-类型断言的含义就是要明确地告诉编译器，我们知道对象的类型，这样编译器就会绕过类型检查。
-
-```typescript
-
-render({
-  data: [
-    { id: 1, name: "A", age: 18 },
-    { id: 2, name: "B" }
-  ]
-} as Result);
-```
-
-类型断言的另外一种方式：
-
-```typescript
-render(<Result>{
-  data: [
-    { id: 1, name: "A", age: 18 },
-    { id: 2, name: "B" }
-  ]
-});
-```
-
-两种方式是等价的，但更建议使用第一种方式，因为方式二在 React 中会有歧义。
-
-##### 3.使用字符串索引签名
-
-签名格式如下。它的含义是：用任意的字符串去索引 List，可以得到任意的结果。这样 List 就可以支持多个属性了。
-
-```typescript
-interface List {
-  id: number;
-  name: string;
-  [x: string]: any;
-}
-```
-
-### 接口属性
-
-#### 可选属性
-
-假如现在需要判断一下遍历模拟数据时的 value 是否含有新字段（两个接口恢复最开始的定义）。编译器会报错。
-
-```typescript
-function render2(result: Result) {
-  result.data.forEach(value => {
-    if (value.age) {
-      console.log(value.age);
-    }
-  });
-}
-=====================================
-#类型“List”上不存在属性“age”。
-```
-
-但是在 List 接口上添加该属性，也还是会报错：
-
-```typescript
-interface List {
-  id: number;
-  name: string;
-  age: number;
-}
-=================
-#类型“{ data: { id: number; name: string; }[]; }”的参数不能赋给类型“Result”的参数。
-#属性“data”的类型不兼容。不能将类型“{ id: number; name: string; }[]”分配给类型“List[]”。
-#Property 'age' is missing in type '{ id: number; name: string; }' but required in type 'List'.
-```
-
-此时需要用到可选属性，就能符合预期。
-
-```typescript
-interface List {
-  id: number;
-  name: string;
-  age?:number
-}
-```
-
-#### 只读属性
-
-我们可以给属性加上 readonly，就变成只读属性。
-
-```typescript
-interface List {
-  readonly id: number;
-  name: string;
-}
-```
-
-如果修改只读属性会报错，也就是说只读属性不能被修改。
-
-```typescript
-function render3(result: Result) {
-  result.data.forEach(value => {
-    value.id++;
-  });
-}
-===================================
-#Cannot assign to 'id' because it is a read-only property.
-```
-
-### 可索引接口
-
-当不确定一个接口中有多少个属性时，就可以使用前面提到的 **可索引签名**。可索引接口类型既可以用数字索引，也可以用字符串索引。
-
-* **用数字索引的接口**
-
-  它的含义是用任意的数字去索引 StringArray，都可以得到一个字符串。这就相当于声明了一个字符串类型的数组。
-
-  ```typescript
-  interface StringArray {
-    [index: number]: string;
-  }
-  let chars:StringArray = ["A","B"]
-  ```
-
-* **用字符串索引的接口**
-
-  它的含义是用任意的字符串与索引 Names，都可以得到一个字符串。
-
-  ```typescript
-  interface Names {
-    [x: string]: string;
-  }
-  ```
-
-  这样声明之后，就不能再声明一个number类型的成员了。否则编译器会报错。
-
-  ```typescript
-  interface Names {
-    [x: string]: string;
-    [y: number]: number;
-  }
-  ======================
-  #数字索引类型“number”不能赋给字符串索引类型“string”。
-  ```
-
-* **混用两种索引签名**
-
-  这样就既可以用字符串索引，也可以用数字索引。需要注意的是，数字索引的返回值类型必须是字符串索引返回值类型所能兼容的类型。因为 JavaScript 会进行类型转换，把 number 转为 string， 以保持兼容性。
-
-  ```typescript
-  interface Names {
-    [x: string]: string; 	//any 类型也可以
-    [z: number]: string;
-  }
-  ```
-
-## 函数类型的接口
-
-#### 定义和使用
-
-在 [02类型基础](02.类型基础.md) 中提到过用变量定义函数的方式：
-
-```typescript
-//定义
-let minus: (x: number, y: number) => number;
-
-// 函数具体实现
-minus = (a, b) => a - b;
-```
-
-此外还有两种定义函数类型的方式：函数类型接口及类型别名。类型别名的意思是为函数取一个具体的名字。
-
-```typescript
-// 以接口方式定义
-interface Minus {
-  (x: number, y: number): number;
-}
-// 以类型别名方式定义
-type Minus = (x: number, y: number) => number;
-
-// 函数具体实现
-let minus: Minus = (a, b) => a - b;
-```
-
-#### 混合类型接口
-
-混合类型接口：表示一个接口既可以定义一个函数，也可以像对象一样拥有属性和方法。下面用混合类型的方法定义一个类库。
-
-```typescript
-//混合类型接口
-interface Lib {
-  (): void; 			//本身是一个函数
-  version: string;		//添加属性
-  doSomethind(): void;	//添加方法
-}
-```
-
-我们在具体实现混合类型接口函数时发现，编译器报错。即使我们为其他两个属性赋值了，也依然没有修复。
-
-```typescript
-let lib: Lib = () => {};
-lib.version = "v.1.0";
-lib.doSomethind = () => {};
-=======================
-Type '() => void' is missing the following properties from type 'Lib': version, doSomethind
-```
-
-这时候我们就需要用到类型断言，告诉编译器我们知道这是一个 Lib 类型。
-
-```typescript
-let lib: Lib = (() => {}) as Lib;
-```
-
-它的 JavaScript 实现是这样子的：
-
-```javascript
-"use strict";
-let lib = (() => { });
-lib.version = "v.1.0";
-lib.doSomethind = () => { };
-```
-
----
-
----
-url: /my_notes/notes/前端开发/ts/lei-he-jie-kou-de-guan-xi/index.md
----
-# 类和接口的关系
-
-## 类类型接口
-
-下面定义一个 Human 接口，Asian 类用 implements 关键字实现了这个接口。
-
-```typescript
-interface Human {
-  name: string;
-  eat(): void;
-}
-
-class Asian implements Human {
-  constructor(name: string) {
-    this.name = name;
-  }
-  name: string;
-  eat() {}
-}
-```
-
-我们需要注意两点：
-
-1. 类在实现接口的过程中，必须声明接口中所有的属性，否则编译器会报错。但 Asian 类定义自己的属性是可以的。
-
-```typescript
-class Asian implements Human {
-  constructor(name: string) {
-    this.name = name;
-  }
-  name: string;
-  sleep(){}	// √  
-  // eat() {}
-}
-==============================
-#类“Asian”错误实现接口“Human”。
-#Property 'eat' is missing in type 'Asian' but required in type 'Human'.
-```
-
-2. 接口只能约束类的公有成员。
-
-```typescript
-class Asian implements Human {
-  //...
-  private name: string;
-}
-==============================
-#类“Asian”错误实现接口“Human”。
-#属性“name”在类型“Asian”中是私有属性，但在类型“Human”中不是。
-```
-
-3. 接口也不能约束类的构造函数。例如下面期望在接口中定义构造函数，编译器会报错。
-
-```typescript
-interface Human {
-  new (name: string): void;
-  //...
-}
-==========================
-#类“Asian”错误实现接口“Human”。
-#类型“Asian”提供的内容与签名“new (name: string): void”不匹配。
-```
-
-## 接口的继承
-
-接口可以像类一样实现继承，并且一个接口可以继承多个接口。例如下面紧接前面的代码，又实现了三个接口。Man 接口继承了 Human 接口，Boy 接口继承了 Man 和 Child 接口。
-
-```typescript
-interface Man extends Human {
-  run(): void;
-}
-interface Child {
-  cry(): void;
-}
-interface Boy extends Man, Child {}
-```
-
-如果我们想要创建一个 Boy 接口类型的对象，该对象就必须实现 Boy 接口所继承的所有祖先接口定义的属性。
-
-```typescript
-let boy: Boy = {
-  //from interface Human
-  name: "Mark",
-  eat() {},
-  //from interface Man
-  run() {},
-  //from interface Child
-  cry() {}
-};
-```
-
-接口的继承可以抽离出可重用的接口，也可以将多个接口合并成一个接口。
-
-## 接口继承类
-
-接口除了可以继承接口外，还可以继承类。这就相当于，接口把类的公有成员都抽象了出来。也就是只有类的成员结构，而没有具体实现。
-
-下面我们定义一个 Auto 类，它只有一个属性 state。然后定义一个接口 AutoInterface 继承了这个类。那么这个接口就隐含了 state 属性。要想实现这个接口，就需要一个类的成员实现这个属性 state。
-
-```typescript
-class Auto {
-  state = 1;
-}
-
-interface AutoInterface extends Auto {}
-
-class C implements AutoInterface {
-  state = 2;
-}
-```
-
-Auto 的子类也可以实现 AutoInterface 这个接口。但在这个子类中，我们不必再定义 state 属性。因为 Auto 的子类自然继承了父类的属性。
-
-```typescript
-class Bus extends Auto implements AutoInterface{ }
-```
-
-需要注意的是，接口在抽离类成员的时候，不仅抽离了公共成员，还抽离了私有成员和受保护成员。
-
-```typescript
-class Auto {
-  state = 1;
-  private state2 = 2;
-}
-interface AutoInterface extends Auto {}
-class C implements AutoInterface {
-  state = 2;
-  // 没有实现 Auto 的私有属性 state2
-}
-=================================
-#类“C”错误实现接口“AutoInterface”。
-#Property 'state2' is missing in type 'C' but required in type 'AutoInterface'.
-```
-
-一图胜千言：
-
-![class-interface](http://q5frcy1n7.bkt.clouddn.com/images/gitbook-typescript-notes/class-interface.JPG)
-
-* 接口之间是可以相互继承的，这样能够实现接口的复用
-* 类之间也可以相互继承，这样可以实现方法和属性的复用
-* 接口可以通过类来实现，但接口只能约束类的公有属性
-* 类可以通过接口抽离出公有成员、私有成员和受保护成员
-
----
-
----
-url: /my_notes/notes/前端开发/ts/lei-xing-ji-chu/index.md
+url: /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/2-lei-xing-ji-chu/index.md
 ---
 # 数据类型
 
@@ -4092,7 +2774,623 @@ TS 的基本数据类型完全覆盖了 JS 中的类型，并且通过 any 类�
 ---
 
 ---
-url: /my_notes/notes/前端开发/ts/lei/index.md
+url: /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/3-mei-ju-lei-xing/index.md
+---
+# 枚举类型
+
+## 角色判断例子
+
+现有一个角色判断的例子，应用上存在不同的角色，每种角色有不同操作权限及不同的UI界面。那么用户登录的时候我们一般需要做一些初始化的操作，如下面代码所示：
+
+```javascript
+function initByRole(role){
+    if(role === 1 || role === 2){
+        // do sth
+    }else if( role === 3 || role == 4){
+        // do sth
+    }else if( role === 5){
+        // do sth
+    }else{
+        // do sth
+    }
+}
+```
+
+上述代码至少存在两个严重的问题：
+
+1. 可读性差：如果不借助特殊文档，很难一直记住数字的含义
+2. 可维护性差：代表角色的数字都被硬编码了，如果某一天代表角色牵一发动全身
+
+怎么解决这个问题？可以使用 TS 的枚举类型。
+
+## 什么是枚举？
+
+枚举：一组**有名字的**常量集合。
+
+![enum](http://q5frcy1n7.bkt.clouddn.com/images/gitbook-typescript-notes/enum.JPG)
+
+### 数字枚举
+
+枚举成员的值默认从0开始，后续成员递增。
+
+```typescript
+enum Role {
+  Reporter,
+  Developer,
+  Maintainer
+}
+console.log(Role.Reporter);		//0
+console.log(Role.Developer);	//1
+```
+
+也可以指定成员起始值。
+
+```typescript
+enum Role2 {
+  Reporter = 10,
+  Developer,
+  Maintainer
+}
+console.log(Role2.Reporter);	//10
+console.log(Role2.Developer);	//11
+```
+
+你可能觉得枚举看起来很像一个对象，实际上它编译出来就是一个对象：
+
+```typescript
+console.log( Role )
+===================
+{
+    0: "Reporter"
+	1: "Developer"
+	2: "Maintainer"
+	Reporter: 0
+	Developer: 1
+	Maintainer: 2
+}
+```
+
+枚举的实现过程如下，枚举成员及成员的值都作为了 key 。这种实现方法叫做**反向映射**。
+
+```javascript
+"use strict";
+var Role;
+(function (Role) {
+    Role[Role["Reporter"] = 0] = "Reporter";
+    Role[Role["Developer"] = 1] = "Developer";
+    Role[Role["Maintainer"] = 2] = "Maintainer";
+})(Role || (Role = {}));
+```
+
+### 字符串枚举
+
+为枚举成员全都赋值字符串，就是字符串枚举。
+
+```typescript
+enum Message {
+  Success = "Great!",
+  Fail = "Sorry!"
+}
+```
+
+它的实现过程如下。只有枚举成员作为了 key。也就是说，字符串枚举是不能就进行反向映射的。
+
+```javascript
+"use strict";
+var Message;
+(function (Message) {
+    Message["Success"] = "Great!";
+    Message["Fail"] = "Sorry!";
+})(Message || (Message = {}));
+```
+
+### 异构枚举
+
+我们还可以吧数字枚举和字符串枚举混用。
+
+```typescript
+enum Answer {
+  N,
+  Y = "yes"
+}
+console.log(Answer.N);	// 0
+console.log(Answer.Y);	//'yes'
+```
+
+它的实现过程如下。但是这用使用容易引起混淆，不太建议使用。
+
+```javascript
+"use strict";
+var Answer;
+(function (Answer) {
+    Answer[Answer["N"] = 0] = "N";
+    Answer["Y"] = "yes";
+})(Answer || (Answer = {}));
+```
+
+## 枚举成员的性质
+
+### 修改枚举成员的值
+
+枚举成员是只读类型，如果修改枚举成员的值，编辑器会报错：
+
+```typescript
+Role.Reporter = 2;
+==================
+# Cannot assign to 'Reporter' because it is a read-only property.
+```
+
+### 枚举成员的分类
+
+#### 常量枚举成员
+
+常量枚举成员（const member ）有三种情况：
+
+* 使用默认初始值
+* 对已有枚举成员的引用
+* 常量表达式
+
+常量成员会在编译的时候计算出结果，然后 以常量的形式出现在运行时环境。
+
+#### 计算枚举成员
+
+计算枚举成员（computed member）是一些非常量的表达式。这些表达式不会在编译时运行，而会被保留到程序的运行阶段。
+
+```typescript
+enum Char {
+  a,
+  b = Char.a,
+  c = 1 + 3,
+  d = Math.random(),
+  e = "123".length
+}
+console.log(Char.a);	// 0
+console.log(Char.b);	// 0
+console.log(Char[0]);	// b
+```
+
+它的实现过程如下。
+
+```typescript
+"use strict";
+var Char;
+(function (Char) {
+    Char[Char["a"] = 0] = "a";
+    Char[Char["b"] = 0] = "b";
+    Char[Char["c"] = 4] = "c";
+    Char[Char["d"] = Math.random()] = "d";
+    Char[Char["e"] = "123".length] = "e";
+})(Char || (Char = {}));
+```
+
+另外在计算枚举成员后面的成员必须赋初始值，否则编辑器报错：
+
+```typescript
+enum Char {
+  e = "123".length,
+  f
+}
+=======================
+#枚举成员必须具有初始化表达式。
+```
+
+### 常量枚举
+
+用 const 声明的枚举就是常量枚举。常量枚举的特性是在编译阶段会被移除，也就是说编译后没有任何代码生成。那么它有什么用呢？当我们不需要一个对象，而需要对象的值的时候就可以使用常量枚举，这样可以减少我们在编译环境的代码。
+
+```typescript
+const enum Month{
+  Jan,
+  Feb,
+  Mar
+}
+let month = [Month.Jan,Month.Feb,Month.Mar]
+```
+
+编译后枚举成员被直接替换成了常量。
+
+```javascript
+"use strict";
+let month = [0 /* Jan */, 1 /* Feb */, 2 /* Mar */];
+```
+
+## 枚举类型及枚举成员类型
+
+在某些情况下，枚举和枚举成员都可以作为一种单独的类型存在。我们分数字枚举和字符串枚举两种情况。
+
+### 数字枚举类型
+
+如下我们定义了两个枚举类型 e 和 f，然后可以把任意的 number 类型值赋给 e 和 f 。
+
+```typescript
+enum E { a, b }
+enum F { a = 0,b = 1 }
+let e: E = 3;
+let f: F = 3;
+console.log(e);		//3
+console.log(f);		//3
+```
+
+但两种不同类型的枚举是不可以进行比较的，编辑器会报错。因为枚举类型不同，永远都会返回false，没有比较的必要。
+
+```typescript
+e === f;
+========
+#This condition will always return 'false' since the types 'E' and 'F' have no overlap.
+```
+
+如果给常量枚举类型赋值非 number 值，编辑器也会报错：
+
+```typescript
+let f1: F = "3";
+================
+#不能将类型“"3"”分配给类型“F”。
+```
+
+除了枚举类型变量，同样可以定义枚举成员类型变量:
+
+```typescript
+let e1: E.a;
+let e2: E.b;
+let e3: E.a;
+```
+
+尚未赋值的枚举成员类型变量不能用来比较：
+
+```typescript
+e1 === e2;
+===========
+#在赋值前使用了变量“e1”。
+#在赋值前使用了变量“e2”。
+```
+
+赋值后，不同枚举成员类型的变量也永远不能比较：
+
+```typescript
+let e1: E.a = 1;
+let e2: E.b = 1;
+e1 === e2;
+=========
+#This condition will always return 'false' since the types 'E.a' and 'E.b' have no overlap.
+```
+
+相同枚举成员类型的变量可以比较：
+
+```typescript
+let e1: E.a = 1;
+let e2: E.a = 1;
+e1 === e2;		//true
+```
+
+### 字符串枚举类型
+
+字符串枚举类型变量，其取值只能是枚举成员。字符串枚举成员类型变量，其取值只能是自身。
+
+```typescript
+enum G {
+  a = "apple",
+  b = "banana"
+}
+let g1: G = G.a;
+let g2: G.a = G.a;
+g1 === g2
+```
+
+## 小结
+
+除了学习一种新的概念——枚举之外，我们还需要掌握一种思维方法，就是将程序中不容易记忆的硬编码，或者是在未来中可能会改变的常量抽取出来，定义成枚举类型。这样可以提高程序的可读性和可维护性，枚举可以使你的程序以不变应万变。
+
+---
+
+---
+url: /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/4-jie-kou/index.md
+---
+# 接口
+
+接口是 TS 的一个重要概念。它可以用来约束对象、函数以及类的结构和类型。这是一种代码协作的契约，我们必须遵守，不能改变。
+
+## 对象类的型接口
+
+### 定义和使用
+
+下面我们用 interface 关键字定义两个接口。
+
+```typescript
+interface List {
+  id: number;
+  name: string;
+}
+interface Result {
+  data: List[];
+}
+```
+
+然后定义一个渲染函数，它接收一个 Result 接口类型的参数，遍历 List 类型数组的 成员 id 和 value。
+
+```typescript
+function render(result: Result) {
+  result.data.forEach(value => {
+    console.log(value.id, value.name);
+  });
+}
+```
+
+最后模拟一个符合接口定义的数据，并执行渲染函数。可以看到结果符合预期。
+
+```typescript
+let result = {
+  data: [
+    { id: 1, name: "A" },
+    { id: 2, name: "B" }
+  ]
+};
+render(result);
+// 1 "A"
+// 2 "B"
+```
+
+### 类型检查
+
+#### 传参时的类型检查
+
+如果模拟数据包含约定之外的字段，编译器并不会报错。因为 TS 采用了一种鸭式变形法。你一定听过它的形象描述：一只鸟如果看起来像鸭子，游起来像鸭子，叫起来像鸭子，那么这只鸟就可以被认为是一只鸭子。这是一种动态语言风格。
+
+回到 TS，我们只要传入的对象满足接口的必要条件，即使还有多余属性，也是被允许的。
+
+```typescript
+let result2 = {
+  data: [
+    { id: 1, name: "A", age: 18 },
+    { id: 2, name: "B" }
+  ]
+};
+render(result2);
+// 1 "A"
+// 2 "B"
+```
+
+但是，如果我们直接以字面量的形式传入，TS 就会对额外的字段进行类型检查，编译器会报错。
+
+```typescript
+render({
+  data: [
+    { id: 1, name: "A", age: 18 },
+    { id: 2, name: "B" }
+  ]
+});
+===================================
+#不能将类型“{ id: number; name: string; age: number; }”分配给类型“List”。对象文字可以只指定已知属性，并且“age”不在类型“List”中。
+```
+
+#### 绕过类型检查的三种方式
+
+有三种方式：
+
+##### 1.使用变量赋值
+
+如上面例子那样，把对象字面量赋值给一个变量
+
+##### 2.使用类型断言
+
+类型断言的含义就是要明确地告诉编译器，我们知道对象的类型，这样编译器就会绕过类型检查。
+
+```typescript
+
+render({
+  data: [
+    { id: 1, name: "A", age: 18 },
+    { id: 2, name: "B" }
+  ]
+} as Result);
+```
+
+类型断言的另外一种方式：
+
+```typescript
+render(<Result>{
+  data: [
+    { id: 1, name: "A", age: 18 },
+    { id: 2, name: "B" }
+  ]
+});
+```
+
+两种方式是等价的，但更建议使用第一种方式，因为方式二在 React 中会有歧义。
+
+##### 3.使用字符串索引签名
+
+签名格式如下。它的含义是：用任意的字符串去索引 List，可以得到任意的结果。这样 List 就可以支持多个属性了。
+
+```typescript
+interface List {
+  id: number;
+  name: string;
+  [x: string]: any;
+}
+```
+
+### 接口属性
+
+#### 可选属性
+
+假如现在需要判断一下遍历模拟数据时的 value 是否含有新字段（两个接口恢复最开始的定义）。编译器会报错。
+
+```typescript
+function render2(result: Result) {
+  result.data.forEach(value => {
+    if (value.age) {
+      console.log(value.age);
+    }
+  });
+}
+=====================================
+#类型“List”上不存在属性“age”。
+```
+
+但是在 List 接口上添加该属性，也还是会报错：
+
+```typescript
+interface List {
+  id: number;
+  name: string;
+  age: number;
+}
+=================
+#类型“{ data: { id: number; name: string; }[]; }”的参数不能赋给类型“Result”的参数。
+#属性“data”的类型不兼容。不能将类型“{ id: number; name: string; }[]”分配给类型“List[]”。
+#Property 'age' is missing in type '{ id: number; name: string; }' but required in type 'List'.
+```
+
+此时需要用到可选属性，就能符合预期。
+
+```typescript
+interface List {
+  id: number;
+  name: string;
+  age?:number
+}
+```
+
+#### 只读属性
+
+我们可以给属性加上 readonly，就变成只读属性。
+
+```typescript
+interface List {
+  readonly id: number;
+  name: string;
+}
+```
+
+如果修改只读属性会报错，也就是说只读属性不能被修改。
+
+```typescript
+function render3(result: Result) {
+  result.data.forEach(value => {
+    value.id++;
+  });
+}
+===================================
+#Cannot assign to 'id' because it is a read-only property.
+```
+
+### 可索引接口
+
+当不确定一个接口中有多少个属性时，就可以使用前面提到的 **可索引签名**。可索引接口类型既可以用数字索引，也可以用字符串索引。
+
+* **用数字索引的接口**
+
+  它的含义是用任意的数字去索引 StringArray，都可以得到一个字符串。这就相当于声明了一个字符串类型的数组。
+
+  ```typescript
+  interface StringArray {
+    [index: number]: string;
+  }
+  let chars:StringArray = ["A","B"]
+  ```
+
+* **用字符串索引的接口**
+
+  它的含义是用任意的字符串与索引 Names，都可以得到一个字符串。
+
+  ```typescript
+  interface Names {
+    [x: string]: string;
+  }
+  ```
+
+  这样声明之后，就不能再声明一个number类型的成员了。否则编译器会报错。
+
+  ```typescript
+  interface Names {
+    [x: string]: string;
+    [y: number]: number;
+  }
+  ======================
+  #数字索引类型“number”不能赋给字符串索引类型“string”。
+  ```
+
+* **混用两种索引签名**
+
+  这样就既可以用字符串索引，也可以用数字索引。需要注意的是，数字索引的返回值类型必须是字符串索引返回值类型所能兼容的类型。因为 JavaScript 会进行类型转换，把 number 转为 string， 以保持兼容性。
+
+  ```typescript
+  interface Names {
+    [x: string]: string; 	//any 类型也可以
+    [z: number]: string;
+  }
+  ```
+
+## 函数类型的接口
+
+#### 定义和使用
+
+在 [02类型基础](3.2-类型基础.md) 中提到过用变量定义函数的方式：
+
+```typescript
+//定义
+let minus: (x: number, y: number) => number;
+
+// 函数具体实现
+minus = (a, b) => a - b;
+```
+
+此外还有两种定义函数类型的方式：函数类型接口及类型别名。类型别名的意思是为函数取一个具体的名字。
+
+```typescript
+// 以接口方式定义
+interface Minus {
+  (x: number, y: number): number;
+}
+// 以类型别名方式定义
+type Minus = (x: number, y: number) => number;
+
+// 函数具体实现
+let minus: Minus = (a, b) => a - b;
+```
+
+#### 混合类型接口
+
+混合类型接口：表示一个接口既可以定义一个函数，也可以像对象一样拥有属性和方法。下面用混合类型的方法定义一个类库。
+
+```typescript
+//混合类型接口
+interface Lib {
+  (): void; 			//本身是一个函数
+  version: string;		//添加属性
+  doSomethind(): void;	//添加方法
+}
+```
+
+我们在具体实现混合类型接口函数时发现，编译器报错。即使我们为其他两个属性赋值了，也依然没有修复。
+
+```typescript
+let lib: Lib = () => {};
+lib.version = "v.1.0";
+lib.doSomethind = () => {};
+=======================
+Type '() => void' is missing the following properties from type 'Lib': version, doSomethind
+```
+
+这时候我们就需要用到类型断言，告诉编译器我们知道这是一个 Lib 类型。
+
+```typescript
+let lib: Lib = (() => {}) as Lib;
+```
+
+它的 JavaScript 实现是这样子的：
+
+```javascript
+"use strict";
+let lib = (() => { });
+lib.version = "v.1.0";
+lib.doSomethind = () => { };
+```
+
+---
+
+---
+url: /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/5-lei/index.md
 ---
 # 类
 
@@ -4431,311 +3729,2741 @@ new MyFlow().next().step1().step2();
 ---
 
 ---
-url: /my_notes/notes/前端开发/ts/mei-ju-lei-xing/index.md
+url: /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/6-fan-xing/index.md
 ---
-# 枚举类型
+# 泛型
 
-## 角色判断例子
+## 什么是泛型？
 
-现有一个角色判断的例子，应用上存在不同的角色，每种角色有不同操作权限及不同的UI界面。那么用户登录的时候我们一般需要做一些初始化的操作，如下面代码所示：
+很多时候我们希望一个函数或者一个类可以支持多种数据类型，提高灵活性。下面有一个例子：
 
-```javascript
-function initByRole(role){
-    if(role === 1 || role === 2){
-        // do sth
-    }else if( role === 3 || role == 4){
-        // do sth
-    }else if( role === 5){
-        // do sth
-    }else{
-        // do sth
-    }
+```typescript
+function log(value: string): string {
+    console.log(value)
+    return value;
 }
 ```
 
-上述代码至少存在两个严重的问题：
-
-1. 可读性差：如果不借助特殊文档，很难一直记住数字的含义
-2. 可维护性差：代表角色的数字都被硬编码了，如果某一天代表角色牵一发动全身
-
-怎么解决这个问题？可以使用 TS 的枚举类型。
-
-## 什么是枚举？
-
-枚举：一组**有名字的**常量集合。
-
-![enum](http://q5frcy1n7.bkt.clouddn.com/images/gitbook-typescript-notes/enum.JPG)
-
-### 数字枚举
-
-枚举成员的值默认从0开始，后续成员递增。
+如果希望 log 函数能够接收一个字符串数组，该怎么实现呢？结合之前的内容，我们会想到函数重载：
 
 ```typescript
-enum Role {
-  Reporter,
-  Developer,
-  Maintainer
-}
-console.log(Role.Reporter);		//0
-console.log(Role.Developer);	//1
-```
-
-也可以指定成员起始值。
-
-```typescript
-enum Role2 {
-  Reporter = 10,
-  Developer,
-  Maintainer
-}
-console.log(Role2.Reporter);	//10
-console.log(Role2.Developer);	//11
-```
-
-你可能觉得枚举看起来很像一个对象，实际上它编译出来就是一个对象：
-
-```typescript
-console.log( Role )
-===================
-{
-    0: "Reporter"
-	1: "Developer"
-	2: "Maintainer"
-	Reporter: 0
-	Developer: 1
-	Maintainer: 2
+function log(value:string):string;
+function log(value:string[]):string[];
+function log(value:any){
+    console.log(value)
+    return value;
 }
 ```
 
-枚举的实现过程如下，枚举成员及成员的值都作为了 key 。这种实现方法叫做**反向映射**。
-
-```javascript
-"use strict";
-var Role;
-(function (Role) {
-    Role[Role["Reporter"] = 0] = "Reporter";
-    Role[Role["Developer"] = 1] = "Developer";
-    Role[Role["Maintainer"] = 2] = "Maintainer";
-})(Role || (Role = {}));
-```
-
-### 字符串枚举
-
-为枚举成员全都赋值字符串，就是字符串枚举。
+或者联合类型：
 
 ```typescript
-enum Message {
-  Success = "Great!",
-  Fail = "Sorry!"
+function log(value: string | string[]): string | string[]{
+    console.log(value)
+    return value;
 }
 ```
 
-它的实现过程如下。只有枚举成员作为了 key。也就是说，字符串枚举是不能就进行反向映射的。
-
-```javascript
-"use strict";
-var Message;
-(function (Message) {
-    Message["Success"] = "Great!";
-    Message["Fail"] = "Sorry!";
-})(Message || (Message = {}));
-```
-
-### 异构枚举
-
-我们还可以吧数字枚举和字符串枚举混用。
+现在我们希望更进一步，log 函数能够接收任何类型的参数，我们很自然地想到 any 类型：
 
 ```typescript
-enum Answer {
-  N,
-  Y = "yes"
+function log(value: any) {
+    console.log(value)
+    return value;
 }
-console.log(Answer.N);	// 0
-console.log(Answer.Y);	//'yes'
 ```
 
-它的实现过程如下。但是这用使用容易引起混淆，不太建议使用。
+到此为止，这个函数似乎满足了我们的所有需求。但是这产生了另外一个问题，就是 any 类型丢失了一些信息，也就是类型之间的约束关系，它忽略了参数类型和返回值类型必须是一致的。当调用者看到 any 的时候，他无法获知这种约束关系。这时候，就需要用到 \*\*泛型 \*\*了。
 
-```javascript
-"use strict";
-var Answer;
-(function (Answer) {
-    Answer[Answer["N"] = 0] = "N";
-    Answer["Y"] = "yes";
-})(Answer || (Answer = {}));
-```
+* 那么什么时泛型呢？
 
-## 枚举成员的性质
+> 泛型：不预先确定的数据类型，具体的类型在使用的时候才能确定。
 
-### 修改枚举成员的值
+## 泛型函数
 
-枚举成员是只读类型，如果修改枚举成员的值，编辑器会报错：
+现在用泛型改造上面的函数。
 
 ```typescript
-Role.Reporter = 2;
-==================
-# Cannot assign to 'Reporter' because it is a read-only property.
-```
-
-### 枚举成员的分类
-
-#### 常量枚举成员
-
-常量枚举成员（const member ）有三种情况：
-
-* 使用默认初始值
-* 对已有枚举成员的引用
-* 常量表达式
-
-常量成员会在编译的时候计算出结果，然后 以常量的形式出现在运行时环境。
-
-#### 计算枚举成员
-
-计算枚举成员（computed member）是一些非常量的表达式。这些表达式不会在编译时运行，而会被保留到程序的运行阶段。
-
-```typescript
-enum Char {
-  a,
-  b = Char.a,
-  c = 1 + 3,
-  d = Math.random(),
-  e = "123".length
+function log<T>(value: T): T {
+  return value;
 }
-console.log(Char.a);	// 0
-console.log(Char.b);	// 0
-console.log(Char[0]);	// b
 ```
 
-它的实现过程如下。
+改造之后，类型 T 不需要预先指定，就相当于 any 类型。另一方面可以保证输入参数和返回值的类型是一致的。定义泛型函数后，有两种方式调用泛型函数：
+
+1. 直接指明泛型函数的类型，那么输入参数就必须和该类型相同
+
+   ```typescript
+   log<string[]>(["a", "b", "c"]);
+   ```
+
+2. 利用 TS 的类型推断，省略泛型类型参数
+
+   ```typescript
+   log(["a", "b", "c"])
+   ```
+
+我们不仅可以使用泛型定义一个函数，还可以定义一个类型。例如定义一个泛型函数类型:
 
 ```typescript
-"use strict";
-var Char;
-(function (Char) {
-    Char[Char["a"] = 0] = "a";
-    Char[Char["b"] = 0] = "b";
-    Char[Char["c"] = 4] = "c";
-    Char[Char["d"] = Math.random()] = "d";
-    Char[Char["e"] = "123".length] = "e";
-})(Char || (Char = {}));
+type Log = <T>(value: T) => T;
+
+//泛型函数的具体实现
+let myLog: Log = value => value;
 ```
 
-另外在计算枚举成员后面的成员必须赋初始值，否则编辑器报错：
+## 泛型接口
+
+泛型同样可以用在接口中。我们依然使用上面的例子。它和类型别名的方式是完全等价的。
 
 ```typescript
-enum Char {
-  e = "123".length,
-  f
+interface LogInterface {
+  <T>(value: T): T;
 }
-=======================
-#枚举成员必须具有初始化表达式。
 ```
 
-### 常量枚举
-
-用 const 声明的枚举就是常量枚举。常量枚举的特性是在编译阶段会被移除，也就是说编译后没有任何代码生成。那么它有什么用呢？当我们不需要一个对象，而需要对象的值的时候就可以使用常量枚举，这样可以减少我们在编译环境的代码。
+在上面的例子中，泛型仅仅用来约束了一个函数，我们也可以用泛型来约束整个接口的所有成员。这里需要注意一点，当泛型变量约束了整个接口之后，我们必须指定一个类型。
 
 ```typescript
-const enum Month{
-  Jan,
-  Feb,
-  Mar
+interface LogInterface<T> {
+  (value: T): T;
 }
-let month = [Month.Jan,Month.Feb,Month.Mar]
+//在具体实现时指定类型
+let myLog2: LogInterface<number> = value => value;
 ```
 
-编译后枚举成员被直接替换成了常量。
-
-```javascript
-"use strict";
-let month = [0 /* Jan */, 1 /* Feb */, 2 /* Mar */];
-```
-
-## 枚举类型及枚举成员类型
-
-在某些情况下，枚举和枚举成员都可以作为一种单独的类型存在。我们分数字枚举和字符串枚举两种情况。
-
-### 数字枚举类型
-
-如下我们定义了两个枚举类型 e 和 f，然后可以把任意的 number 类型值赋给 e 和 f 。
+或者在定义时使用默认类型
 
 ```typescript
-enum E { a, b }
-enum F { a = 0,b = 1 }
-let e: E = 3;
-let f: F = 3;
-console.log(e);		//3
-console.log(f);		//3
+interface LogInterface<T = number> {
+  (value: T): T;
+}
+let myLog2: LogInterface = value => value;
 ```
 
-但两种不同类型的枚举是不可以进行比较的，编辑器会报错。因为枚举类型不同，永远都会返回false，没有比较的必要。
+## 泛型类
+
+与泛型接口非常类似，泛型也可以约束类。下面定义了一个泛型类。同样，我们把泛型变量放在类名后面，就可以约束整个类。
 
 ```typescript
-e === f;
-========
-#This condition will always return 'false' since the types 'E' and 'F' have no overlap.
+class Car<T> {
+  run(value: T) {
+    return value;
+  }
+}
 ```
 
-如果给常量枚举类型赋值非 number 值，编辑器也会报错：
+注意，泛型不能应用于类的静态成员。
 
 ```typescript
-let f1: F = "3";
-================
-#不能将类型“"3"”分配给类型“F”。
+class Car<T> {
+  static run(value: T) {
+    return value;
+  }
+}
+==========================
+#静态成员不能引用类类型参数。
 ```
 
-除了枚举类型变量，同样可以定义枚举成员类型变量:
+在实例化泛型类的时候，我们可以显式地指定 T 的类型。那么实例的方法就会受到泛型的约束。run() 的参数只能是 string 类型，否则编辑器会报错。
 
 ```typescript
-let e1: E.a;
-let e2: E.b;
-let e3: E.a;
-```
+let car =  new Car<string>()
+car.run('fast'); // √
 
-尚未赋值的枚举成员类型变量不能用来比较：
-
-```typescript
-e1 === e2;
+car.run(1);
 ===========
-#在赋值前使用了变量“e1”。
-#在赋值前使用了变量“e2”。
+#类型“1”的参数不能赋给类型“string”的参数。
 ```
 
-赋值后，不同枚举成员类型的变量也永远不能比较：
+此外也可以不指定类型参数。这个时候该实例就不受泛型的约束，value 可以为任意类型。
 
 ```typescript
-let e1: E.a = 1;
-let e2: E.b = 1;
-e1 === e2;
-=========
-#This condition will always return 'false' since the types 'E.a' and 'E.b' have no overlap.
+let car2 = new Car();
+
+car2.run("fast");	// √
+car2.run(1);		// √
 ```
 
-相同枚举成员类型的变量可以比较：
+## 泛型约束
+
+现在我们再定义 log 函数，但返回的是参数的属性。编译器会报错，提示 T 类型不存在该属性。
 
 ```typescript
-let e1: E.a = 1;
-let e2: E.a = 1;
-e1 === e2;		//true
-```
-
-### 字符串枚举类型
-
-字符串枚举类型变量，其取值只能是枚举成员。字符串枚举成员类型变量，其取值只能是自身。
-
-```typescript
-enum G {
-  a = "apple",
-  b = "banana"
+function log2<T>(value: T): T {
+  console.log(value.length)
+  return value;
 }
-let g1: G = G.a;
-let g2: G.a = G.a;
-g1 === g2
+===============================
+#类型“T”上不存在属性“length”。
+```
+
+此时就需要 **泛型约束** 这个概念。我们先预定义一个含有 length 属性的接口，然后让 T 继承这个接口，T 就拥有了 length 属性，从而可以通过类型检查。
+
+```typescript
+interface Length {
+  length: number;
+}
+function log2<T extends Length>(value: T): T {
+  console.log(value.length);
+  return value;
+}
+```
+
+T 继承了 length 接口，就表示 T 受到了约束，不再是可以接受任何类型。输入的参数不管是什么类型，但必须具有 length 属性。例如数组、字符串、或含有 length 属性的对象。
+
+```typescript
+log2([1]);			 //√
+log2("a");			 //√
+log2({ length: 1 }); //√
 ```
 
 ## 小结
 
-除了学习一种新的概念——枚举之外，我们还需要掌握一种思维方法，就是将程序中不容易记忆的硬编码，或者是在未来中可能会改变的常量抽取出来，定义成枚举类型。这样可以提高程序的可读性和可维护性，枚举可以使你的程序以不变应万变。
+泛型的好处：
+
+1. 函数和类可以轻松地支持多种类型，增强程序的扩展性
+2. 不必谢多条函数重载，冗长的联合类型声明，增强代码可读性
+3. 灵活控制类型之间的约束
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/7-han-shu-xiang-guan-zhi-shi-dian/index.md
+---
+# 函数相关知识点梳理
+
+## 如何定义一个函数？
+
+1. 通过 function 关键字定义函数
+
+   需要明确指出函数参数的类型，而返回值的类型可以通过 TS 的类型推断省去。
+
+```typescript
+function add1(x: number, y: number) {
+  return x + y;
+}
+```
+
+2. 通过变量定义函数类型
+
+```typescript
+let add2: (x: number, y: number) => number;
+```
+
+3. 通过 type 类型别名定义函数类型
+
+```typescript
+type add3 = (x: number, y: number) => number;
+```
+
+4. 通过类型接口定义函数类型
+
+```typescript
+interface add4 {
+  (x: number, y: number): number;
+}
+```
+
+注意后三种只是函数类型的定义，并没有具体的函数实现。真正需要调用的话，需要书写函数体。
+
+## 函数的参数
+
+### 参数个数
+
+JavaScript 中对函数参数的个数没有限制。TypeScript 中的形参和实参都必须一一对应，多一个或少一个都不行。
+
+```typescript
+add1(1);
+========
+#应有 2 个参数，但获得 1 个。
+```
+
+```typescript
+add1(1,2,3);
+============
+#应有 2 个参数，但获得 3 个。
+```
+
+### 参数可选
+
+有时候需要函数的参数是可选的，可传可不传。这就用到可选参数。
+
+```typescript
+function add5(x: number, y?: number) {
+  return y ? x + y : x;
+}
+add5(1);	// 1
+add5(1,2);	// 3
+```
+
+必须要注意的是，可选参数必须位于必选参数之后，否则编译器会报错。
+
+```typescript
+function add5(x: number, y?: number, z: number) {
+  return y ? x + y : x;
+}
+=================================================
+#必选参数不能位于可选参数后。
+```
+
+### 参数默认值
+
+可以像 ES6 那样，为参数定义默认值。
+
+```typescript
+function add6(x: number, y = 1, z: number, q = 1) {
+  return x + y + z + q;
+}
+```
+
+调用的时候，我们需要注意一下：在必选参数前的默认参数是不能省略的，必须明确地传入 undefined 来获取默认值。但非必选参数前的默认参数，这里是参数 q ，是可以省略的。
+
+```typescript
+add6(1, undefined, 1); // 4
+```
+
+### 剩余参数
+
+当参数个数不确定的时候，可以使用剩余参数。剩余参数的类型是以数组形式存在。
+
+```typescript
+function add7(x: number, ...rest: number[]) {
+  return x + rest.reduce((pre, cur) => pre + cur);
+}
+add7(1, 1, 1);	//3
+```
+
+## 函数重载
+
+在静态类型语言中，如C、C++、Java都有函数重载的概念。它的含义是：两个函数，如果他们的函数名相同，参数个数或参数类型不同，那么就实现了函数重载。函数重载的好处是无需为功能相似的函数选用不同的函数名称，这样增强了函数的可读性。
+
+在TypeScript 中，函数重载的定义方式有些不同。它要求我们先定义一个函数名相同但参数不同的声明列表，然后在一个类型最宽泛的版本中，实现函数重载。
+
+```typescript
+//声明列表
+function add8(...rest: number[]): number;
+function add8(...rest: stringp[]): string;
+//函数重载
+function add8(...rest: any[]): any {
+  let first = rest[0];
+  if (typeof first === "string") {
+    return rest.join("");
+  }
+  if (typeof first === "number") {
+    return rest.reduce((pre, cur) => pre + cur);
+  }
+}
+add8(1, 2, 3);			// 6
+add8("a", "b", "c");	// abc
+```
+
+TypeScript 编译器在编译重载的时候，会去查找声明列表，并按照列表顺序尝试各个定义。如果匹配的话，就使用该定义，否则继续往下查找。所以应该把最容易匹配的放在最前面。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-san-jie-duan-type-script/8-lei-he-jie-kou-de-guan-xi/index.md
+---
+# 类和接口的关系
+
+## 类类型接口
+
+下面定义一个 Human 接口，Asian 类用 implements 关键字实现了这个接口。
+
+```typescript
+interface Human {
+  name: string;
+  eat(): void;
+}
+
+class Asian implements Human {
+  constructor(name: string) {
+    this.name = name;
+  }
+  name: string;
+  eat() {}
+}
+```
+
+我们需要注意两点：
+
+1. 类在实现接口的过程中，必须声明接口中所有的属性，否则编译器会报错。但 Asian 类定义自己的属性是可以的。
+
+```typescript
+class Asian implements Human {
+  constructor(name: string) {
+    this.name = name;
+  }
+  name: string;
+  sleep(){}	// √  
+  // eat() {}
+}
+==============================
+#类“Asian”错误实现接口“Human”。
+#Property 'eat' is missing in type 'Asian' but required in type 'Human'.
+```
+
+2. 接口只能约束类的公有成员。
+
+```typescript
+class Asian implements Human {
+  //...
+  private name: string;
+}
+==============================
+#类“Asian”错误实现接口“Human”。
+#属性“name”在类型“Asian”中是私有属性，但在类型“Human”中不是。
+```
+
+3. 接口也不能约束类的构造函数。例如下面期望在接口中定义构造函数，编译器会报错。
+
+```typescript
+interface Human {
+  new (name: string): void;
+  //...
+}
+==========================
+#类“Asian”错误实现接口“Human”。
+#类型“Asian”提供的内容与签名“new (name: string): void”不匹配。
+```
+
+## 接口的继承
+
+接口可以像类一样实现继承，并且一个接口可以继承多个接口。例如下面紧接前面的代码，又实现了三个接口。Man 接口继承了 Human 接口，Boy 接口继承了 Man 和 Child 接口。
+
+```typescript
+interface Man extends Human {
+  run(): void;
+}
+interface Child {
+  cry(): void;
+}
+interface Boy extends Man, Child {}
+```
+
+如果我们想要创建一个 Boy 接口类型的对象，该对象就必须实现 Boy 接口所继承的所有祖先接口定义的属性。
+
+```typescript
+let boy: Boy = {
+  //from interface Human
+  name: "Mark",
+  eat() {},
+  //from interface Man
+  run() {},
+  //from interface Child
+  cry() {}
+};
+```
+
+接口的继承可以抽离出可重用的接口，也可以将多个接口合并成一个接口。
+
+## 接口继承类
+
+接口除了可以继承接口外，还可以继承类。这就相当于，接口把类的公有成员都抽象了出来。也就是只有类的成员结构，而没有具体实现。
+
+下面我们定义一个 Auto 类，它只有一个属性 state。然后定义一个接口 AutoInterface 继承了这个类。那么这个接口就隐含了 state 属性。要想实现这个接口，就需要一个类的成员实现这个属性 state。
+
+```typescript
+class Auto {
+  state = 1;
+}
+
+interface AutoInterface extends Auto {}
+
+class C implements AutoInterface {
+  state = 2;
+}
+```
+
+Auto 的子类也可以实现 AutoInterface 这个接口。但在这个子类中，我们不必再定义 state 属性。因为 Auto 的子类自然继承了父类的属性。
+
+```typescript
+class Bus extends Auto implements AutoInterface{ }
+```
+
+需要注意的是，接口在抽离类成员的时候，不仅抽离了公共成员，还抽离了私有成员和受保护成员。
+
+```typescript
+class Auto {
+  state = 1;
+  private state2 = 2;
+}
+interface AutoInterface extends Auto {}
+class C implements AutoInterface {
+  state = 2;
+  // 没有实现 Auto 的私有属性 state2
+}
+=================================
+#类“C”错误实现接口“AutoInterface”。
+#Property 'state2' is missing in type 'C' but required in type 'AutoInterface'.
+```
+
+一图胜千言：
+
+![class-interface](http://q5frcy1n7.bkt.clouddn.com/images/gitbook-typescript-notes/class-interface.JPG)
+
+* 接口之间是可以相互继承的，这样能够实现接口的复用
+* 类之间也可以相互继承，这样可以实现方法和属性的复用
+* 接口可以通过类来实现，但接口只能约束类的公有属性
+* 类可以通过接口抽离出公有成员、私有成员和受保护成员
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/1-gou-jian-gong-ju-vite-ru-men/index.md
+---
+# 构建工具 Vite 入门
+
+开发一个大一点的网页/应用时，代码会被拆成大量模块：需要合并、转换（TS/Sass）、处理兼容、热更新。构建工具负责把这些源头代码编译打包成浏览器可用的产物。**Vite** 是当前最主流的现代构建工具，也是 VuePress 这类工具链的底层引擎。
+
+## 为什么需要构建工具
+
+* **模块化**：ES Module、import 依赖之间的关系需要解析与合并。
+* **语法转换**：TypeScript、SCSS、JSX/Vue 单文件组件都要编译为浏览器能运行的 JS/CSS。
+* **兼容与优化**：降级语法、压缩体积、拆包按需加载。
+* **开发体验**：热更新（改代码页面即时刷新）、错误提示。
+
+## Vite vs Webpack
+
+| 维度 | Vite | Webpack |
+|:-----|:-----|:--------|
+| 开发模式原理 | 原生 ES Module，按需编译，秒级启动 | 全量打包/bundle，项目大时启动慢 |
+| 模块打包 | 生产用 Rollup 打包 | 内置打包 |
+| 配置复杂度 | 轻，开箱即用 | 复杂，配置项多 |
+| 生态 | 现代框架普遍默认 | 成熟但逐步被 Vite 追赶 |
+
+（仓库 `3.1-编译第一个TS程序` 中有一套较旧的 webpack + TS 配置，属历史方案，可对照参考。）
+
+## 创建项目
+
+```bash
+npm create vite@latest my-app
+# 按提示选择框架模板：vanilla / vue / react / preact 等，及是否用 TS
+cd my-app
+npm install
+npm run dev
+```
+
+`npm run dev` 启动本地开发服务器并打印访问地址，默认在 `http://localhost:5173`。
+
+## 目录结构
+
+```
+my-app/
+├── index.html          # 入口页面（Vite 以它为起点）
+├── package.json
+├── vite.config.js      # Vite 配置（可集成插件、代理等）
+├── public/             # 静态资源，构建时原样拷贝、URL 直接引用
+└── src/
+    ├── main.js         # 应用入口，import 并挂载
+    ├── App.vue         # 以 Vue 模板为例的根组件
+    └── assets/         # 需要经过构建处理的资源（import 方式引入）
+```
+
+## 常用命令
+
+| 命令 | 作用 |
+|:-----|:-----|
+| `npm run dev` | 开发服务器，热更新 |
+| `npm run build` | 生产构建，产物输出到 `dist/`（压缩、hash 文件名、代码分割） |
+| `npm run preview` | 本地预览构建产物（先 build 再 preview） |
+
+## 集成 TypeScript 与 Sass
+
+按脚手架模板选择 Vite 已内置对应能力：选 TypeScript 模板即支持 `.ts`；安装后 Sass 开箱即用：
+
+```bash
+npm install -D sass
+```
+
+在 `.vue` 或 `.scss` 中把样式写成 `lang="scss"` 即可使用变量/嵌套/mixin（见 `1.6-CSS常用样式` 的 SCSS 片段）。
+
+## vite.config.js 常见配置
+
+```js
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],          // 插件：编译 .vue 等
+  server: {
+    proxy: {                 // 开发环境代理，解决跨域
+      '/api': 'http://localhost:8080',
+    },
+  },
+  build: {
+    outDir: 'dist',          // 输出目录
+  },
+})
+```
+
+## 静态资源与 public
+
+* `public/` 下的文件**不做处理**，直接按路径引用：`<img src="/logo.png">`。
+* `src/assets/` 下经 `import imgUrl from './x.png'` 引入的资源会被处理（hash 命名、体积优化）。
+
+## 构建产物简述
+
+`npm run build` 后 `dist/` 里是纯静态文件（html + js/css + 资源）。可用任意静态服务器托管（`npm run preview` 或 nginx 等），也可部署到 GitHub Pages 等平台。本知识库本身就是 VuePress 构建后静态托管，原理相同。
+
+## 下一步
+
+Vite 是框架工程化的基础设施。掌握 Vite 后，可以学习 Vue/React 框架（本路线暂未展开，框架部分留作后续方向），并结合第四阶段的实战技巧（工具函数、上传、二维码等）搭建完整应用。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/2-chang-yong-gong-ju-han-shu/index.md
+---
+# 日常开发工具函数
+
+## 随机 ID 值
+
+```js
+const randomId = function () {
+	const n = Math.random()
+	return n.toString(36).substring(2)
+}
+```
+
+## 随机 uuid
+
+```js
+const uuid = function (len = 8, radix = 16) {
+	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')
+	const value = []
+	let i = 0
+	radix = radix || chars.length
+	if (len) {
+		for (i = 0; i < len; i++) value[i] = chars[0 | (Math.random() * radix)]
+	} else {
+		let r
+		value[8] = value[13] = value[18] = value[23] = '-'
+		value[14] = '4'
+		for (i = 0; i < 36; i++) {
+			if (!value[i]) {
+				r = 0 | (Math.random() * 16)
+				value[i] = chars[i === 19 ? (r & 0x3) | 0x8 : r]
+			}
+		}
+	}
+	return value.join('')
+}
+```
+
+## 生成一个范围内的随机数
+
+```js
+const rangeRandomNum = function (min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min
+}
+```
+
+## delay 延迟
+
+```js
+const delay = function (delayTime = 25) {
+	return new Promise((resolve) => {
+		setTimeout(() => {
+			resolve()
+		}, delayTime)
+	})
+}
+```
+
+## 倒计时
+
+```js
+/**
+ * 倒计时
+ * @param diff 倒计时时间(s)
+ * @param loadTime 运行时的当前时间(s)
+ * @param item 倒计时对象 默认：{ speed: 1000 }
+ * @param callback 回调
+ */
+const countDown = function (diff, loadTime, item, callback) {
+	function round($diff) {
+		let dd = parseInt($diff / 1000 / 60 / 60 / 24, 10) // 计算剩余的天数
+		let hh = parseInt(($diff / 1000 / 60 / 60) % 24, 10) // 计算剩余的小时数
+		let mm = parseInt(($diff / 1000 / 60) % 60, 10) // 计算剩余的分钟数
+		let ss = parseInt(($diff / 1000) % 60, 10) // 计算剩余的秒数
+		function checkTime(_a) {
+			let a = _a
+			if (a < 10) {
+				a = '0' + a
+			}
+			return a.toString()
+		}
+		item.conttainer = {
+			ddhh: checkTime(dd * 24 + hh),
+			dd: checkTime(dd),
+			hh: checkTime(hh),
+			mm: checkTime(mm),
+			ss: checkTime(ss),
+		}
+		if (item.conttainer.dd > 0 || item.conttainer.hh > 0 || item.conttainer.mm > 0 || item.conttainer.ss > 0) {
+			item.t = setTimeout(function () {
+				round($diff - (item.speed || 1000))
+			}, item.speed || 1000)
+		}
+		// 回调
+		callback && callback(item)
+	}
+	round(diff - loadTime)
+}
+```
+
+## 时间日期格式化
+
+```js
+/** 时间格式化
+ * @param {dateTime} date 标准时间格式 -> new Date()
+ * @param {string} format 时间格式化的格式 'yyyy-MM-dd hh:mm:ss'
+ * @returns {string} 格式化后的时间  '2017-01-01 01:00:00'
+ */
+const dateFormat = function (date = new Date(), format = 'yyyy-MM-dd hh:mm:ss') {
+	var o = {
+		'M+': date.getMonth() + 1, // month
+		'd+': date.getDate(), // day
+		'h+': date.getHours(), // hour
+		'm+': date.getMinutes(), // minute
+		's+': date.getSeconds(), // second
+		'q+': Math.floor((date.getMonth() + 3) / 3), // quarter
+		S: date.getMilliseconds(), // millisecond
+	}
+	if (/(y+)/.test(format)) {
+		format = format.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
+	}
+	for (var k in o) {
+		if (new RegExp('(' + k + ')').test(format)) {
+			format = format.replace(RegExp.$1, RegExp.$1.length === 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length))
+		}
+	}
+	return format
+}
+```
+
+## url 参数(k-v)的序列化及反序列化
+
+```js
+/*
+ * 反序列化URL参数
+ * { age: "25", name: "Tom" }
+ */
+const parseUrlSearch = function (location) {
+	return location.search
+		.replace(/(^\?)|(&$)/g, '')
+		.split('&')
+		.reduce((t, v) => {
+			const [key, val] = v.split('=')
+			t[key] = decodeURIComponent(val)
+			return t
+		}, {})
+}
+/*
+ * getQueryParams('id')
+ * 获取url上某个key的值
+ */
+const getParam = function (param) {
+	// 获取浏览器参数
+	const r = new RegExp(`\\?(?:.+&)?${param}=(.*?)(?:&.*)?$`)
+	const m = window.location.toString().match(r)
+	return m ? decodeURI(m[1]) : ''
+}
+/*
+ * queryStringify
+ * 将k-v的对象序列化转成 url?k=v&k1=v1;
+ */
+const queryStringify = function (search = {}) {
+	return Object.entries(search)
+		.reduce((t, v) => `${t}${v[0]}=${encodeURIComponent(v[1])}&`, Object.keys(search).length ? '?' : '')
+		.replace(/&$/, '')
+}
+```
+
+## 判断浏览器 UserAgent
+
+```js
+const browser = function () {
+	const u = navigator.userAgent.toLowerCase()
+	return {
+		txt: u, // userAgent 信息
+		version: (u.match(/.+(?:rv|it|ra|ie)[\/: ]([\d.]+)/) || [])[1], // 版本号
+		msie: /msie/.test(u) && !/opera/.test(u), // IE内核
+		mozilla: /mozilla/.test(u) && !/(compatible|webkit)/.test(u), // 火狐浏览器
+		safari: /safari/.test(u) && !(u.indexOf('android') > -1) && !/chrome/.test(u), //是否为safair
+		chrome: /chrome/.test(u), //是否为chrome
+		opera: /opera/.test(u), //是否为oprea
+		presto: u.indexOf('presto/') > -1, //opera内核
+		webKit: u.indexOf('applewebkit/') > -1, //苹果、谷歌内核
+		gecko: u.indexOf('gecko/') > -1 && u.indexOf('khtml') == -1, //火狐内核
+		mobile: !!u.match(/applewebkit.*mobile.*/), //是否为移动终端
+		ios: !!u.match(/\(i[^;]+;( u;)? cpu.+mac os x/), //ios终端
+		android: u.indexOf('android') > -1, //android终端
+		iPhone: u.indexOf('iphone') > -1, //是否为iPhone
+		iPad: u.indexOf('ipad') > -1, //是否为iPad
+		weixin: /micromessenger/.test(u), //微信
+		QQBrowse: u.indexOf(' QQ') > -1 || u.indexOf(' qq') > -1, // QQ浏览器
+		isApp: u.indexOf('jscp/ios') > -1 || u.indexOf('jscp/android') > -1 || getParamsCode('source') == 'app',
+	}
+}
+```
+
+## 封装 ajax 请求
+
+```js
+class Request {
+	options = {
+		responseType: 'json',
+	}
+	constructor(method = 'GET', url, data = null, options) {
+		this.method = method
+		this.url = url
+		this.data = this.formatData(data)
+		Object.assign(this.options, options)
+	}
+	formatData(data) {
+		if (typeof data != 'object' || data == null) data = {}
+		let form = new FormData()
+		for (const [name, value] of Object.entries(data)) {
+			form.append(name, value)
+		}
+		return form
+	}
+	static get(url, options) {
+		return new this('GET', url, null, options).xhr()
+	}
+	static post(url, data, options) {
+		return new this('POST', url, data, options).xhr()
+	}
+	xhr() {
+		return new Promise((resolve, reject) => {
+			const xhr = new XMLHttpRequest()
+			xhr.open(this.method, this.url)
+			xhr.responseType = this.options.responseType
+			xhr.send(this.data)
+			xhr.onload = function () {
+				if (xhr.status != 200) {
+					reject({ status: xhr.status, error: xhr.statusText })
+				} else {
+					resolve(xhr.response)
+				}
+			}
+			xhr.onerror = function (error) {
+				reject(error)
+			}
+		})
+	}
+}
+```
+
+## 防抖&&节流
+
+防抖
+
+```js
+/**
+ * 防抖
+ * @param {Function} func 需要包装的函数
+ * @param {string} wait 等待执行时间
+ * @param {string} immediate 是否是立即执行 默认不立即执行
+ * @returns {Function} 返回包装后的函数
+ */
+const debounce = function (func, wait, immediate) {
+	let timeout, result
+	return function () {
+		const context = this
+		const args = arguments
+		if (timeout) clearTimeout(timeout)
+		if (immediate) {
+			const callNow = !timeout
+			timeout = setTimeout(function () {
+				timeout = null
+			}, wait)
+			if (callNow) result = func.apply(context, args)
+		} else {
+			timeout = setTimeout(function () {
+				func.apply(context, args)
+			}, wait)
+		}
+		return result
+	}
+}
+```
+
+节流
+
+```js
+// 使用时间戳
+/**
+ * 防抖
+ * @param {Function} func 需要包装的函数
+ * @param {string} wait 间隔时间
+ * @returns {Function} 返回包装后的函数
+ */
+const throttle = function (func, wait) {
+	let context, args
+	let previous = 0
+	return function () {
+		let now = +new Date()
+		context = this
+		args = arguments
+		if (now - previous > wait) {
+			func.apply(context, args)
+			previous = now
+		}
+	}
+}
+// 使用定时器
+/**
+ * 防抖
+ * @param {Function} func 需要包装的函数
+ * @param {string} wait 间隔时间
+ * @returns {Function} 返回包装后的函数
+ */
+const throttle = function (func, wait) {
+	let timeout
+	return function () {
+		const context = this
+		const args = arguments
+		if (!timeout) {
+			timeout = setTimeout(function () {
+				timeout = null
+				func.apply(context, args)
+			}, wait)
+		}
+	}
+}
+```
+
+## 深拷贝
+
+```js
+function deepClone(obj, cache = new WeakMap()) {
+	if (typeof obj !== 'object') return obj // 普通类型，直接返回
+	if (obj === null) return obj
+	if (cache.get(obj)) return cache.get(obj) // 防止循环引用，程序进入死循环
+	if (obj instanceof Date) return new Date(obj)
+	if (obj instanceof RegExp) return new RegExp(obj)
+
+	// 找到所属原型上的constructor，所属原型上的constructor指向当前对象的构造函数
+	let cloneObj = new obj.constructor()
+	cache.set(obj, cloneObj) // 缓存拷贝的对象，用于处理循环引用的情况
+	for (let key in obj) {
+		if (obj.hasOwnProperty(key)) {
+			cloneObj[key] = deepClone(obj[key], cache) // 递归拷贝
+		}
+	}
+	return cloneObj
+}
+```
+
+## 常用验证方法
+
+```js
+/**
+ * 是否是外部调用链接
+ * @param {string} path
+ * @returns {Boolean}
+ */
+export function isExternal(path) {
+	return /^(https?:|mailto:|tel:)/.test(path)
+}
+/**
+ * 是否是URL链接
+ * @param {string} url
+ * @returns {Boolean}
+ */
+export function validURL(url) {
+	const reg =
+		/^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/
+	return reg.test(url)
+}
+/**
+ * 是否是小写字母
+ * @returns {Boolean}
+ */
+export function validLowerCase(str) {
+	const reg = /^[a-z]+$/
+	return reg.test(str)
+}
+/**
+ * 是否是大写字母
+ * @param {string} str
+ * @returns {Boolean}
+ */
+export function validUpperCase(str) {
+	const reg = /^[A-Z]+$/
+	return reg.test(str)
+}
+/**
+ * 是否是英文
+ * @param {string} str
+ * @returns {Boolean}
+ */
+export function validAlphabets(str) {
+	const reg = /^[A-Za-z]+$/
+	return reg.test(str)
+}
+/**
+ * 是否是邮箱
+ * @param {string} email
+ * @returns {Boolean}
+ */
+export function validEmail(email) {
+	const reg =
+		/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+	return reg.test(email)
+}
+/**
+ * 是否是手机号
+ * @param {string} mobile
+ * @returns {Boolean}
+ */
+export function validMobile(mobile) {
+	const reg = /^(13[0-9]|14[5|7]|15[0|1|2|3|4|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$/
+	return reg.test(mobile)
+}
+/**
+ * 是否是座机号
+ * @param {string} phoneNum
+ * @returns {Boolean}
+ */
+export function validPhoneNum(phoneNum) {
+	const reg = /^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$/
+	return reg.test(phone)
+}
+/**
+ * 是否是域名
+ * @param {string} domain
+ * @returns {Boolean}
+ */
+export function validDomain(domain) {
+	const reg = /[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?/
+	return reg.test(domain)
+}
+/**
+ * 是否是字符串
+ * @param {string} str
+ * @returns {Boolean}
+ */
+export function isString(str) {
+	if (typeof str === 'string' || str instanceof String) {
+		return true
+	}
+	return false
+}
+/**
+ * 是否是数组
+ * @param {Array} arg
+ * @returns {Boolean}
+ */
+export function isArray(arg) {
+	if (typeof Array.isArray === 'undefined') {
+		return Object.prototype.toString.call(arg) === '[object Array]'
+	}
+	return Array.isArray(arg)
+}
+```
+
+## 进入/离开动画过渡封装
+
+```js
+class Aniamte {
+	constructor(options) {
+		this.animateStatus = false
+		this.mergeOptions(options)
+		this.init()
+	}
+	/* 合并配置 */
+	mergeOptions(options) {
+		if (!options.el) {
+			throw new Error('options.el 必须为一个query选择器')
+		}
+		this.options = {
+			el: '', // 动画元素选择器(必要的)
+			animateRoot: '', // 可能需要一个公用的class 例如animate.css
+			entry: '', // 定义进入过渡的开始状态
+			enterActive: '', // 定义进入过渡生效时的状态
+			enterTo: '', // 定义进入过渡的结束状态
+			leave: '', // 定义离开过渡的开始状态
+			leaveActive: '', // 定义离开过渡生效时的状态
+			leaveTo: '', //定义离开过渡的结束状态
+		}
+		Object.assign(this.options, options)
+	}
+	/* 初始化 */
+	init() {
+		this.elements = this.queryAll(this.options.el)
+		this.elements.forEach((element) => {
+			element.addEventListener('animationend', (e) => this.animationend(e))
+		})
+	}
+	/* 动画执行结束 */
+	animationend(e) {
+		const { animateRoot, entry, enterActive, enterTo, leave, leaveActive, leaveTo } = this.options
+		const element = e.target
+		const { classList, className, afterCallback } = e.target
+		// 移除渡状态
+		this.removeClass(element, [animateRoot, leaveActive, enterActive, entry, leave])
+		// 添加离开过渡的结束状态
+		if (element.transitionType === 'entry' && enterTo) {
+			classList.add(enterTo)
+		} else if (element.transitionType === 'leave' && leaveTo) {
+			classList.add(leaveTo)
+		}
+		// 执行结束的回调
+		afterCallback && afterCallback.apply(element)
+		element.transitionType = 'none'
+	}
+	/* 进入 */
+	enter(el, before, after) {
+		const element = typeof el === 'string' ? this.query(el) : el
+		if (element.transitionType !== 'none') return
+		element.afterCallback = after
+		// 设置元素过度状态为entry
+		element.transitionType = 'entry'
+		const { animateRoot, enterActive, entry, leaveTo } = this.options
+		// 过渡开始前的回调
+		before && before.apply(element)
+		if (leaveTo && element.className.indexOf(leaveTo)) element.classList.remove(leaveTo)
+		if (entry) element.classList.add(entry)
+		if (animateRoot) element.classList.add(animateRoot)
+		if (enterActive) element.classList.add(enterActive)
+	}
+	/* 离开 */
+	leave(el, before, after) {
+		const element = typeof el === 'string' ? this.query(el) : el
+		if (element.transitionType !== 'none') return
+		element.afterCallback = after
+		// 设置元素过度状态为leave
+		element.transitionType = 'leave'
+		const { animateRoot, leaveActive, leave, enterTo } = this.options
+		// 过渡开始前的回调
+		before && before.apply(element)
+		if (enterTo && element.className.indexOf(enterTo)) element.classList.remove(enterTo)
+		if (leave) element.classList.add(leave)
+		if (animateRoot) element.classList.add(animateRoot)
+		if (leaveActive) element.classList.add(leaveActive)
+	}
+	queryAll(el) {
+		return document.querySelectorAll(el)
+	}
+	query(el) {
+		return document.querySelector(el)
+	}
+	removeClass(element, classList) {
+		classList.forEach((className) => {
+			if (className && [...element.classList].includes(className)) {
+				element.classList.remove(className)
+			}
+		})
+	}
+}
+/******************使用******************/
+// 这里使用了animate.css库
+const animate = new Aniamte({
+	el: '.box',
+	animateRoot: 'animate__animated',
+	enterTo: 'show',
+	enterActive: 'animate__fadeInRightBig',
+	leaveActive: 'animate__fadeOutRightBig',
+	leaveTo: 'hide',
+})
+const btn = document.querySelector('#btn')
+let status = true
+btn.addEventListener('click', (e) => {
+	if (status) {
+		animate.leave(
+			'.box1',
+			function () {
+				// TODO 过渡开始前要做的事
+				console.log('leave')
+			},
+			function () {
+				// TODO 过渡结束后要做的事
+				status = false
+			}
+		)
+	} else {
+		animate.enter(
+			'.box1',
+			function () {
+				// TODO 过渡开始前要做的事
+				console.log('enter')
+			},
+			function () {
+				// TODO 过渡结束后要做的事
+				status = true
+			}
+		)
+	}
+})
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/3-shang-chuan-tu-pian-ji-yu-lan/index.md
+---
+# 上传图片及预览
+
+## 说明
+
+使用技术：原生 js 上传图片的方法
+
+原生 js 构造函数：
+
+1. FormData
+2. XMLHttpRequest
+3. fileReader
+
+## 上传图片
+
+```html
+<input type="file" id="fileInput" />
+<button onclick="uploadFile()">上传</button>
+
+<script>
+	function uploadFile() {
+		//获取图片
+		var file = document.querySelector('#fileInput').files[0]
+		//创建formData对象，并将图片添加到formData中
+		var formData = new FormData()
+		formData.append('file', file)
+		// 利用xhr方式上传
+		var xhr = new XMLHttpRequest()
+		xhr.open('POST', '/upload')
+		xhr.onreadystatechange = function() {
+			if (xhr.status === 200 && xhr.readyState == 4) {
+				//文件上传成功
+			}
+		}
+		xhr.send(formData)
+	}
+</script>
+```
+
+## 图片预览
+
+```html
+<input type="file" id="fileInput" />
+<img id="echoImage" />
+<button>上传</button>
+
+<script>
+	//获取文件上传控件和预览图片的控件
+	var echoImage = document.querySelector('#echoImage')
+	var fileInput = document.querySelector('#fileInput')
+
+	//为文件上传控件添加onchanges事件
+	fileInput.onchange = function() {
+		//创建读取文件的对象
+		var fileReader = new FileReader()
+		//读取文件为base64格式
+		fileReader.readAsDataURL(this.files[0])
+		//文件读取成功
+		fileReader.onload = function(event) {
+			//读取到的文件放入img控件
+			echoImage.src = event.target.result
+		}
+	}
+</script>
+```
+
+## 大文件切片上传
+
+前端上传文件时如果文件很大，上传时会出现各种问题，比如连接超时了，网断了，都会导致上传失败。
+
+为了避免上传大文件时上传超时，就需要用到切片上传，工作原理是：我们将大文件切割为小文件，然后将切割的若干小文件上传到服务器端，服务器端接收到被切割的小文件，然后按照一定的顺序将小文件拼接合并成一个大文件。
+
+相较于单独上传一个文件而言，大文件上传在前端层面，多了一步切割的步骤，后端多了一步合并的步骤，只有前后端配合才能完成大文件切片上传。
+
+\*\*技术包括：\*\*H5（前端使用）和nodejs（后端使用）
+
+### 前端代码
+
+```js
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>upload</title>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="./uuid.js"></script>
+</head>
+<body>
+    <input type="file" name="file" id="file">
+    <button id="upload">上传</button>
+    <script type="text/javascript">
+        var bytesPerPiece = 1024 * 1024; // 每个文件切片大小定为1MB .
+        var totalPieces;   //切片总数
+        //发送请求
+        $("#upload").click(upload)
+        function upload() {
+            var blob = document.getElementById("file").files[0];
+            // 文件唯一标识符号，防止多个用户一起上传文件时切片混乱
+            var uuidfolder = uuidv1();
+            // 开始切割的位置
+            var start = 0;
+            // 切割的结束位置
+            var end;
+            // 切片的索引
+            var index = 0;
+            // 回调计数器
+            var count = 0;
+            // 文件的大小
+            var filesize = blob.size;
+            // 文件的名称
+            var filename = blob.name;
+            //计算文件切片总数
+            totalPieces = Math.ceil(filesize / bytesPerPiece);
+            // 启动while循环对文件切片
+            while(start < filesize) {
+                // 设置切片的结束位置
+                end = start + bytesPerPiece;
+                // 对最后一片数据进行处理（可以省略）
+                if(end > filesize) {
+                    end = filesize;
+                }
+                // 切割文件
+                var chunk = blob.slice(start,end);//切割文件
+                // 给每一片切片设置名字，名字的值为原始名称加索引，这样做是为了让后端可以按照索引顺序合并图片。
+                var sliceIndex= blob.name + index;
+                // 利用formData来传递数据
+                var formData = new FormData();
+                formData.append("file", chunk, sliceIndex);
+                formData.append("uuidfolder", uuidfolder);
+                formData.append("imgorder", index);
+                $.ajax({
+                    url: '/upload3',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,  // 不处理数据
+                    contentType: false,  // 不设置内容类型
+                }).done(function(res){ 
+                    count++;
+                    if(count==totalPieces){
+                        console.log("上传结束,请求拼接接口，将切片信息拼接完整，返回图片url");
+                        $.post('/merge',{id:uuidfolder},function(data){
+                            console.log(data);
+                        })
+                    }
+
+                }).fail(function(res) {
+                    console.log("上传失败")
+                });
+                start = end;
+                index++;
+            }
+        }
+    </script>
+</body>
+</html>
+```
+
+上面的代码启动了一个while循环，在这个循环中，每次截取固定大小的切片，然后用ajax上传到后端服务器，并且会附加一些比较重要的信息，这些信息主要包括：图片的唯一标识符（这里用到了uuid.js来生成唯一的id），切片的索引（为了后端按照切片顺序将切片合并），ajax每次上传完成后都要检查所有切片是否上传完成，全部上传完成后，请求合并接口，这个接口返回合并后的图片的url。
+
+前端将切片信息传递到后端，后端用过nodejs接受切片，然后按照索引将切片拼接成完整的文件，这里用到了两个工具包multer和concat-files，前一个是负责接收切片信息，后一个负责合并切片。
+
+这里一般的做法是设置两个接口，一个接口负责接收图片的切片信息，将其保存，另外一个接口负责拼接切片信息。这样做的原因是，如果用一个接口来操作的话，每张切片接收完成后都要去检查所有切片是否都接收完成，而只有当所有切片完成才能将切片合并，这样比较耗费服务端的性能。
+
+### 后端代码
+
+接口处理代码如下：
+
+```js
+// 接收切片信息接口
+router.post('/upload3', upload.single('file'), function (req, res, next) {
+  console.log(req.body)
+  // 接受图片唯一标识符号
+    let imgname = req.body.uuidfolder;
+    // 接受切片索引
+    let imgorder = req.body.imgorder;
+    // 建立图片存储目录
+    let imgpath = path.join(__dirname,'..','public/mult',imgname);
+    // 判断目录是否存在，存在的话直接使用并存储切片，不存在的话就新建。
+    if (fs.existsSync(imgpath)) {
+      fs.readFile(req.file.path, function (err, data) {
+        fs.writeFile(path.join(imgpath, imgorder), data, (err) => {
+          if (!err) {
+            res.send("写入后面的文件")
+          }
+        })
+      })
+    } else {
+      fs.mkdirSync(imgpath);
+      fs.readFile(req.file.path, function (err, data) {
+        fs.writeFile(path.join(imgpath, imgorder), data, (err) => {
+          if (!err) {
+            res.send("第一次写入并新建文件夹")
+          }
+        })
+      })
+    }
+})
+
+
+// 合并图片接口：
+router.post('/merge',function(req,res){
+  let id = req.body.id;
+  let folderpath = path.join(__dirname,"..",'public/mult',id);
+  let destinpath = path.join(__dirname,"..",'public/img',id+'.jpg');
+  let dist = '/img/'+id+'.jpg'
+  fs.readdir(folderpath,function(err,arr){
+    let arr2 = arr.map(e=>path.join(folderpath,e));
+    concat(arr2, destinpath, function(err) {
+      if (err) throw err
+      res.send(dist);
+    });
+  })
+})
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/4-sheng-cheng-er-wei-ma/index.md
+---
+# 生成二维码
+
+## 说明
+
+使用技术：canvas 绘制，第三方类库
+
+第三方类库：
+
+1. [qrcode.js](http://davidshimjs.github.io/qrcodejs/)
+
+## 绘制二维码，下载二维码
+
+```html
+<body>
+	<script src="./js/qrcode.min.js"></script>
+	<!--创建二维码的按钮-->
+	<button id="submit">生成二维码</button>
+	<!-- 下载二维码按钮 -->
+	<button id="downQrcode">下载二维码</button>
+	<!--存放生成的二维码的容器-->
+	<div id="qrcode"></div>
+	<!--二次绘制的画板-->
+	<canvas id="canvas"></canvas>
+
+	<!-- 引入qrcode -->
+	<script src="./js/qrcode.min.js"></script>
+	<script>
+		// 获取按钮
+		var submit = document.getElementById('submit')
+		//下载按钮
+		var downQrcode = document.getElementById('downQrcode')
+		// 获取二维码容器
+		var codeCon = document.getElementById('qrcode')
+		// 隐藏容器
+		codeCon.style.display = 'none'
+		//二次绘制二维码的画布
+		var canvas = document.getElementById('canvas')
+		//定义要生成二维码的内容
+		var qrcodeText = 'https://www.baidu.com/'
+		// 二维码配置
+		var option = {
+			width: 150,
+			height: 150,
+			colorDark: '#000000',
+			colorLight: '#ffffff',
+			margin: 10,
+			correctLevel: QRCode.CorrectLevel.H,
+		}
+		// 创建QRCode实例对象
+		var qrcode = new QRCode(codeCon, option)
+		// 绘制二维码
+		submit.onclick = function() {
+			// 生成二维码
+			qrcode.makeCode(qrcodeText)
+			canvas.width = 200
+			canvas.height = 200
+
+			// 二维码背景图片
+			var codeBg = document.createElement('img')
+			// 获取二维码
+			var codeImg = codeCon.getElementsByTagName('img')[0]
+			//设置背景图片
+			codeBg.src = './img/avatar.jpg'
+			//背景图片加载完成后就开始二次绘制
+			codeBg.onload = function() {
+				if (canvas.getContext) {
+					//绘制流程
+					var ctx = canvas.getContext('2d')
+					ctx.fillRect(0, 0, 200, 200)
+					ctx.drawImage(this, 0, 0) //绘制背景
+					ctx.fillStyle = 'white'
+					ctx.fillRect(10, 10, 180, 180) //绘制二维码白底
+					ctx.drawImage(codeImg, 25, 25) //绘制二维码
+				}
+			}
+		}
+		// 下载二维码
+		downQrcode.onclick = function() {
+			var a = document.createElement('a')
+			a.setAttribute('href', canvas.toDataURL())
+			a.setAttribute('download', '下载二维码')
+			a.click()
+		}
+	</script>
+</body>
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/5-shang-la-jia-zai/index.md
+---
+# 上拉加载
+
+## 分析
+
+首先要考虑 html 的结构
+
+1. 一般上拉加载不会直接监听 window 的滚动事件，应该选择一个 div 作为滚动的容器，这里命名为 root
+2. 还需要在 root 中添加一个存放具体内容的 div，方便获取内容区域的整体高度，这里命名为 content
+3. 为 root 元素注册 scroll 事件，通过滚动来获取 root 元素的 scrollTop 的值，然后根据 scrollTop 的值和内容的高度来判断是否执行加载操作
+4. 主要就是以上三点，具体思路往下看
+
+## 开始封装-过程
+
+这里我使用了 class 来创建 scrollView 对象
+
+1. 首先我们需要把这个对象内可能用到的属性先给添加上去，（ps：能想到的、用到的、不会用到的全放上去就完事）
+
+```javascript
+//创建scrollView对象
+class ScrollView {
+	constructor(option) {} // 肯定是需要一个构造函数来初始化相关配置
+	option: {} // 定义一个用来存放配置信息的对象
+	root: null // 用来保存根元素
+	content: null // 用来保存内容容器元素
+	timeout: null // 保存定时器
+	scrollTop: 0 // 保存root元素的scrollTop值
+	refreshHeight: 0 // 保存content元素的高度
+	isLoading: false // 是否可以触发加载的状态 true:可以加载  false:不可以加载
+}
+```
+
+2. 还需要定义一些初始化属性的方法（有哪些属性需要初始化呢？）
+
+```javascript
+//我习惯定义一个初始化的入口函数
+init(){}
+
+//初始化root元素的方法
+initRoot(){}
+
+//初始化content的方法
+initContent(){}
+
+/*-------------------------------------*/
+//还需要定义一些可能用到的工具函数 如：
+
+//获取dom的方法
+querySelector(){}
+
+//设置scrollTop的方法
+setScrollTop(){}
+
+//获取高度的方法
+getRefreshHeight(){}
+
+//暂时就先这么多....后面应该还会有
+```
+
+3. 整个类的结构大概就这样，开始码代码啦！
+
+```javascript
+//创建scrollView对象
+class ScrollView {
+	// 构造函数，用来初始化配置，以及调用init对属性进行初始化
+	constructor(option) {
+		Object.assign(this.option, option)
+		this.init()
+	}
+	// 默认样式
+	style = {
+		width: '100%',
+		height: '300px',
+		overflowY: 'scroll',
+	}
+	// 默认配置
+	option = {
+		el: '', // 根容器绑定的元素
+		content: '', // 子容器绑定的元素
+		delay: 200, // 防抖延迟 定时器执行的时间
+		offset: 0, // 偏移量
+		loading: null, // 用来接收一个匿名函数
+		style: null, // 调用者传进来的样式
+	}
+	root = null // 根容器元素
+	content = null // 内容容器元素 所有的内容都应该放在这个容器里面
+	timeout = null // 定时器
+	scrollTop = 0 // 滚动距离
+	isLoading = false // 是否可加载
+	refreshHeight = 0 // 可刷新的高度
+
+	// 初始化
+	init() {
+		this.initRoot()
+		this.initContent()
+	}
+	// 初始化根元素
+	initRoot() {
+		this.root = this.querySelector(this.option.el)
+		Object.assign(this.style, this.option.style)
+		Object.assign(this.root.style, this.style)
+		this.root.addEventListener('scroll', this.scrollHandle(this)) // 为root元素添加滚动监听 需要传递一个匿名函数
+	}
+	// 初始化子元素
+	initContent() {
+		const el = this.option.children
+		this.content = el ? this.querySelector(el) : this.root.children[0]
+		console.dir(this.content)
+		this.setRefreshHeight()
+	}
+	// dom选择器
+	querySelector(el) {
+		return document.querySelector(el)
+	}
+	// 返回scroll事件触发的函数
+	scrollHandle(self) {
+		return function() {
+			// 一个简单的防抖
+			clearTimeout(self.timeout)
+			self.timeout = setTimeout(function() {
+				// 事件每触发一次都会重新获取scrollTop值
+				self.setScrollTop()
+				// 事件没触发一次也要重新过去content的高度
+				self.setRefreshHeight()
+				// 判断是否需要执行加载操作
+				self.isLoadingHandle()
+				// 执行loading
+				self.loading(self.option.loading)
+			}, self.option.delay)
+		}
+	}
+	// 获取root元素的scrollTop值
+	setScrollTop() {
+		this.scrollTop = this.root.scrollTop
+	}
+	// 处理是否加载
+	isLoadingHandle() {
+		const height = this.refreshHeight - this.root.offsetHeight - this.option.offset
+		if (this.scrollTop >= height) {
+			this.isLoading = true
+		} else {
+			this.isLoading = false
+		}
+	}
+	// 获取content的高度
+	setRefreshHeight() {
+		this.refreshHeight = this.content.offsetHeight
+	}
+	// 加载 传递一个回调函数
+	loading(callback) {
+		console.log('is scrolling....')
+		//如果传递进来的参数是一个函数,就执行函数
+		if (this.isLoading && callback instanceof Function) {
+			callback(this.root, this.content)
+		}
+	}
+}
+```
+
+## 使用
+
+* 在 html 中使用
+
+```html
+<div class="root">
+	<div class="content">
+		<div>...内容</div>
+	</div>
+</div>
+
+<!--引入scrollView.js-->
+<script src="./js/scrollView.js"></script>
+<script>
+	new ScrollView({
+		el: '.root',
+		content: '.content', //默认为.root内的第一个子元素
+		style: {
+			height: '500px',
+		},
+		delay: 200, //加载延迟
+		offset: 100, //滚动偏移
+		loading: function(root, content) {
+			console.log('is loading')
+			//上拉加载逻辑写在这里
+		},
+	})
+</script>
+```
+
+## 总结
+
+以上只是最简单的上拉加载的实现，还有很多问题和需要完善的地方，在写这个 demo 时，对 JavaScript 的对象了解的其实并不是很透彻，包括利用 class 创建对象的规范不是很明确，以后再回来优化...
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/6-ke-zhe-die-de-lie-biao/index.md
+---
+# 可折叠的列表
+
+## 说明
+
+使用技术：jquery + es6
+
+只需要将HTML按照指定的布局排列（可参考[HTML布局](#HTML布局)），并指定对应的配置信息即可实现列表的折叠，可用于文章，商品楼层等。本项目自动获取内容的高度，并按照布局将内容划分成多屏，每次点击展开时会自动向下追加展开，点击收起时会恢复至初始化的状态（只有一屏的状态）。
+
+注意：HTML布局不可更改，使用float布局，页面可同时存在多个布局，已提供默认的标签选择器，用户可在配置项中自定义。没有对列表进行下拉加载的处理，只是简单的`overflow：hidden`和`height`实现的隐藏，因此如果列表中的数据量过大，会存在性能问题，解决思路：第一次获取两屏的数据，然后再在每次点击展开按钮时预先获取下一屏的数据，并重新获取当前元素的数量（callback函数即为每次点击按钮的回调函数，会将当前点击数据信息返回）。更新列表状态信息：在callback函数中执行实例方法`updateCount(res)`重新获取元素的数量和可展开次数。
+
+## 源码
+
+```js
+class Collapse {
+	constructor(options) {
+		this.collapseInfo = []
+		this.options = this.mergeOptions(options)
+		const root = $(this.options.root)
+		if (!root.length) {
+			throw new Error('[.collapse-container]:root element is not found')
+		}
+		root.each((index, el) => {
+			const selector = (this.collapseInfo[index] = Object.create(null))
+			selector.root = $(el)
+			this.init(selector.root, selector)
+		})
+	}
+
+	// 合并配置项
+	mergeOptions(options) {
+		// 默认配置
+		const defaultOptions = {
+			root: '.collapse-container', //根节点元素
+			collapse: '.collapse', // 内容存放节点元素
+			section: '.section', // 内容块元素
+			touch: '.toggle-btn', // 触发按钮元素
+			gap: 0, //上或下间距
+			row: 2, //一屏多少行 必须与css布局相同
+			col: 3, //一屏多少列 必须与css布局相同
+			callback: function (res) {
+				console.log(res)
+			},
+		}
+		return Object.assign(defaultOptions, options)
+	}
+
+	/**
+	 * 初始化页面全部可折叠容器状态信息
+	 * @param {*} el 根节点元素
+	 * @param {*} selector 节点信息对象
+	 */
+	init(el, selector) {
+		selector.collapse = el.find(this.options.collapse)
+		selector.sections = el.find(this.options.section)
+		selector.touchs = el.find(this.options.touch)
+		selector.count = selector.sections.length
+		// 获取元素高度
+		const { row, col, gap } = this.options
+		selector.sHeight = selector.sections.height() + gap
+		// 设置collapse元素初始高度
+		if (selector.count <= row) {
+			selector.height = selector.sHeight
+			selector.collapse.height(selector.height)
+		} else {
+			selector.height = selector.sHeight * row
+			selector.collapse.height(selector.height)
+		}
+		// 计算可展开的次数
+		selector.step = 0
+		if (selector.count > row * col) {
+			selector.step = Math.ceil(selector.count / (row * col))
+		}
+		selector.current = 1
+		if (selector.step <= 0) {
+			selector.touch.hide()
+		}
+		// 绑定事件
+		selector.touchs.on('click', this.toggle(selector))
+	}
+	/**
+	 * 返回一个收起|折叠的函数
+	 * @param {*} selector 节点信息对象
+	 * @returns {Function} result
+	 */
+	toggle(selector) {
+		let addHeight = 0
+		const { row, col, callback } = this.options
+		return function () {
+			if (selector.current < selector.step) {
+				const overage = selector.count - selector.current * row * col
+				// 剩余的section不够一屏时
+				if (overage <= col * row) {
+					addHeight = Math.ceil(overage / col) * selector.sHeight
+				} else {
+					addHeight = row * selector.sHeight
+				}
+				selector.current++
+				// 增加高度
+				selector.height = selector.height + addHeight
+				selector.collapse.height(selector.height)
+			} else {
+				selector.current = 1
+				// 恢复初始高度
+				if (selector.count <= col) {
+					selector.height = selector.sHeight
+					selector.collapse.height(selector.height)
+				} else {
+					selector.height = selector.sHeight * row
+					selector.collapse.height(selector.height)
+				}
+			}
+			// 执行回调
+			callback(selector)
+		}
+	}
+    /**
+	 * 更新列表状态信息
+	 * @param {*} selector 需要更新的collapseInfo
+	 */
+	updateCount(selector) {
+		const { section, row, col } = this.options
+		selector.sections = selector.root.find(section)
+		selector.count = selector.sections.length
+		if (selector.count > row * col) {
+			selector.step = Math.ceil(selector.count / (row * col))
+		}else {
+            selector.step = 0
+        }
+	}
+}
+```
+
+## HTML布局
+
+```html
+<div class="floor">
+	<div class="collapse-container clearfix">
+		<div class="clearfix collapse">
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+		</div>
+		<div class="toggle-btn">展开</div>
+	</div>
+</div>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+$(function () {
+	new Collapse({
+		gap: 24,
+		callback: function (res) {
+			console.log(res)
+		},
+	})
+})
+</script>
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/7-excel-biao-ge-jie-xi/index.md
+---
+# Excel表格解析
+
+## 说明
+
+使用技术：xlsx.js
+
+基于webpack模块化开发，利用`xlsx.js`的`utils.sheet_to_json()`方法可以将工作表转为以第一行为key的json数组对象，然后通过`formatSheetsJsonToArray()`方法将json对象处理为后端接口可用数组对象。`xlsx.js`也提供了很多其它对Excel文件操作的方法。
+
+链接：https://github.com/SheetJS/sheetjs
+
+npm安装
+
+```
+npm i xlsx -S
+```
+
+## 代码
+
+formatSheetsJsonToArray.js
+
+```js
+const keysMap = {
+	name: '姓名',
+	age: '年龄',
+	grade: '年级',
+	other: '其他',
+}
+
+/**
+ * 将工作表JSON对象数组为合法的数组
+ * @param {*} sheetJson 工作表JSON对象数组
+ * @returns 工作表数据数组
+ */
+const formatSheetsJsonToArray = function (sheetJson) {
+	const sheetArrayList = []
+	for (const key in sheetJson) {
+		sheetArrayList[key] = transformObjectKeys(sheetJson[key])
+	}
+	return sheetArrayList
+}
+
+/**
+ * 将对象中的key按照keysMap中的关系进行转换
+ * @param {object} obj 需要被处理对象
+ */
+const transformObjectKeys = function (obj) {
+	let newObj = Object.create(null)
+	for (const key in keysMap) {
+		newObj[key] = obj[keysMap[key]] || ''
+	}
+	return newObj
+}
+
+export default formatSheetsJsonToArray
+```
+
+index.js
+
+```js
+import { read, utils } from 'xlsx'
+import formatSheetsJsonToArray from './formatSheetsToArray'
+
+const handleFile = function (e) {
+	let files = e.target.files,
+		f = files[0]
+	let reader = new FileReader()
+	reader.onload = function (e) {
+		let workbook = read(e.target.result)
+		doSomething(workbook)
+	}
+	reader.readAsArrayBuffer(f)
+}
+
+/**
+ * 读取工作表成功后要做的事
+ * @param {*} workbook 工作表对象
+ */
+const doSomething = function (workbook) {
+	let sheet = null
+    const allSheetArrayList = []
+	for (const key in workbook.Sheets) {
+		sheet = workbook.Sheets[key]
+		if (!sheet['!ref']) continue
+		const json = utils.sheet_to_json(workbook.Sheets[key])
+		console.log(utils.sheet_to_html(workbook.Sheets[key]))
+		const sheetArrayList = formatSheetsJsonToArray(json)
+        allSheetArrayList.push(...sheetArrayList)
+	}
+    // TODO获取到数组对象后要做的事
+    // ...
+    console.log(allSheetArrayList)
+}
+
+const input_dom_element = document.querySelector('#input_dom_element')
+input_dom_element.addEventListener('change', handleFile, false)
+```
+
+index.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+	</head>
+	<body>
+		<input type="file" name="file" id="input_dom_element" />
+		<script src="/assets/bundle.js"></script>
+	</body>
+</html>
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/1-html-ji-chu-ru-men/index.md
+---
+# HTML 基础入门
+
+HTML（HyperText Markup Language）是网页的骨架，用标签描述内容的结构与含义。浏览器加载 HTML 后结合 CSS 与 JavaScript 渲染出完整页面。
+
+## 文档骨架
+
+一个最小 HTML 文档由 `<!DOCTYPE html>` 声明和 `<html>` 根元素构成：
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>页面标题</title>
+  </head>
+  <body>
+    <h1>标题</h1>
+    <p>段落文本</p>
+  </body>
+</html>
+```
+
+* `head`：不显示的元信息，包括字符集、视口、标题、样式与脚本引用。
+* `body`：页面可见内容。
+* `meta` 标签使用自闭合写法 `<meta ... />`（XML 风格，HTML5 中也可省略斜杠）。
+
+## 常用标签
+
+### 标题与段落
+
+```html
+<h1>一级标题</h1>
+<h2>二级标题</h2>  <!-- 直到 h6，语义上有层级，不要跳级 -->
+<p>段落文本，浏览器会自动换行。</p>
+```
+
+### 文本格式化
+
+```html
+<strong>加粗强调</strong>、<em>斜体强调</em>、<br />换行、<hr />水平分隔线
+```
+
+### 列表
+
+```html
+<ul>          <!-- 无序列表 -->
+  <li>项目一</li>
+  <li>项目二</li>
+</ul>
+
+<ol>          <!-- 有序列表 -->
+  <li>第一步</li>
+  <li>第二步</li>
+</ol>
+```
+
+### 链接与图片
+
+```html
+<a href="https://example.com" target="_blank" rel="noopener">外部链接</a>
+<a href="#section1">页内锚点</a>
+<img src="./images/logo.png" alt="Logo 描述文本" width="200" />
+```
+
+`alt` 属性在图片加载失败时显示，也被屏幕阅读器朗读，务必填写。
+
+### 表格
+
+```html
+<table>
+  <thead>
+    <tr><th>姓名</th><th>分数</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>张三</td><td>90</td></tr>
+    <tr><td>李四</td><td>85</td></tr>
+  </tbody>
+</table>
+```
+
+`thead` / `tbody` / `th` 提供语义；`colspan` / `rowspan` 可合并单元格。
+
+## 语义化标签
+
+HTML5 提供有明确含义的块级容器，便于搜索引擎与辅助工具理解页面结构：
+
+```html
+<header>页面头部</header>
+<nav>导航区</nav>
+<main>
+  <article>
+    <section>独立章节</section>
+  </article>
+</main>
+<aside>侧栏/补充内容</aside>
+<footer>页面底部</footer>
+```
+
+优先使用语义化标签，而不是所有区域都用 `div`。语义化带来的好处：可读性、SEO、无障碍（屏幕阅读器）。
+
+## 块级与行内元素
+
+* **块级元素**：独占一行，宽度占满父容器（如 `div`、`p`、`h1-h6`、`ul`、`table`）。
+* **行内元素**：不换行，宽度由内容决定（如 `span`、`a`、`strong`、`em`、`img`）。
+
+`display` 可在 CSS 中改变元素的盒类型，但语义不变。
+
+## 属性
+
+标签可携带属性，格式为 `属性名="值"`：
+
+| 属性 | 作用 |
+|:-----|:-----|
+| `id` | 页面内唯一标识，用于锚点定位与 JS 选取 |
+| `class` | 样式类名，可重复，CSS 按类选择 |
+| `style` | 内联样式，优先级最高，尽量避免 |
+| `data-*` | 自定义数据属性，供 JS 读取（`dataset`） |
+| `title` | 悬停提示文本（少数标签为其它含义，如 `<title>` 是文档标题） |
+
+## HTML5 常用新增
+
+```html
+<audio src="music.mp3" controls></audio>
+<video src="movie.mp4" controls poster="cover.png"></video>
+<details>
+  <summary>点击展开</summary>
+  折叠起来的详细内容
+</details>
+```
+
+## 注释与字符实体
+
+```html
+<!-- 这是注释，浏览器不显示 -->
+<p>小于号 &lt;、大于号 &gt;、与号 &amp;、版权符 &copy;</p>
+```
+
+特殊字符使用实体名称或编号转义，避免与标签语法冲突。
+
+## 用 DevTools 初见 HTML
+
+按 `F12` 打开浏览器开发者工具，在 **Elements 面板**中：元素结构树、选中元素看盒模型与样式、双击直接改内容即时预览。这是前端调试的第一站。
+
+---
+
+---
+url: /my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/2-html-biao-dan/index.md
+---
+# HTML 表单
+
+表单用于收集用户输入并提交给后端，是网页与用户交互的核心手段。
+
+## form 元素
+
+```html
+<form action="/api/login" method="POST">
+  <!-- 表单控件 -->
+</form>
+```
+
+* `action`：提交到的服务器地址。
+* `method`：`GET`（参数在 URL 中）或 `POST`（参数在请求体里）。
+* 表单按钮点击后会执行浏览器内置的提交逻辑；也可以拦截后用 `FormData` 异步提交（见实战篇的图片上传）。
+
+## input 类型
+
+`input` 通过 `type` 属性决定形态：
+
+| type | 说明 |
+|:-----|:-----|
+| `text` | 单行文本（默认） |
+| `password` | 密码框，内容打点显示 |
+| `radio` | 单选项，同一组用相同 `name` |
+| `checkbox` | 多选框 |
+| `file` | 文件选择 |
+| `number` | 数字输入，带上下箭头 |
+| `date` / `time` | 日期/时间选择 |
+| `range` | 滑块 |
+| `hidden` | 隐藏字段，随表单提交但不显示 |
+| `search` / `email` / `url` | 带语义的文本输入，移动端会调起对应键盘 |
+
+```html
+<input type="text" name="username" placeholder="请输入用户名" required />
+<input type="password" name="password" minlength="6" />
+<input type="radio" name="gender" value="male" /> 男
+<input type="radio" name="gender" value="female" /> 女
+<input type="checkbox" name="hobby" value="coding" /> 编程
+<input type="file" name="avatar" accept="image/*" />
+```
+
+### 常用属性
+
+| 属性 | 作用 |
+|:-----|:-----|
+| `name` | 提交时的字段名，**必填**，否则字段不会被提交 |
+| `value` | 默认值；checkbox/radio 提交的是 `value` |
+| `placeholder` | 占位提示文本（不随表单提交） |
+| `required` | 必填校验 |
+| `readonly` | 只读，仍随表单提交 |
+| `disabled` | 禁用，不随表单提交 |
+| `maxlength` / `min` / `max` | 长度/数值范围限制 |
+
+## select 与 textarea
+
+```html
+<select name="city">
+  <option value="beijing">北京</option>
+  <option value="shanghai" selected>上海</option>
+</select>
+
+<textarea name="intro" rows="4" cols="30">默认内容</textarea>
+```
+
+`select` 的 `selected` 指定默认选项；`textarea` 的内容写在标签中间，而非 `value` 属性。
+
+## label 关联
+
+`label` 将说明文字与控件绑定：点击文字即可聚焦/选中控件，也方便屏幕阅读器。
+
+```html
+<label for="email">邮箱</label>
+<input id="email" type="email" name="email" />
+
+<!-- 写法二：把控件包在 label 里，无需 id/for -->
+<label>手机号 <input type="tel" name="phone" /></label>
+```
+
+## 分组：fieldset 与 legend
+
+```html
+<fieldset>
+  <legend>联系方式</legend>
+  <label>邮箱 <input type="email" name="email" /></label>
+  <label>电话 <input type="tel" name="phone" /></label>
+</fieldset>
+```
+
+## 原生表单校验
+
+浏览器内置校验规则，无需额外 JS：
+
+* `required`：不能为空。
+* `type="email"` 等：格式校验。
+* `pattern="\d{11}"`：正则校验。
+* `min` / `max` / `minlength` / `maxlength`：数值/长度范围。
+
+提交时若校验失败，浏览器会阻止提交并提示。用 JS 可监听 `invalid` 事件自定义提示文案，或用 `form.checkValidity()` 主动触发校验。
+
+## 完整示例：登录表单
+
+```html
+<form action="/api/login" method="POST" novalidate>
+  <fieldset>
+    <legend>登录</legend>
+    <label>用户名 <input type="text" name="username" required autofocus /></label>
+    <label>密码 <input type="password" name="password" required minlength="6" /></label>
+  </fieldset>
+  <button type="submit">登录</button>
+</form>
+```
+
+* `novalidate`：临时关闭原生校验，便于先用 JS 校验。
+* `<button type="submit">` 触发提交；`type="button"` 的按钮不提交。
+
+## 提交方式小结
+
+1. **原生提交**：点击 submit，浏览器按 `action`/`method` 跳转或刷新页面。
+2. **异步提交**（常用）：`e.preventDefault()` 拦截默认行为，用 `new FormData(form)` 或手动取值，配合 `fetch`/ajax 无刷新提交（可参考第四阶段「图片上传」相关笔记）。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/3-css-ji-chu-yu-he-mo-xing/index.md
+---
+# CSS 基础与盒模型
+
+CSS（Cascading Style Sheets）负责网页的外观与布局。理解「选择器 → 声明」的规则、优先级与盒模型，是写好样式的前提。
+
+## 引入方式与优先级
+
+| 引入方式 | 写法 | 优先级 |
+|:---------|:-----|:-------|
+| 内联样式 | `<div style="color: red">` | 最高（除非 `!important`） |
+| 内部样式 | `<head>` 中的 `<style>` | 中 |
+| 外部样式 | `<link rel="stylesheet" href="app.css">` | 低 |
+| `@import` | CSS 内引入其它 CSS | 最低（已不推荐） |
+
+```css
+/* 外部样式表 app.css */
+p {
+  color: #333;
+  font-size: 14px;
+}
+```
+
+选择器优先级计算：**内联 > ID > 类/伪类/属性 > 标签/伪元素**。权重按 (a, b, c) 累加：ID 记 (1,0,0)，类记 (0,1,0)，标签记 (0,0,1)。`!important` 覆盖一切，尽量少用。
+
+## 常用选择器
+
+```css
+/* 标签 / 类 / ID */
+p { } .nav { } #app { }
+
+/* 后代、子代、相邻兄弟、通用兄弟 */
+div p    /* div 内所有 p（任意层级） */
+div > p  /* div 的直属 p */
+h1 + p   /* h1 后面紧邻的 p */
+h1 ~ p   /* h1 后面所有 p */
+
+/* 属性 / 伪类 / 伪元素 */
+input[type="text"] { }      /* 属性选择器 */
+a:hover { } input:focus { } /* 状态伪类 */
+li:first-child { } li:nth-child(2n) { }  /* 结构伪类 */
+p::before { } p::after { }  /* 伪元素，常配合 content 做图标/装饰 */
+```
+
+## 盒模型
+
+每个元素都是一个矩形盒子，从内到外依次是 **content → padding → border → margin**（内容的宽高）。
+
+```
+┌────────────── margin ──────────────┐
+│  ┌────────── border ──────────┐    │
+│  │  ┌────── padding ──────┐   │    │
+│  │  │   content 内容区    │   │    │
+│  │  └─────────────────────┘   │    │
+│  └────────────────────────────┘    │
+└────────────────────────────────────┘
+```
+
+```css
+.box {
+  width: 200px;             /* content 宽度 */
+  padding: 10px;            /* 内边距，内容与边框的间距 */
+  border: 1px solid #333;   /* 边框，占用盒子尺寸 */
+  margin: 20px;             /* 外边距，与其他盒子的间距 */
+  box-sizing: border-box;   /* 见下 */
+}
+```
+
+### box-sizing
+
+* `content-box`（默认）：`width` 只指内容区，padding/border 会叠加，实际占位更大。
+* `border-box`：`width` 包含 padding 和 border，总宽度即 `width`，布局更好预测。
+
+实际开发几乎都设 `box-sizing: border-box`：
+
+```css
+* {
+  box-sizing: border-box;
+}
+```
+
+`margin` 不属于盒子尺寸的一部分，始终在 border 之外。
+
+## 背景与渐变
+
+```css
+.card {
+  background-color: #f5f5f5;
+  background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: cover;   /* 背景图等比例铺满 */
+  background-position: center;
+}
+```
+
+## 常见单位
+
+| 单位 | 说明 |
+|:-----|:-----|
+| `px` | 像素，固定尺寸 |
+| `em` | 相对 **父元素** 字号 |
+| `rem` | 相对 **根元素（html）** 字号，常用于全局字号体系 |
+| `%` | 相对父容器的百分比（宽度/高度含义不同） |
+| `vw` / `vh` | 相对视口宽度/高度 |
+| `line-height: 1.5` | 无单位，相对自身字号 |
+
+## 层叠、继承与重置
+
+* **层叠**：多条规则命中同一元素时，按「重要程度 + 优先级 + 书写顺序」裁决，后者覆盖前者。
+* **继承**：颜色、字号等文本类属性会继承给子元素；盒模型相关属性（margin/padding/border 等）不继承。
+* **重置**：浏览器默认样式各不相同，可用 `* { margin: 0; padding: 0 }` 或 CSS Reset / Preflight 抹平差异，再按需设值。
+
+## 与 SCSS 的关系
+
+CSS 本身不带变量、嵌套、mixin。SCSS 是预处理器，编译后输出普通 CSS，能大幅提升维护性。第四阶段 Vite 笔记会介绍如何集成；`1.6-CSS常用样式` 里有可直接复用的 SCSS 片段。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/4-css-bu-ju-flex-yu-grid/index.md
+---
+# CSS 布局：flex 与 grid
+
+现代布局主要用 Flexbox 与 Grid 两套体系。**Flex 擅长一维布局**（一行或一列内对齐），**Grid 擅长二维布局**（行列同时控制）。先用 flex 解决大多数排版，复杂网格再上 grid。
+
+## flex 布局基础
+
+给容器设 `display: flex`，其直接子元素沿主轴排列：
+
+```css
+.nav {
+  display: flex;
+  justify-content: space-between; /* 主轴对齐：flex-start/center/space-between/space-around */
+  align-items: center;            /* 交叉轴对齐：flex-start/center/stretch/baseline */
+  flex-direction: row;            /* 主轴方向：row(默认)/column/row-reverse/column-reverse */
+  gap: 12px;                      /* 子元素间距 */
+}
+```
+
+* **主轴**：`flex-direction` 决定，默认水平。
+* **交叉轴**：与主轴垂直。
+* `flex-wrap: wrap`：允许子项换行。
+
+### 子项的伸缩
+
+```css
+.item {
+  flex: 1;            /* 简写 = flex-grow:1 flex-shrink:1 flex-basis:0% */
+}
+.item-fixed {
+  flex: 0 0 200px;    /* 不伸缩，固定 200px */
+}
+```
+
+* `flex-grow`：剩余空间如何按比例分配（占满容器的关键）。
+* `flex-shrink`：空间不足时如何收缩。
+* `flex-basis`：分配剩余空间前的基准尺寸。
+
+### 经典布局示例
+
+**水平垂直居中：**
+
+```css
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;   /* 撑满视口高度 */
+}
+```
+
+**等分卡片：**
+
+```css
+.cards {
+  display: flex;
+  gap: 16px;
+}
+.cards > .card {
+  flex: 1;   /* 每张卡片均分剩余空间并等宽 */
+}
+```
+
+**两栏：侧栏固定 + 主内容自适应**
+
+```css
+.layout {
+  display: flex;
+}
+.sidebar {
+  flex: 0 0 240px;
+}
+.main {
+  flex: 1;   /* 吃掉剩余宽度 */
+}
+```
+
+## grid 布局
+
+```css
+.grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 1fr;  /* 三列：固定 + 两份弹性 */
+  grid-template-rows: auto 300px;
+  gap: 16px;
+}
+```
+
+* `fr`：按比例分配剩余空间，`1fr 1fr` = 两等分。
+* `repeat(3, 1fr)`：等价于 `1fr 1fr 1fr`。
+* `gap` / `row-gap` / `column-gap`：间距。
+* `grid-template-areas`：用命名区域排版，直观描述整体布局。
+
+```css
+.page {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-areas:
+    "header header"
+    "sidebar main"
+    "footer footer";
+}
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }
+```
+
+### 元素如何占位
+
+```css
+.item {
+  grid-column: 1 / 3;   /* 从第1条列线到第3条列线，占据两列 */
+  grid-row: 2 / 4;      /* 占据两行 */
+}
+/* 等价简写 spanning：grid-column: span 2; */
+```
+
+## 定位：position
+
+| 取值 | 说明 |
+|:-----|:-----|
+| `static` | 默认，正常文档流 |
+| `relative` | 相对自身原位置偏移，不脱离文档流 |
+| `absolute` | 相对最近的非 static 祖先定位，脱离文档流 |
+| `fixed` | 相对视口定位，脱离文档流（如悬浮按钮、吸顶导航） |
+| `sticky` | 滚动到阈值前 relative、之后 fixed（吸顶） |
+
+`relative` + `absolute` 是最常用的组合：父容器 `relative` 做参照系，内部元素 `absolute` 精确摆放。
+
+## flex 还是 grid？
+
+* 一行/一列内的对齐、均分、居中 → **flex**。
+* 二维网格、需要跨行列占位 → **grid**。
+* 两者可嵌套混用，没有冲突。
+
+选择器的优先级、盒模型细节详见 `1.3-CSS基础与盒模型`，响应式适配见 `1.5-响应式与动画`。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/5-xiang-ying-shi-yu-dong-hua/index.md
+---
+# 响应式与动画
+
+响应式让网站在不同屏幕宽度下都可用；动画让交互更生动。两者都是现代前端的基础能力。
+
+## 响应式核心思路
+
+* **流式布局**：容器用百分比/弹性尺寸代替固定像素，内容随宽度自然流动。
+* **弹性图片**：`img { max-width: 100%; height: auto; }` 防止图片撑破容器。
+* **媒体查询**：按视口宽度切换样式。
+
+## 媒体查询与断点
+
+```css
+/* 视口 ≥ 768px 时生效（tablet 及以上） */
+@media (min-width: 768px) {
+  .cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 视口 ≤ 480px 时生效（手机） */
+@media (max-width: 480px) {
+  .nav {
+    flex-direction: column;
+  }
+}
+```
+
+常用断点参考：`480px`（手机）→ `768px`（平板竖屏）→ `1024px`（平板横屏/小桌面）→ `1280px`（桌面）。断点不是硬性标准，按内容实际换行需求定。
+
+### 移动优先 vs 桌面优先
+
+* **移动优先**：默认样式面向手机，再用 `min-width` 逐级增强。代码更简洁、手机用户优先。
+* **桌面优先**：默认桌面样式，用 `max-width` 降级适配。适合后台管理类系统。
+
+## 自适应单位
+
+* `rem`：基于根元素字号，整站字号体系改 `html { font-size }` 一处即可整体缩放。
+* `vw` / `vh`：基于视口，常用于大屏占位与沉浸式字体。
+* `clamp(min, 理想值, max)`：区间内自适应，无需媒体查询：
+
+```css
+.title {
+  font-size: clamp(20px, 4vw, 40px);  /* 最小20px，随视口浮动，最大40px */
+}
+```
+
+## 过渡 transition
+
+`transition` 让属性变化平滑过渡，需要变化前后有明确值：
+
+```css
+.btn {
+  background: #333;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.btn:hover {
+  background: #0066ff;
+  transform: translateY(-2px);
+}
+```
+
+* 可过渡：颜色、尺寸、`transform`、`opacity` 等（连续数值）。
+* `transition: 属性 时长 缓动函数 延迟`，多个属性用逗号分隔。
+* 优化建议：尽量过渡 `transform` 与 `opacity`，它们不引发重排（reflow）。
+
+## 动画 animation 与 @keyframes
+
+```css
+@keyframes bounce {
+  from { transform: translateY(0); }
+  50%  { transform: translateY(-12px); }
+  to   { transform: translateY(0); }
+}
+
+.loading-dot {
+  animation: bounce 0.6s ease-in-out infinite;
+}
+```
+
+`animation` 简写：`名称 时长 缓动 延迟 次数(无限用 infinite)`。多个动画可用 `keyframes` 分帧控制。
+
+### 示例：CSS 加载动画
+
+```html
+<div class="spinner"></div>
+```
+
+```css
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #0066ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+```
+
+## transform 变换
+
+| 函数 | 作用 |
+|:-----|:-----|
+| `translate(x, y)` | 平移 |
+| `scale(n)` | 缩放 |
+| `rotate(deg)` | 旋转 |
+| `skew(deg)` | 斜切 |
+
+变换不会改变元素占位，配合 `transition` 就能做出平滑的交互动效。
+
+## 无障碍与性能要点
+
+* 动效尊重系统偏好：`@media (prefers-reduced-motion: reduce)` 时降级为无动画或极简动画。
+* 避免对会触发重排的属性（width/height/margin）做高频动画，改用 `transform`/`opacity`。
+* 动画元素尽量加 `will-change` 或让 GPU 合成，避免页面卡顿。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/6-css-chang-yong-yang-shi/index.md
+---
+# 日常开发 CSS 样式类
+
+## 文本超出显示省略号
+
+```scss
+.ellipsis {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 1; // 这里控制几行显示省略号
+	-webkit-box-orient: vertical;
+}
+/* scss中可以用mixin来扩展 */
+@mixin ellipsis($line: 1) {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: $line;
+	-webkit-box-orient: vertical;
+}
+```
+
+## 三角形
+
+```scss
+.triangle {
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 0 25px 40px 25px;
+	border-color: transparent transparent red transparent;
+}
+/* mixin混入 */
+@use 'sass:meta'; // 注意这一句不要忘了
+@mixin triangle($width, $rest...) {
+	display: inline-block;
+	width: 0;
+	height: 0;
+	vertical-align: middle;
+	border: $width solid transparent;
+	@each $key, $color in meta.keywords($rest) {
+		border-#{$key}-color: $color;
+	}
+}
+.triangle {
+	@include triangle(15px, $top: red);
+}
+```
+
+## 滚动条
+
+```css
+::-webkit-scrollbar    //滚动条整体部分
+::-webkit-scrollbar-button   //滚动条两端的按钮
+::-webkit-scrollbar-track   // 外层轨道
+::-webkit-scrollbar-track-piece    //内层轨道，滚动条中间部分（除去）
+::-webkit-scrollbar-thumb //滚动条里面可以拖动的那个
+::-webkit-scrollbar-corner   //边角
+::-webkit-resizer   ///定义右下角拖动块的样式
+/*定义滚动条高宽及背景
+ 高宽分别对应横竖滚动条的尺寸*/
+::-webkit-scrollbar {
+	width: 16px;
+	height: 16px;
+	background-color: #f5f5f5;
+}
+/*定义滚动条轨道
+ 内阴影+圆角*/
+::-webkit-scrollbar-track {
+	-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+	border-radius: 10px;
+	background-color: #f5f5f5;
+}
+/*定义滑块
+ 内阴影+圆角*/
+::-webkit-scrollbar-thumb {
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+	background-color: #555;
+}
+```
 
 ---
 

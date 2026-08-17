@@ -1,0 +1,172 @@
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/6-ke-zhe-die-de-lie-biao/index.md
+---
+# 可折叠的列表
+
+## 说明
+
+使用技术：jquery + es6
+
+只需要将HTML按照指定的布局排列（可参考[HTML布局](#HTML布局)），并指定对应的配置信息即可实现列表的折叠，可用于文章，商品楼层等。本项目自动获取内容的高度，并按照布局将内容划分成多屏，每次点击展开时会自动向下追加展开，点击收起时会恢复至初始化的状态（只有一屏的状态）。
+
+注意：HTML布局不可更改，使用float布局，页面可同时存在多个布局，已提供默认的标签选择器，用户可在配置项中自定义。没有对列表进行下拉加载的处理，只是简单的`overflow：hidden`和`height`实现的隐藏，因此如果列表中的数据量过大，会存在性能问题，解决思路：第一次获取两屏的数据，然后再在每次点击展开按钮时预先获取下一屏的数据，并重新获取当前元素的数量（callback函数即为每次点击按钮的回调函数，会将当前点击数据信息返回）。更新列表状态信息：在callback函数中执行实例方法`updateCount(res)`重新获取元素的数量和可展开次数。
+
+## 源码
+
+```js
+class Collapse {
+	constructor(options) {
+		this.collapseInfo = []
+		this.options = this.mergeOptions(options)
+		const root = $(this.options.root)
+		if (!root.length) {
+			throw new Error('[.collapse-container]:root element is not found')
+		}
+		root.each((index, el) => {
+			const selector = (this.collapseInfo[index] = Object.create(null))
+			selector.root = $(el)
+			this.init(selector.root, selector)
+		})
+	}
+
+	// 合并配置项
+	mergeOptions(options) {
+		// 默认配置
+		const defaultOptions = {
+			root: '.collapse-container', //根节点元素
+			collapse: '.collapse', // 内容存放节点元素
+			section: '.section', // 内容块元素
+			touch: '.toggle-btn', // 触发按钮元素
+			gap: 0, //上或下间距
+			row: 2, //一屏多少行 必须与css布局相同
+			col: 3, //一屏多少列 必须与css布局相同
+			callback: function (res) {
+				console.log(res)
+			},
+		}
+		return Object.assign(defaultOptions, options)
+	}
+
+	/**
+	 * 初始化页面全部可折叠容器状态信息
+	 * @param {*} el 根节点元素
+	 * @param {*} selector 节点信息对象
+	 */
+	init(el, selector) {
+		selector.collapse = el.find(this.options.collapse)
+		selector.sections = el.find(this.options.section)
+		selector.touchs = el.find(this.options.touch)
+		selector.count = selector.sections.length
+		// 获取元素高度
+		const { row, col, gap } = this.options
+		selector.sHeight = selector.sections.height() + gap
+		// 设置collapse元素初始高度
+		if (selector.count <= row) {
+			selector.height = selector.sHeight
+			selector.collapse.height(selector.height)
+		} else {
+			selector.height = selector.sHeight * row
+			selector.collapse.height(selector.height)
+		}
+		// 计算可展开的次数
+		selector.step = 0
+		if (selector.count > row * col) {
+			selector.step = Math.ceil(selector.count / (row * col))
+		}
+		selector.current = 1
+		if (selector.step <= 0) {
+			selector.touch.hide()
+		}
+		// 绑定事件
+		selector.touchs.on('click', this.toggle(selector))
+	}
+	/**
+	 * 返回一个收起|折叠的函数
+	 * @param {*} selector 节点信息对象
+	 * @returns {Function} result
+	 */
+	toggle(selector) {
+		let addHeight = 0
+		const { row, col, callback } = this.options
+		return function () {
+			if (selector.current < selector.step) {
+				const overage = selector.count - selector.current * row * col
+				// 剩余的section不够一屏时
+				if (overage <= col * row) {
+					addHeight = Math.ceil(overage / col) * selector.sHeight
+				} else {
+					addHeight = row * selector.sHeight
+				}
+				selector.current++
+				// 增加高度
+				selector.height = selector.height + addHeight
+				selector.collapse.height(selector.height)
+			} else {
+				selector.current = 1
+				// 恢复初始高度
+				if (selector.count <= col) {
+					selector.height = selector.sHeight
+					selector.collapse.height(selector.height)
+				} else {
+					selector.height = selector.sHeight * row
+					selector.collapse.height(selector.height)
+				}
+			}
+			// 执行回调
+			callback(selector)
+		}
+	}
+    /**
+	 * 更新列表状态信息
+	 * @param {*} selector 需要更新的collapseInfo
+	 */
+	updateCount(selector) {
+		const { section, row, col } = this.options
+		selector.sections = selector.root.find(section)
+		selector.count = selector.sections.length
+		if (selector.count > row * col) {
+			selector.step = Math.ceil(selector.count / (row * col))
+		}else {
+            selector.step = 0
+        }
+	}
+}
+```
+
+## HTML布局
+
+```html
+<div class="floor">
+	<div class="collapse-container clearfix">
+		<div class="clearfix collapse">
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+			<div class="section"></div>
+		</div>
+		<div class="toggle-btn">展开</div>
+	</div>
+</div>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+$(function () {
+	new Collapse({
+		gap: 24,
+		callback: function (res) {
+			console.log(res)
+		},
+	})
+})
+</script>
+```
