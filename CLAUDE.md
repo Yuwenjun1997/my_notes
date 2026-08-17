@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-个人开发笔记网站（"小鱼开发笔记"），基于 **VuePress 2**（`2.0.0-rc.30`，Vue 3 + Vite 8）的静态文档站。笔记内容全部是中文，按"主题 → 子主题 → 编号 Markdown 文件"组织。部署到 GitHub Pages，仓库名为 `my_notes`。
+个人知识库网站（"小鱼知识库"），基于 **VuePress 2**（`2.0.0-rc.30`，Vue 3 + Vite 8）的静态文档站。笔记内容全部是中文，按"主题 → 子主题 → 编号 Markdown 文件"组织，定位为技术知识沉淀与系统化学习路线（前端、Java、Python、Linux、LangChain）。部署到 GitHub Pages，仓库名为 `my_notes`。
 
 ## Commands
 

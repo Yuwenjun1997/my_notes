@@ -28,8 +28,8 @@ const sfcFs = {
 export default defineUserConfig({
   lang: 'zh-CN',
   base: '/my_notes/',
-  title: '小鱼开发笔记',
-  description: '开发中使用的技术及参考',
+  title: '小鱼知识库',
+  description: '技术知识与学习路线',
   hostname: 'https://yuwenjun1997.github.io',
   head: [['link', { rel: 'icon', href: '/my_notes/cyberpunk/logo-fish.svg' }]],
   bundler: viteBundler({
