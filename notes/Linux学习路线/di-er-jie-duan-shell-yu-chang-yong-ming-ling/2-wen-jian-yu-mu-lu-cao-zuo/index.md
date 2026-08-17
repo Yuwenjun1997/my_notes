@@ -249,6 +249,100 @@ rsync -avP --exclude='node_modules' --exclude='.git' \
 
 ***
 
+## 五、进阶技巧与常见坑
+
+### 5.1 find 高效处理：-exec、-delete 与 xargs
+
+```bash
+# 三种"找到后处理"的方式
+find . -name "*.tmp" -delete                      # 直接删除（最快）
+find . -name "*.log" -exec rm {} \;               # 每个文件起一个 rm
+find . -name "*.log" -exec rm {} +                # ⭐ 合并参数一次处理（比 \; 高效）
+find . -name "*.log" | xargs rm                   # 通过 xargs 传参
+
+# ⭐ 文件名含空格/特殊字符时，必须用 NUL 分隔防拆分
+find . -name "*.log" -print0 | xargs -0 rm        # -print0 与 -0 配套使用
+find . -name "*.log" -print0 | xargs -0 grep -l "ERROR"
+
+# 批量重命名实战
+find . -name "*.txt" -exec mv {} {}.bak \;        # 全部加 .bak 后缀
+find . -name "*.txt" -print0 | xargs -0 -I{} mv {} {}.md   # 改成 .md
+```
+
+> ⚠️ **空格陷阱**：`find ... | xargs rm` 遇到文件名含空格会被拆成多个参数，产生误删风险。**生产环境批量删除务必 `-print0 | xargs -0`**。xargs 的更多选项（`-n`/`-P`/`-d`）见 **2.3 §五**。
+
+### 5.2 glob 与 find 的差异、特殊文件名的坑
+
+```bash
+# glob（通配符）由 Shell 展开，默认只匹配当前目录
+ls *.log                    # 只匹配当前目录的 .log
+shopt -s globstar           # 开启后 ** 可递归（bash 4+）
+
+# find 更强大：递归 + 按条件组合
+find . -name "*.log"        # 递归查找
+
+# 以 - 开头的文件
+rm -- -file.txt             # ⭐ -- 告诉命令"后面是文件名，不是选项"
+ls ./-file.txt              # 或用 ./ 前缀规避
+
+# ls -a 与 ls -d .* 的区别
+ls -a                       # 显示 . 和 .. 及所有隐藏文件
+ls -d .*                    # 只显示隐藏文件（含 . 和 ..）
+```
+
+### 5.3 tar 进阶：排除、校验与流式备份
+
+```bash
+# 排除指定路径
+tar -czvf backup.tar.gz \
+    --exclude='node_modules' \
+    --exclude='.git' \
+    --exclude='*.log' \
+    ~/projects/
+
+# 从文件读排除规则（-X）
+printf 'node_modules\n*.log\n' > exclude.txt
+tar -czvf backup.tar.gz -X exclude.txt ~/projects/
+
+# 校验归档完整性
+tar -tvf backup.tar.gz              # 查看内容列表
+gzip -t backup.tar.gz               # ⭐ 校验 gzip 压缩包完整性
+
+# 流式远程备份（不落地中间文件）⭐
+tar czf - ~/projects/ | ssh user@host 'cat > /backup/projects.tar.gz'
+tar czf - ~/projects/ | ssh user@host 'tar xzf - -C /remote/dir/'
+```
+
+### 5.4 rsync 增量备份：--link-dest
+
+```bash
+# ⭐ 硬链接增量备份：每次"全量"，但未变化的文件复用上次的硬链接，不占空间
+rsync -av --link-dest=/backup/2026-08-15/ ~/projects/ /backup/2026-08-16/
+
+# 演练：只列出会传输的文件，不实际传输
+rsync -avn /source/ /dest/          # -n = --dry-run
+rsync -av --list-only /source/ /dest/
+```
+
+> 💡 `--link-dest` 是"时间点备份"（snapshot）的经典做法：每天一份完整目录树，只占一份实际空间，还能随时回滚到任一天。改坏了文件直接 `cp --reflink` 或从备份目录取回。
+
+### 5.5 touch 精确改时间、mv 的本质
+
+```bash
+# 精确设置时间戳
+touch -t 202608151730 file.txt       # 设置为 2026-08-15 17:30
+touch -d "2026-08-15 17:30:00" f.txt # 更可读的写法
+stat file.txt                        # 验证 atime/mtime/ctime
+
+# mv 的两种本质
+mv a.txt b.txt          # 同文件系统 → rename 系统调用，瞬时完成
+mv /mnt/data/a.txt ~/   # ⭐ 跨文件系统 → 先复制再删除（慢！）
+```
+
+> 💡 `mv` 大文件跨磁盘（如从 `~/` 移到挂载盘）会"复制+删除"，耗时比预想长。用 `df -T ~/` 和 `df -T /mnt/data` 对比文件系统类型，不同即跨盘。
+
+***
+
 ## 📝 实践项目
 
 ### 目标

@@ -287,6 +287,105 @@ journalctl -u nginx -p err             # 只看 ERROR 级别
 
 ***
 
+## 六、进阶：僵尸进程、/proc 与资源限制
+
+### 6.1 僵尸进程的产生与回收
+
+```bash
+# 僵尸进程（Z）：子进程已退出，但父进程没有调用 wait() 回收它的退出状态
+# 产生原因：父进程 fork 后没 wait、或父进程本身是常驻服务没处理 SIGCHLD
+
+# 找到所有僵尸进程 ⭐
+ps -eo pid,ppid,stat,cmd | awk '$3 ~ /^Z/'
+ps aux | awk '$8 ~ /^Z/'
+
+# 僵尸进程杀不掉（kill -9 无效），只能：
+# 1. 让父进程处理：kill -HUP 父进程，或重启父进程（父进程退出后由 init 收养回收）
+# 2. 如果父进程是 init(1)，僵尸会尽快被回收
+kill -HUP <PPID>        # 提示父进程重新读取配置/回收子进程
+```
+
+> 💡 少量僵尸进程无害；大量僵尸说明**父进程存在 bug**（没 wait），排查方向是父进程，而不是僵尸本身。
+
+### 6.2 /proc/PID/ —— 进程的"体检报告"
+
+```bash
+# 每个进程在 /proc 下都有一个目录，内核实时暴露进程信息 ⭐
+PID=$(pgrep -f "app.jar" | head -1)
+
+cat /proc/$PID/status        # 状态、内存、线程数（Threads 字段）
+ls -l /proc/$PID/fd          # 该进程打开的所有文件描述符 ⭐
+cat /proc/$PID/cmdline | tr '\0' ' '   # 完整启动命令行（含空格，用 \0 分隔）
+cat /proc/$PID/environ | tr '\0' '\n'  # 进程的环境变量
+cat /proc/$PID/limits        # 进程的资源限制（含 nofile 软硬上限）
+ls /proc/$PID/task           # 该进程的所有线程
+
+# 实时监控：/proc/meminfo /proc/loadavg /proc/cpuinfo
+head -5 /proc/meminfo
+cat /proc/loadavg
+```
+
+> 💡 排查"进程占了多少内存 / 打开了哪些文件 / 环境变量是什么"这类问题，`/proc/PID/` 是最权威的第一手数据，比 `top`/`ps` 更细。
+
+### 6.3 cgroup 与 systemd 资源限制
+
+```bash
+# systemd 运行任意命令并附加资源限制 ⭐
+sudo systemd-run --scope -p MemoryMax=512M -p CPUQuota=50% java -jar app.jar
+
+# 对已有服务设置资源上限（立即生效 + 写入配置）
+sudo systemctl set-property nginx.service MemoryMax=1G
+sudo systemctl set-property nginx.service CPUQuota=80%
+
+# 查看 cgroup 实际用量
+systemd-cgtop                    # 类似 top 的 cgroup 资源视图
+cat /sys/fs/cgroup/memory.events # OOM 事件计数
+```
+
+> 💡 这是防止"单进程吃光内存/CPU"的现代做法，比 `ulimit` 更细粒度（可针对单个服务）。与 **4.3 内核参数调优**、**4.4 容器资源限制**衔接。
+
+### 6.4 后台运行的会话细节与 tmux
+
+```bash
+# & vs nohup vs setsid 的差异核心：控制终端与 SIGHUP
+#   cmd &            ：仍是当前会话的作业，关终端发 SIGHUP 被终止
+#   nohup cmd &      ：忽略 SIGHUP，但没有完全脱离会话（3.3 已讲）
+#   setsid cmd       ：创建新会话，完全脱离终端 ⭐
+
+setsid java -jar app.jar > app.log 2>&1 &
+disown -h %1          # 标记后台任务不响应 SIGHUP（配合 & 使用）
+
+# ⭐ 推荐：长任务用 tmux/screen，会话级保持 + 可重连
+sudo apt install tmux -y
+tmux new -s deploy            # 新建会话（关终端任务继续跑）
+tmux attach -t deploy         # 重新连接
+tmux ls                       # 列出会话
+```
+
+> 💡 `nohup` 只能防 SIGHUP；`tmux`/`screen` 提供的是**完整会话保持**：中途断线可 `attach` 重连，还能看回历史输出。远程操作长时间任务首选。
+
+### 6.5 ulimit 与 "Too many open files"
+
+```bash
+ulimit -n                    # 查看当前进程打开文件数上限
+ulimit -n 65535              # 临时调高（当前会话）
+
+# 永久设置（用户级）写入 /etc/security/limits.conf
+# alice soft nofile 65535
+# alice hard nofile 65535
+
+# 服务级（systemd 服务）在 unit 文件里设
+# [Service]
+# LimitNOFILE=65535
+
+# 全局内核上限
+sysctl fs.file-max           # 系统所有进程可打开的 fd 总数
+```
+
+> ⚠️ **"Too many open files"** 是 Java/中间件高并发下的经典报错：连接数/文件句柄超过 `ulimit -n` 默认值（常为 1024）。排查顺序：`ulimit -n` → 服务是否降级了限制 → 提高软硬上限后重启服务。与 **4.3 连接数排查**、**4.4 容器限制**联动。
+
+***
+
 ## 📝 实践项目
 
 ### 目标

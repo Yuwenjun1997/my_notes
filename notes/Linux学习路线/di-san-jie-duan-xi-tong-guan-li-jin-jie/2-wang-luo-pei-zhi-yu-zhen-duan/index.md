@@ -215,6 +215,109 @@ sudo ufw status verbose
 
 ***
 
+## 五、进阶：TCP 原理、DNS 深入与 curl 脚本化
+
+### 5.1 netplan 排障与渲染器
+
+```bash
+# ⭐ netplan try：应用配置并等待确认，超时自动回滚（防自己锁死）
+sudo netplan try                 # 120 秒内回车确认，否则回滚
+
+# 查看实际生效的网络配置
+networkctl status                # systemd-networkd 状态
+networkctl list
+
+# 渲染器（renderer）决定后端
+#   networkd：轻量，服务器默认，适合无桌面
+#   NetworkManager：桌面环境（GNOME 控制面板），WiFi 支持
+cat /etc/netplan/00-installer-config.yaml   # 看 renderer 字段
+
+# 排障顺序：netplan get 检查解析 → netplan try 试应用 → networkctl status 看生效
+```
+
+> 💡 如果改完网络配置连不上，但没机会确认 `netplan try`：让机器保持重启（配置会在重试后回滚）或用带外控制台（VNC/IPMI）进去 `sudo netplan revert`。
+
+### 5.2 TCP 三次握手/四次挥手与抓包解读
+
+```text
+三次握手（建连）              四次挥手（断开）
+客户端       服务器            客户端       服务器
+  │--SYN------→│                │--FIN------→│
+  │←--SYN+ACK--│                │←--ACK------│
+  │--ACK-------→│  建立         │←--FIN------│
+                                    │--ACK------→│
+```
+
+```bash
+# 抓包看握手（在服务器上抓访问的 80 端口）
+sudo tcpdump -i eth0 port 80 -n
+#   12:00:01.1 IP 10.0.0.2.50000 > 10.0.0.1.80: Flags [S]   ← 客户端 SYN
+#   12:00:01.1 IP 10.0.0.1.80 > 10.0.0.2.50000: Flags [S.]  ← SYN+ACK
+#   12:00:01.1 IP 10.0.0.2.50000 > 10.0.0.1.80: Flags [.]   ← ACK
+
+# 大量 TIME_WAIT 的排查（主动关闭方产生）
+ss -tan | grep TIME_WAIT | wc -l
+# TIME_WAIT 多通常无害（端口复用有默认 60s），持续打满才需关注（联动 4.3）
+```
+
+> 💡 读 `Flags [S]`/`[S.]`/`[.]`/`[F]`/`[R]`：S=SYN、.=ACK、F=FIN、R=RST。能看懂握手/挥手，很多"连不上/断连"问题就能定位是卡在哪一步。
+
+### 5.3 DNS 深入：解析链路与缓存
+
+```bash
+# resolv.conf 通常是软链，指向 systemd-resolved 管理
+ls -l /etc/resolv.conf            # 看到 → /run/systemd/resolve/...
+
+# 完整的 DNS 解析链路
+cat /etc/nsswitch.conf | grep hosts   # hosts: files dns  → 先查 /etc/hosts 再查 DNS
+
+# 递归追踪 DNS 查询（定位是哪一层解析慢/失败）⭐
+dig +trace example.com
+
+# systemd-resolved 缓存管理与刷新
+resolvectl statistics                # 缓存命中统计
+sudo resolvectl flush-caches         # 刷新 DNS 缓存
+resolvectl query example.com
+
+# 测试解析耗时
+time dig example.com | grep "Query time"
+```
+
+> 💡 "浏览器打不开但 ping IP 通"十有八九是 DNS 问题。排查顺序：`cat /etc/resolv.conf` 看服务器 → `dig 目标` 看能否解析 → `resolvectl flush-caches` 刷缓存。
+
+### 5.4 ufw 与 iptables/nftables 的关系
+
+```bash
+# ufw 只是 iptables 的前端，规则最终落到内核 netfilter
+sudo ufw status verbose
+sudo ufw status numbered
+
+# 查看 ufw 实际生成的 iptables 规则
+sudo iptables -L -n | head -30        # 传统 iptables 语法
+sudo nft list ruleset | head -40      # ⭐ 新一代 nftables（Ubuntu 默认内核）
+```
+
+> 💡 **演进**：iptables → nftables。Ubuntu 22.04+ 内核已默认 nftables 框架，`iptables` 命令是兼容层。日常用 ufw 管理；需要细粒度规则（按时间、按用户、日志）时，学习 nftables 语法是进阶方向。**4.2 安全加固**、**4.4 Docker 端口映射**都会涉及 netfilter。
+
+### 5.5 curl 脚本化监控
+
+```bash
+# 监控脚本常用参数 ⭐
+curl --resolve example.com:443:127.0.0.1 https://example.com/   # 指定解析到本机（测试本地 HTTPS）
+curl -k https://10.0.0.1/          # 跳过证书校验（内网自签证书测试）
+curl -L http://example.com/        # 跟随重定向
+curl --max-time 5 URL              # 超时 5 秒（脚本里必须有，防卡死）⭐
+curl -s -o /dev/null -w '%{http_code}' URL   # 只输出状态码
+
+# 完整的健康检查一行流 ⭐
+curl -s -o /dev/null -w 'HTTP %{http_code} | DNS %{time_namelookup}s | 连接 %{time_connect}s | TTFB %{time_starttransfer}s | 总耗时 %{time_total}s\n' \
+  https://example.com/api/health
+```
+
+> 💡 脚本化监控注意：`--max-time` 防超时挂死、`-s` 静默、`-o /dev/null` 丢弃 body、`-w` 输出指标。这构成一个简易的 HTTP 探活器（联动 **3.5 定时任务** 定时跑、**3.4 日志** 记录结果）。
+
+***
+
 ## 📝 实践项目
 
 ```bash

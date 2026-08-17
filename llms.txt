@@ -1,6 +1,6 @@
-# 小鱼开发笔记
+# 小鱼知识库
 
-> 开发中使用的技术及参考This file contains links to all documentation sections.
+> 技术知识与学习路线This file contains links to all documentation sections.
 
 ## Table of Contents
 
@@ -46,6 +46,7 @@
 - [第二阶段 · 主流框架](/my_notes/notes/JAVA学习路线/第二阶段-主流框架/index.md)
 - [第四阶段 · 分布式与系统设计](/my_notes/notes/JAVA学习路线/第四阶段-分布式与系统设计/index.md)
 - [1-Spring全家桶](/my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/1-spring-quan-jia-tong/index.md)
+- [2-SpringBoot常用Starter配置](/my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/2-springboot-chang-yong-starter-pei-zhi/index.md)
 - [1-缓存](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/1-huan-cun/index.md)
 - [2-消息队列](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/2-xiao-xi-dui-lie/index.md)
 - [3-安全](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/3-an-quan/index.md)
@@ -89,6 +90,7 @@
 - [4-进程管理与系统监控](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/4-jin-cheng-guan-li-yu-xi-tong-jian-kong/index.md)
 - [5-软件包管理](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/5-ruan-jian-bao-guan-li/index.md)
 - [6-文本查看与编辑](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/6-wen-ben-cha-kan-yu-bian-ji/index.md)
+- [7-文本操作命令进阶](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/7-wen-ben-cao-zuo-ming-ling-jin-jie/index.md)
 - [1-磁盘管理与文件系统](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/1-ci-pan-guan-li-yu-wen-jian-xi-tong/index.md)
 - [2-网络配置与诊断](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/2-wang-luo-pei-zhi-yu-zhen-duan/index.md)
 - [3-服务管理-systemd](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/3-fu-wu-guan-li-systemd/index.md)
@@ -174,4 +176,4 @@
 
 ### Others
 
-- [小鱼开发笔记](/my_notes/index.md): 小鱼开发笔记 —— 日常开发中使用的技术及参考，赛博朋克风格个人笔记站点
+- [小鱼知识库](/my_notes/index.md): 小鱼知识库 —— 技术知识、学习路线与参考文档，赛博朋克风格个人知识库站点

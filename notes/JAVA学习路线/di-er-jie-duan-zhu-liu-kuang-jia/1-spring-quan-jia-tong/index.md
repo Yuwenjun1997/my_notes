@@ -824,6 +824,8 @@ public class RedisProperties {
 </dependency>
 ```
 
+> 💡 以上各 Starter 的**完整配置教程**（application.yml 示例 + 每个配置项的作用逐条解释）见 [2.2-SpringBoot常用Starter配置](./2.2-SpringBoot常用Starter配置.md)。
+
 ### 3.3 Actuator 监控
 
 Spring Boot Actuator 提供了生产级的监控和管理功能。

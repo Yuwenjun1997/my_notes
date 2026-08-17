@@ -39,6 +39,7 @@ url: /my_notes/notes/JAVA学习路线/index.md
 | 模块 | 核心内容 | 文档 |
 |:-----|:---------|:----:|
 | **2.1 Spring 全家桶** | IoC 容器 & DI、AOP 面向切面编程、Bean 生命周期；Spring MVC DispatcherServlet 流程、请求处理；Spring Boot 自动配置原理、Starter、Actuator；Spring Data JPA & MyBatis ORM 框架 | [📖 查看](./第二阶段-主流框架/2.1-Spring全家桶.md) |
+| **2.2 Starter 配置指南** | Web / JDBC / JPA / MyBatis / Security / Cache / Redis / RabbitMQ / Kafka 等常用 Starter 的 application.yml 配置教程，逐项解释每个配置项的作用 | [📖 查看](./第二阶段-主流框架/2.2-SpringBoot常用Starter配置.md) |
 
 ***
 
@@ -125,7 +126,7 @@ url: /my_notes/notes/JAVA学习路线/index.md
 | 5.2 DDD 领域驱动设计 | [📖 查看](./深度学习/05-设计模式与架构/5.2-DDD领域驱动设计.md) |
 | 5.3 系统设计真题解析 | [📖 查看](./深度学习/05-设计模式与架构/5.3-系统设计真题解析.md) |
 
-📌 深度学习总索引：[📖 查看完整深度索引](./深度学习/深度学习总索引.md)
+📌 深度学习总索引：[📖 查看完整深度索引](./深度学习/README.md)
 
 ***
 

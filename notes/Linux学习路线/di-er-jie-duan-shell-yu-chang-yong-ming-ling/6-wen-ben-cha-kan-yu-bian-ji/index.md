@@ -300,6 +300,94 @@ nano -l file.txt       # 显示行号
 
 ***
 
+## 七、进阶：环境变量、崩溃恢复与插件
+
+> 本节与 **2.7 文本操作命令进阶** 分工：2.7 讲 vim 的**宏/可视块/寄存器/批量替换**；本节讲 less/vim 的**环境、恢复与集成**，都是"让日常更稳"的进阶。
+
+### 7.1 less 环境变量与 lesspipe
+
+```bash
+# LESS 环境变量：默认参数（~/.bashrc 里设一次，之后 less 全生效）⭐
+export LESS="-N -R"            # 自动行号 + 保留颜色
+export LESS="-N -R -i"         # + 搜索忽略大小写
+
+# lesspipe：预处理脚本，让 less 直接读压缩包/归档 ⭐
+# （Ubuntu 的 less 已自动配置，可直接：）
+less app.log.gz               # 压缩日志直接分页查看
+less archive.tar.gz           # 自动列出 tar 内容（无需先解压）
+
+# 其他实用启动参数
+less -M file                  # 底部显示文件路径与百分比
+less +G file                  # 打开即跳到文件末尾 ⭐（配合 -F 等于实时跟踪）
+less +F /var/log/syslog       # 打开即实时跟踪（等价 tail -f）
+```
+
+### 7.2 vim 的 swap、备份与崩溃恢复
+
+```bash
+# 崩溃恢复：编辑中途终端掉线/断电，vim 会留下 .filename.swp ⭐
+vim file.txt                  # 提示 "Swap file already exists"
+vim -r file.txt               # 用 swap 恢复未保存内容
+vim -r file.txt -c 'saveas ~/recovered.txt'   # 恢复到新文件再退出
+
+# 编辑时保存原始文件备份
+:set backup                   # 写文件前生成 file~ 备份
+:set backupdir=~/.vim/backup  # 备份放到独立目录（避免污染源码目录）
+
+# 预防：经常 :w 保存；处理完确认无 .swp 残留
+ls -la | grep .swp
+```
+
+> ⚠️ 终端掉线是远程编辑的最高发事故。出现 `E325` swap 提示时：先判断是自己上次残留（`vim -r` 恢复后删除 `.swp`），还是另一个进程正在编辑（别动，等它结束）。**2.7 宏/可视块等批量操作都建立在"及时保存"上**。
+
+### 7.3 只读模式与 less 联动
+
+```bash
+vim -R config.conf            # 只读打开（误操作会被拒绝写入）
+view /etc/fstab               # 等同 vim -R，只读查看 ⭐
+vim -M file                   # 强制只读（连 vim 命令都禁用）
+
+# less 里按 v 直接进入 vim 编辑当前文件 ⭐
+less -N app.log               # 看到第 100 行 → 按 v → vim 打开第 100 行
+#   在 vim 改完 :wq 退出后，会回到 less 继续翻页
+```
+
+> 💡 检查系统配置只用 `view`/`less`，防止手滑改动生产配置；真正要改再用 `sudo vim`。less 的 `v` 是"只读浏览 → 紧急编辑"的桥。
+
+### 7.4 运行时配置扩展：list / cursorline / fileformat
+
+```vim
+" 追加到 ~/.vimrc 后 :source ~/.vimrc 生效
+set list                     " 显示不可见字符：Tab 显示为 ^I，行尾显示 $
+set listchars=tab:»\ ,trail:· " 自定义符号（trail 标出行尾空格）
+set cursorline               " 高亮当前行
+set fileformat=unix          " 写文件用 LF 换行（去掉 ^M）⭐
+set wrapscan                 " 搜索到文件末尾后回到开头
+```
+
+> 💡 与 **2.7 的 `cat -A`** 呼应：vim 里 `set list` 也能看不可见字符；发现 `^M` 时 `set fileformat=unix` + `:w` 即修复 DOS 换行。
+
+### 7.5 插件入门：原生键位练熟后的进阶
+
+```vim
+" 安装 vim-plug（Ubuntu）：
+" curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+"   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+" ~/.vimrc 中声明插件
+call plug#begin('~/.vim/plugged')
+  Plug 'tpope/vim-surround'      " ys/cs/ds 快速加/改/删成对符号 ⭐
+  Plug 'tpope/vim-commentary'    " gc 快速注释/取消注释 ⭐
+  Plug 'preservim/nerdtree'      " 文件树（可选）
+call plug#end()
+
+" 安装：vim 里 :PlugInstall
+```
+
+> 💡 不要一上来装一堆插件——先把原生键位（**2.3 §六**、**2.6 §四**、**2.7 §三**）练熟。surround/commentary 是"加/改引号括号、注释"的高频刚需，两个就够。生产服务器上常没有插件环境，原生能力才是底线。
+
+***
+
 ## 📝 实践项目
 
 ### 目标

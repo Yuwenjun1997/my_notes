@@ -44,6 +44,7 @@ url: /my_notes/notes/Linux学习路线/index.md
 | **2.4 进程管理与系统监控** | ps/top/htop 进程查看、kill/pkill 信号控制、后台运行（&/nohup）、systemd 服务管理、free/df/du/iostat 资源监控 | [📖 查看](./第二阶段-Shell与常用命令/2.4-进程管理与系统监控.md) |
 | **2.5 软件包管理** | apt/dpkg 包管理、PPA 添加与管理、snap 与 flatpak、源码编译安装（./configure && make && make install）、常见开发环境搭建（JDK/Node/Python） | [📖 查看](./第二阶段-Shell与常用命令/2.5-软件包管理.md) |
 | **2.6 文本查看与编辑** | less/more 分页查看、vim 编辑器进阶（模式/多文件/分屏/.vimrc）、nano 快速编辑、工具对比与选择 | [📖 查看](./第二阶段-Shell与常用命令/2.6-文本查看与编辑.md) |
+| **2.7 文本操作命令进阶** | cat 高阶用法（-A/-s/heredoc/拼接）、查看命令全家桶速查（nl/rev/od）、vim 进阶技巧（宏/可视块/寄存器/批量替换）、nano 进阶配置 | [📖 查看](./第二阶段-Shell与常用命令/2.7-文本操作命令进阶.md) |
 
 ***
 
@@ -83,7 +84,7 @@ url: /my_notes/notes/Linux学习路线/index.md
     │  概述 → 安装 → 文件系统 → 用户权限
     ▼
 第二阶段：Shell 与常用命令（3-4周）
-    │  Shell基础 → 文件操作 → 文本处理 → 进程管理 → 包管理 → 文本查看编辑
+    │  Shell基础 → 文件操作 → 文本处理 → 进程管理 → 包管理 → 文本查看编辑 → 文本操作进阶
     ▼
 第三阶段：系统管理进阶（2-3周）
     │  磁盘管理 → 网络配置 → systemd → 日志分析 → 定时任务

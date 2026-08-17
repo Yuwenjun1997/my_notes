@@ -278,6 +278,120 @@ sudo apache2ctl configtest  # Apache
 
 ***
 
+## 五、进阶：火焰图、Java 排查与监控误读
+
+### 5.1 perf 火焰图与 sar 历史数据
+
+```bash
+# perf：内核级采样，找出 CPU 热点函数 ⭐
+sudo apt install linux-tools-common linux-tools-generic -y
+sudo perf top                    # 实时查看热点（定位到函数/符号）
+sudo perf record -F 99 -a -g -- sleep 30     # 采样 30 秒，记录调用栈
+sudo perf report                # 交互式查看采样结果
+
+# 火焰图（把 perf record 结果转成图）
+sudo perf script > out.perf
+# 用 FlameGraph 工具（github.com/brendangregg/FlameGraph）
+# ./stackcollapse-perf.pl out.perf > out.folded
+# ./flamegraph.pl out.folded > flame.svg   # 浏览器打开
+
+# sar：历史性能数据（sysstat 持续采集）⭐
+sudo apt install sysstat -y
+sudo sar -u 1 3                 # CPU 使用率
+sudo sar -r                     # 内存
+sudo sar -d                     # 磁盘
+sudo sar -n DEV                 # 网络
+# 默认每 10 分钟存一次，可回看昨天
+sudo sar -u -f /var/log/sysstat/sa$(date +%d -d yesterday)
+```
+
+> 💡 `top` 只能看"当下"，`sar` 能回看"过去"（凌晨的故障第二天复盘），`perf` 能定位"哪一行代码"。三者配合才完整。
+
+### 5.2 Java 应用专属排查（后端必备）⭐
+
+```bash
+# JDK 自带诊断工具
+jps                     # 列出 Java 进程及 PID
+jstack <PID>            # 线程快照（找死锁/线程卡住）⭐
+jmap -heap <PID>        # 堆内存概况
+jmap -histo <PID> | head -20   # 对象实例统计（内存泄漏排查）
+jstat -gcutil <PID> 1000       # GC 实时监控（每 1 秒刷新）
+
+# 一条命令：挖出"CPU 最高的 Java 线程在干嘛"
+top -Hp <PID>           # 找到 CPU 最高的线程 TID
+printf '%x\n' <TID>     # 转十六进制
+jstack <PID> | grep -A30 "nid=0x<十六进制>"   # 定位到该线程调用栈
+
+# GC 日志（启动参数加）
+# -Xlog:gc:file=/var/log/app-gc.log,uptime   （现代 JVM）
+
+# strace 联动：Java 进程"卡住"往往是系统调用在等待
+sudo strace -f -p <PID> 2>&1 | head -50
+```
+
+> 💡 面向后端读者：JVM 问题 90% 先看 `jstat`（GC 是否频繁）+ `jstack`（线程卡在哪）+ `jmap -histo`（内存谁在涨）。这是把 **§2 strace/lsof** 用到 Java 场景。
+
+### 5.3 网络故障定位
+
+```bash
+# 连接状态汇总
+ss -s                          # ⭐ 各状态连接总数（ESTAB/SYN/TIME_WAIT 等）
+ss -tan | awk '{print $1}' | sort | uniq -c | sort -rn
+
+# 内核网络统计（丢包、重传）
+nstat -az | head -30           # 重点看 TcpRetransSegs / TcpExtTCPLostRetransmit
+sudo dmesg | grep -i "drop\|overflow"    # 缓冲区溢出丢包
+
+# 连接数打满排查（与 2.4 §6.5 联动）
+cat /proc/sys/net/ipv4/ip_local_port_range    # 本地端口范围
+sysctl fs.file-max                            # 全局 fd 上限
+ulimit -n                                     # 进程 fd 上限
+ss -s | grep -i "connections"
+```
+
+> 💡 高并发下"连不上"先看端口是否耗尽：`ss -s` 看 TIME\_WAIT 是否堆积，`ip_local_port_range` 看可用端口，fd/连接数逐一排查。
+
+### 5.4 iostat 解读误区
+
+```text
+iostat -x 1
+Device  r_await  w_await  %util
+sda        0.50    2.10    30.0
+```
+
+> ⚠️ **两个常见误读**：
+>
+> * **%util 100% 未必是瓶颈**：%util 是"设备有请求排队的时间占比"。对 NVMe 这类多队列设备，单设备 100% 仍可能远未达到吞吐上限，要看真实的 `r_await`/`w_await`（请求延迟）是否恶化。
+> * **await 是平均等待**：`svctm` 字段已废弃无意义；`await` 高可能是队列等待（I/O 压力大），也可能是设备本身慢。结合 `w_await` 与 `iowait` 一起判断。
+
+```bash
+# iowait 的正确解读：它是"CPU 等 I/O 的空闲比例"；高负载机器上它低反而是好事
+top -1 | grep -E "wa|Cpu"     # wa 列
+uptime                        # 负载 vs 核心数
+```
+
+### 5.5 排查方法论：硬件与启动错误
+
+```bash
+# 硬件错误（内存 ECC、磁盘 MCE）——首选 dmesg ⭐
+sudo dmesg -T | grep -iE "mce|ecc|hardware error|blocked|failed" | tail -30
+# -T 把内核时间转成可读时间戳，便于对照业务故障时间点
+
+# 本次启动的错误聚合
+sudo journalctl -p 3 -b        # -p 3 = err 及以上，-b = 本次启动 ⭐
+sudo journalctl -k -b          # 本次启动的内核日志
+
+# 时间线联动法：业务日志 + 系统日志 + 内核日志三线对齐
+# 1. 确定业务故障时间点（如 14:32）
+# 2. journalctl --since "14:30" --until "14:35"
+# 3. sudo dmesg -T | grep "14:3[0-5]"
+# 4. sudo sar -u -f ... （看当时 CPU）
+```
+
+> 💡 一套可复用的排障顺序：**业务日志 → journald 时间窗 → dmesg 硬件错误 → sar 历史指标**，四线交叉定位，而不是逐条猜。
+
+***
+
 ## 📝 实践项目
 
 ### 模拟 CPU 故障排查

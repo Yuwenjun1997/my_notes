@@ -366,6 +366,112 @@ ZZ              保存并退出（等同 :wq）
 
 ***
 
+## 七、进阶技巧与常见坑
+
+### 7.1 grep 进阶：-P / -o / -f / -q
+
+```bash
+# -P 使用 PCRE 语法（更接近 Java/JS 正则）⭐
+grep -P '\bERROR\b' app.log             # \b 单词边界
+grep -P '(?<=prefix)\d+' app.log        # 向后断言
+
+# -o 只输出匹配的部分（配合统计）⭐
+grep -o 'GET [^ ]*' access.log          # 只输出 GET 后的路径
+grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' access.log | sort | uniq -c
+
+# -f 从文件读多个模式
+grep -f blacklist.txt access.log        # 命中黑名单任一模式即输出
+grep -vf blacklist.txt access.log       # 过滤掉黑名单
+
+# -L 列出"不匹配"的文件（与 -l 相反）
+grep -L "ERROR" *.log                   # 哪些日志里没有 ERROR
+
+# -q 静默模式：只看退出码，用于脚本条件判断 ⭐
+if grep -q "ERROR" app.log; then
+  echo "发现 ERROR，发送告警"           # 退出码 0 = 有匹配
+fi
+```
+
+### 7.2 sed 地址范围进阶
+
+```bash
+# 从文件头匹配到第一个 /re/ 出现（区别于 1,/re/ 只在第一行匹配时才成立）
+sed -n '0,/error/p' app.log            # 从开头打印到第一个 error
+
+# 相对范围：匹配行及其后 N 行
+sed -n '/Exception/,+5p' app.log       # 打印 Exception 行及之后 5 行 ⭐
+sed -n '/start/,/end/p' app.log        # 打印 start 到 end 之间的行
+sed -n '$p' file.txt                   # $ 代表最后一行
+sed -n '1~2p' file.txt                 # 打印奇数行（1~2 = 从第1行起隔2行）
+
+# 只打印被替换过的行（-n + s///p 组合）⭐
+sed -n 's/port=8080/port=9090/p' app.properties   # 只显示实际发生替换的行
+
+# -e 组合多个脚本
+sed -e 's/old/new/g' -e '/^#/d' file.txt          # 替换 + 删注释
+
+# 用其他分隔符避免转义（路径中含 / 时）
+sed -n 's|/etc/nginx|/etc/apache|p' file.txt
+```
+
+### 7.3 awk 内建变量与 getline
+
+```bash
+# 内建变量：FILENAME / NR / NF / FS / OFS / ARGC / ARGV
+awk '{print FILENAME, NR, $0}' a.txt b.txt    # 打印来源文件名 + 行号
+awk 'END {print NR " 行"}' file.txt           # 总行数
+
+# getline：读取下一行（手动控制循环）
+awk '{sum += $1; getline; sum += $1} END {print sum}' file.txt
+
+# sub / gsub：在字段内替换
+awk '{gsub(/ms/,"",$NF); print $NF}' access.log    # 去掉列里的 ms 单位
+awk '{sub(/^0+/,"",$1); print $1}' file.txt        # 去掉数字前导 0
+
+# BEGIN/END 统计聚合
+awk 'BEGIN {total=0} {total += $NF} END {printf "总耗时 %.2f ms\n", total}' access.log
+```
+
+### 7.4 sort / uniq 的 locale 坑
+
+```bash
+# ⭐ locale 影响排序结果：中文字符、字母大小写的顺序在不同 locale 下不同
+sort file.txt                    # 默认按当前 locale（UTF-8）排序
+LC_ALL=C sort file.txt           # 按字节序排序（更稳定、更快）⭐
+LC_ALL=C sort -u file.txt        # 排序并去重（避免大小写/中文差异）
+
+# 多列排序：先按第 1 列，再按第 2 列数字
+sort -t',' -k1,1 -k2,2n data.csv
+
+# uniq -w 只比较前 N 个字符去重
+sort file.txt | uniq -w 3        # 只看每行前 3 个字符判断重复
+```
+
+> 💡 生产脚本里做去重/排序统计，建议显式 `LC_ALL=C`，结果可预测，且 `LC_ALL=C sort` 比 UTF-8 排序快。
+
+### 7.5 xargs 高效处理：-n / -I / -0 / -P
+
+```bash
+# -n 每次传 N 个参数给命令
+echo 1 2 3 4 | xargs -n 2 echo      # 每批 2 个：1 2 / 3 4
+
+# -I 占位符（对每个输入替换 {}）
+cat file.txt | xargs -I{} echo "处理 {} 完成"
+
+# -d 自定义分隔符（不依赖空格）
+echo "a,b,c" | xargs -d ',' echo    # a b c
+
+# -P 并行执行 N 个进程 ⭐
+cat urls.txt | xargs -P 8 -I{} curl -sO {}
+find . -name "*.gz" -print0 | xargs -0 -P 4 -I{} gzip -d {}
+
+# 与 find -exec + 对比：xargs 更适合复杂管道；exec + 语法内聚
+```
+
+> ⚠️ 默认 `xargs` 按空格/换行切分，遇到含空格的路径会错乱，务必配合 `find -print0 | xargs -0`（**2.2 §5.1**）。无参数命令不要给 `-I` 占位符，`-P` 并行对 CPU 敏感任务要控制数量。
+
+***
+
 ## 📝 实践项目
 
 ### 目标

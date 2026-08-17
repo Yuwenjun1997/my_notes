@@ -226,6 +226,108 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 
 ***
 
+## 六、进阶：WSL2 调优、换源安全与 SSH 排障
+
+### 6.1 WSL2 调优：.wslconfig 与 WSLg
+
+```ini
+# %USERPROFILE%\.wslconfig（Windows 用户目录下）
+[wsl2]
+memory=8GB            # 限制 WSL2 占用内存（默认取宿主机一半）
+processors=4          # 限制 CPU 核数
+swap=2GB
+# 新版支持 GUI（WSLg），Windows 11 上可直接跑 Linux 图形应用
+```
+
+```bash
+# 在 WSL2 里启用 systemd（新版默认已开；旧版在 /etc/wsl.conf 加）
+# /etc/wsl.conf
+# [boot]
+# systemd=true
+# 然后 wsl --shutdown 重启 WSL 生效（关联 3.3 systemd）
+
+# /mnt/c 的性能注意：跨文件系统访问慢
+# 代码/编译产物放 Linux 侧（~/），不要放 /mnt/c，IO 差 10 倍以上 ⭐
+```
+
+> 💡 WSL2 本质是**轻量 VM**（微软定制内核），所以资源/IO 与原生有差距；但它有快照、无缝集成、启动快等优势，是 Windows 上学习 Linux 的最佳平衡。生产仍是原生 Linux。
+
+### 6.2 apt 换源的安全姿势（替代 §3 的旧写法）
+
+```bash
+# ⭐ 新版推荐：signed-by 绑定密钥 + deb822 源文件
+# Ubuntu 22.04+ 源默认在 /etc/apt/sources.list.d/ubuntu.sources（deb822 格式）
+cat /etc/apt/sources.list.d/ubuntu.sources
+
+# 手动加第三方源的标准姿势（如 Docker 官方源）
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu noble stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update
+```
+
+> ⚠️ **`apt-key` 已弃用**：它是全局信任，密钥泄露影响所有源。正确做法是每源一个密钥文件 + `signed-by` 绑定。细节见 **2.5 §7.2**。§3 里直接改 `sources.list` 的写法能用，但只适用于官方源换镜像（不涉及第三方 GPG）。
+
+### 6.3 SSH 排障：连不上时看什么
+
+```bash
+# 1. 先加 -v 看握手过程卡在哪一步 ⭐
+ssh -v user@server
+#   debug1: Connecting to server ...      ← 连接阶段（不通=网络/防火墙）
+#   debug1: Offering public key: ...      ← 认证阶段（报错=密钥/权限问题）
+
+# 2. 判断错误类型
+#   "Connection refused"   → SSH 服务没起来 / 端口被防火墙拒绝
+#   "Connection timed out" → 网络不通（路由/防火墙 DROP），不是 SSH 的问题
+nc -zv server 22        # 直接测端口通不通
+
+# 3. known_hosts 冲突修复（提示 host key 变化时）⭐
+ssh-keygen -R server        # 删除旧 host key 记录
+ssh user@server             # 重新确认并记录新 key
+
+# 4. 权限问题
+chmod 600 ~/.ssh/id_ed25519         # 私钥必须 600
+chmod 700 ~/.ssh
+chmod 644 ~/.ssh/authorized_keys    # 服务器端公钥 644（目录 700）
+```
+
+### 6.4 WSL2 与 /mnt/c 性能
+
+```bash
+# 慢的根源：/mnt/c 走 9P 协议跨内核文件系统访问
+# 优化建议：
+#   - 项目代码放 ~/（Linux 原生 ext4），不要放 /mnt/c
+#   - 需要共享给 Windows 的产物，构建后再 cp 到 /mnt/c
+#   - 大量小文件读写（node_modules/编译缓存）差异最明显
+time ls -R /mnt/c/Users/you/code 2>/dev/null | wc -l    # 对比 ~ 下的耗时
+```
+
+### 6.5 Oh My Zsh 的历史与别名
+
+```bash
+# ~/.zshrc 里配置历史与别名
+export HISTFILE=~/.zsh_history
+export HISTSIZE=10000
+export SAVEHIST=10000
+setopt HIST_IGNORE_DUPS        # 忽略连续重复命令
+setopt SHARE_HISTORY           # 多个终端共享历史
+
+alias ll='ls -lah'
+alias gs='git status'
+alias gd='git diff'
+alias ..='cd ..'
+# 定义后立即生效：source ~/.zshrc
+
+# zsh 历史在 ~/.zsh_history，bash 在 ~/.bash_history
+# 命令历史操作（!!、!$、Ctrl+R）在两个 shell 里通用（2.1 §7.1）
+```
+
+> 💡 别名/历史是每个终端用户的"第一生产力配置"。注意别名只在交互 shell 生效（**2.1 §7.4**），脚本里别依赖 `ll` 这类自定义别名。
+
+***
+
 ## 📝 实践项目
 
 ### 目标

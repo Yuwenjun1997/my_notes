@@ -301,6 +301,137 @@ docker compose pull                     # 拉取最新镜像
 
 ***
 
+## 六、进阶：网络模式、数据卷、镜像瘦身与监控
+
+### 6.1 网络模式详解
+
+```bash
+# 四种网络模式
+docker run --network bridge  nginx   # 默认：容器通过 veth + NAT 访问外网
+docker run --network host    nginx   # 共享宿主机网络（无隔离，性能最好）
+docker run --network none    nginx   # 无网络
+docker run --network container:web1 nginx   # 复用另一个容器的网络
+
+# 端口映射的本质：iptables DNAT ⭐
+docker run -d -p 8080:80 nginx
+sudo iptables -t nat -L -n | grep 8080   # 看到 DNAT 规则把 8080 转发到容器 IP
+
+# 自定义 bridge：容器间用服务名互访（compose 默认就是这个）
+docker network create mynet
+docker run -d --network mynet --name db mysql
+docker run -d --network mynet --name app myapp   # app 里可用 "db:3306" 访问
+docker network inspect mynet     # 查看网络成员与 IP
+```
+
+> 💡 compose 里 `app` 能通过 `mysql:3306` 连数据库，就是自定义 bridge 提供的**容器 DNS**。理解 bridge（隔离）与 host（性能）的取舍是关键。
+
+### 6.2 数据卷与镜像分层
+
+```bash
+# 三种持久化方式对比 ⭐
+# 1. bind mount：-v /宿主机路径:/容器路径（用绝对路径）
+docker run -v /opt/data:/app/data nginx
+# 2. named volume：-v 卷名:/容器路径（由 Docker 管理生命周期）
+docker run -v mydata:/app/data nginx
+docker volume ls
+docker volume inspect mydata
+docker volume prune              # 清理无用卷 ⚠️
+# 3. 匿名卷 / tmpfs（内存盘，重启丢失）
+
+# overlayfs 分层：镜像=只读层 + 容器=可写层 ⭐
+docker history nginx:1.25        # 看每一层
+docker diff myapp                # 容器相对镜像改了哪些文件
+
+# 镜像缓存：Dockerfile 每一层有缓存，行顺序决定命中率
+# 常用技巧：先 COPY 依赖（慢变），再 COPY 源码（快变），提升构建缓存命中
+```
+
+### 6.3 镜像瘦身与安全
+
+```dockerfile
+# 从零构建（静态二进制）→ 镜像最小
+FROM scratch
+COPY app /
+ENTRYPOINT ["/app"]
+```
+
+```bash
+# 镜像安全扫描 ⭐
+sudo apt install trivy -y
+trivy image nginx:1.25            # 扫描已知漏洞（CVE）
+trivy fs --severity HIGH,CRITICAL .   # 扫描当前目录依赖
+
+# 私有 registry（离线/内网分发）
+docker run -d -p 5000:5000 --name registry registry:2
+docker tag myapp:1.0 localhost:5000/myapp:1.0
+docker push localhost:5000/myapp:1.0
+docker pull localhost:5000/myapp:1.0
+
+# 安全基线：非 root + 只读根文件系统
+docker run --read-only --tmpfs /tmp myapp
+```
+
+### 6.4 compose 进阶
+
+```yaml
+# .env 变量化（compose 目录下放 .env）
+# MYSQL_ROOT_PASSWORD=root123
+# 引用：${MYSQL_ROOT_PASSWORD}
+
+services:
+  app:
+    build: .
+    env_file: .env                    # 整文件注入环境变量
+    depends_on:
+      mysql:
+        condition: service_healthy    # ⭐ 等 mysql 健康后再启动
+    healthcheck:                      # 容器自身健康检查
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  web:
+    image: nginx
+    profiles: ["frontend"]            # ⭐ 只在特定 profile 启动
+```
+
+```bash
+docker compose up -d --scale web=3        # ⭐ 扩到 3 个实例（配合负载均衡）
+docker compose --profile frontend up -d   # 启动指定 profile
+docker compose config                      # 校验并展开最终配置
+```
+
+### 6.5 容器日志与监控
+
+```bash
+# 日志 driver 对比（daemon.json 或 run 时指定）
+#   json-file：默认，文件存储（2.2 里已配 max-size/max-file 限制）
+#   journald：进系统 journal，journalctl -u docker 查看
+#   loki：配合 Loki+Grafana 集中式（3.4 §5.5）
+docker logs --since 1h --tail 200 myapp
+
+# 退出码解读 ⭐
+docker run myapp; echo $?
+#   0    正常退出
+#   137  = 128+9  = 被 SIGKILL（常因 OOM，查 OOMKilled 字段）
+#   143  = 128+15 = 被 SIGTERM（docker stop 的默认信号）
+
+docker inspect myapp -f '{{.State.OOMKilled}}'   # 是否 OOM 被杀 ⭐
+docker events --filter container=myapp            # 实时事件流
+docker stats --no-stream myapp
+
+# 监控栈：cAdvisor + Prometheus + Grafana
+# docker run -d --name cadvisor -p 8081:8080 \
+#   -v /:/rootfs:ro -v /var/run:/var/run:ro -v /sys:/sys:ro \
+#   gcr.io/cadvisor/cadvisor
+#（Prometheus 抓 cadvisor:8081/metrics，Grafana 展示；日志配 3.4 的 Loki）
+```
+
+> 💡 排错先看退出码：137 → OOM（调内存/查泄漏），143 → 被 stop（是不是误杀）。结合 `docker inspect` 的 OOMKilled + `docker logs` 定位。
+
+***
+
 ## 📝 实践项目
 
 ### 目标

@@ -126,7 +126,189 @@ Nacos → 超过 15 秒未收到心跳 → 标记为不健康
 Nacos → 超过 30 秒未收到心跳 → 移除实例
 ```
 
-### 1.3 API 网关（Spring Cloud Gateway）
+### 1.3 服务发现（Eureka）
+
+Eureka 是 Spring Cloud Netflix 体系中的注册与发现组件（源自 Netflix Eureka），采用 **Server / Client** 架构：服务启动后向 Eureka Server 注册自身实例信息，消费者再从 Server 拉取目标服务的实例列表。
+
+**注册与发现原理**
+
+```text
+Eureka Server（注册中心，独立部署）
+    ▲             ▲
+    | 注册+心跳    | 注册+心跳
+ user-service   order-service
+    ↓
+ServiceC 调用 user-service
+    ↓
+从 Eureka Server 拉取 user-service 实例列表（默认每 30s 拉取并缓存 30s）
+    ↓
+负载均衡策略选择实例 → 发起远程调用
+    ↓
+实例宕机 → 心跳超时（90s）→ 剔除实例
+```
+
+**Eureka Server 部署**
+
+第一步：引入依赖
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+```
+
+第二步：启动类加注解
+
+```java
+@SpringBootApplication
+@EnableEurekaServer
+public class EurekaServerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EurekaServerApplication.class, args);
+    }
+}
+```
+
+第三步：配置
+
+```yaml
+server:
+  port: 8761                    # Eureka Server 默认端口（8761）
+
+spring:
+  application:
+    name: eureka-server
+
+eureka:
+  instance:
+    hostname: localhost         # 本机地址（集群时填各自主机名）
+  client:
+    register-with-eureka: false # 注册中心不注册自己（单节点）
+    fetch-registry: false       # 不拉取服务列表（单节点）
+    service-url:
+      defaultZone: http://localhost:8761/eureka/   # 本注册中心的地址
+  server:
+    enable-self-preservation: false  # 关闭自我保护（生产建议保留默认 true）
+```
+
+**Server 配置项作用**
+
+| 配置项 | 作用 |
+|--------|------|
+| `eureka.client.register-with-eureka` | Server 是否把自己也注册为服务。单节点设为 `false`，否则控制台会出现一个自引用实例 |
+| `eureka.client.fetch-registry` | 是否拉取服务注册表。Server 自己不需要消费服务，单节点设为 `false` |
+| `eureka.client.service-url.defaultZone` | 注册中心地址列表，是客户端上线连接的目标 |
+| `eureka.server.enable-self-preservation` | 自我保护开关，见下方「自我保护模式」 |
+
+**高可用集群**
+
+生产至少部署 2 个 Server 互相同步：每个 Server 都注册到对方（此时 `register-with-eureka: true`），`defaultZone` 填对方地址，通过主机名互相发现。
+
+```yaml
+# 节点 1（peer1）
+server:
+  port: 8761
+eureka:
+  instance:
+    hostname: peer1
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://peer2:8762/eureka/
+
+# 节点 2（peer2）
+server:
+  port: 8762
+eureka:
+  instance:
+    hostname: peer2
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://peer1:8761/eureka/
+```
+
+**客户端接入（服务提供方 / 消费方）**
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+```
+
+```java
+@SpringBootApplication
+@EnableDiscoveryClient   // 或 Netflix 专用的 @EnableEurekaClient
+public class UserServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(UserServiceApplication.class, args);
+    }
+}
+```
+
+```yaml
+spring:
+  application:
+    name: user-service          # 服务名（注册到 Eureka 的标识，调用方靠它寻址）
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    lease-renewal-interval-in-seconds: 30   # 心跳间隔（默认 30s）
+    lease-expiration-duration-in-seconds: 90  # 超过此时长未收到心跳视为宕机（默认 90s）
+    prefer-ip-address: true                 # 注册 IP 而非主机名（容器/虚拟环境必开）
+    ip-address: 10.0.0.5                    # 显式指定要注册的 IP（多网卡机器用）
+```
+
+**客户端配置项作用**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.application.name` | 服务名，是实例注册后的业务标识，消费方通过它发起调用，**必填** |
+| `eureka.client.service-url.defaultZone` | 指定要连接的注册中心地址 |
+| `lease-renewal-interval-in-seconds` | 心跳发送间隔，调小能更快感知实例宕机，但会增大 Server 压力 |
+| `lease-expiration-duration-in-seconds` | 心跳超时阈值，超过即剔除实例；必须大于心跳间隔 |
+| `prefer-ip-address` | 注册 IP 而非主机名；在容器/K8s 里 hostname 常不可解析，**不设会导致发现后调用失败** |
+
+**自我保护模式（Self-Preservation）**
+
+```text
+正常情况：Server 每 90s 收不到某实例心跳 → 剔除该实例
+异常情况（网络分区、Server 负载过高）：15 分钟内续约比例 < 85%
+    ↓
+Server 进入自我保护模式
+    ↓
+不再剔除任何实例 —— 宁可保留疑似已死的实例，也不因网络抖动误删所有实例
+```
+
+| 关注点 | 说明 |
+|--------|------|
+| 触发条件 | 15 分钟内收到的续约心跳低于期望值的 85% |
+| 表现 | 停止剔除任何实例，注册表保持现状，直到心跳比例恢复 |
+| 代价 | 已宕机的实例仍留在注册表，消费方可能调用到"死节点" |
+| 建议做法 | 开发环境置 `enable-self-preservation: false` 便于调试；**生产保留默认 true**，同时让服务优雅下线（ShutdownHook 主动注销），并配合负载均衡重试/熔断兜底死节点 |
+
+**Eureka vs Nacos 对比**
+
+| 维度 | Eureka（Spring Cloud Netflix） | Nacos（Spring Cloud Alibaba） |
+|------|-------------------------------|-------------------------------|
+| 定位 | 注册中心（仅服务发现） | 注册中心 + 配置中心 |
+| 一致性 | AP（可用性优先，去中心化） | 默认 AP，支持切 CP（Raft） |
+| 健康检查 | 客户端心跳（默认 30s） | 心跳 + 可扩展主动健康检查 |
+| 配置管理 | ❌ | ✅ Nacos Config |
+| 控制台 | 基础（英文，功能较少） | 丰富（命名空间/分组/灰度/配置） |
+| 生态现状 | **已进入维护模式** | 活跃（Spring Cloud Alibaba 主导） |
+| 适用建议 | 存量旧系统 / 面试必备 | 新项目首选 |
+
+> ⚠️ Spring Cloud Netflix 自 2021 年起进入维护模式，Eureka / Hystrix / Ribbon 等组件不再增加新功能。**新项目推荐 Nacos 或 Consul**，但存量系统与面试题中 Eureka 依然高频出现，理解其"注册 → 心跳 → 自我保护"的机制是微服务入门必修课。
+
+### 1.4 API 网关（Spring Cloud Gateway）
 
 Spring Cloud Gateway 是基于 WebFlux 的响应式 API 网关。
 
@@ -281,7 +463,7 @@ public class RequestLoggingGatewayFilterFactory
 }
 ```
 
-### 1.4 服务间调用（OpenFeign）
+### 1.5 服务间调用（OpenFeign）
 
 OpenFeign 是声明式的 HTTP 客户端，让服务间调用像调用本地方法一样简单。
 

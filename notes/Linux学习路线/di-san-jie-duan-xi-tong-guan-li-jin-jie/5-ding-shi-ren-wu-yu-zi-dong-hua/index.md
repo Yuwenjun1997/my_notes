@@ -226,6 +226,141 @@ ansible-playbook -i inventory.ini deploy-web.yml
 
 ***
 
+## 五、进阶：cron 排障、timer 迁移与 Ansible 实战
+
+### 5.1 cron 排障三件套
+
+```bash
+# 1. 任务真的执行了吗？—— 查 syslog 的 CRON 行
+grep CRON /var/log/syslog | tail -20          # 每行记录执行时间与 CMD
+journalctl -u cron | tail -20
+
+# 2. 禁掉执行失败时的系统邮件（否则会堆到 /var/mail）
+MAILTO=""                                     # crontab 顶部设置，禁用邮件 ⭐
+
+# 3. cron 环境极简（PATH=/usr/bin:/bin、无自定义变量），规避清单：
+#    - 命令和脚本用绝对路径：/usr/bin/xxx 而不是 xxx
+#    - 脚本内部也写全 PATH：#!/bin/bash 后加 export PATH=...
+#    - 所有输出重定向：>> /var/log/xxx.log 2>&1
+#    - 不依赖 ~/.bashrc 里的别名/变量（cron 不读 .bashrc）
+0 2 * * * /opt/scripts/backup.sh >> /var/log/backup.log 2>&1
+```
+
+> ⚠️ "cron 任务没生效"90% 是环境问题：PATH 不对、脚本没执行权限、路径是相对路径。先 `grep CRON /var/log/syslog` 确认有没有被调度，再手动跑脚本对比。
+
+### 5.2 crontab 备份恢复与用户控制
+
+```bash
+# 备份当前用户的 crontab
+crontab -l > crontab-backup.txt
+
+# 从文件恢复（会整体覆盖当前 crontab）
+crontab crontab-backup.txt
+
+# 一键迁移：把用户 A 的 crontab 复制给用户 B
+crontab -l | sudo crontab -u alice -
+
+# 限制谁能用 crontab（存在即生效）
+sudo touch /etc/cron.allow          # 白名单：只有列出的用户能用
+# /etc/cron.deny                    # 黑名单：默认所有用户可用
+```
+
+### 5.3 anacron：错过任务的补执行
+
+```bash
+# anacron 负责 cron.daily/weekly/monthly：机器关机错过的时间，下次开机补执行
+cat /etc/anacrontab
+#   PERIOD DELAY JOB-IDENTIFIER COMMAND
+#   1    5     cron.daily    run-parts /etc/cron.daily
+#   7    25    cron.weekly   run-parts /etc/cron.weekly
+# （数字越大越靠后执行）
+
+# 对比：cron 只认"绝对时间"，关机就错过；anacron 保证"至少执行一次"
+# 所以日常维护放 /etc/cron.daily/，精确时间点任务才用 crontab
+```
+
+> 💡 服务器定时任务要在"每天几点整"跑（如凌晨 2 点备份），用 crontab；只要"每天跑一次、错过后补"，把脚本放进 `/etc/cron.daily/` 即可（由 anacron 调度）。
+
+### 5.4 timer 进阶：错峰与迁移
+
+```bash
+# 错峰执行：同一时刻大量任务触发会打满 IO，用 RandomizedDelaySec 打散 ⭐
+# /etc/systemd/system/backup.timer
+[Timer]
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=15m        # 2:00 后随机 0-15 分钟执行
+Persistent=true               # 错过则下次开机补执行
+Unit=backup.service
+
+# 校验日历表达式 ⭐
+systemd-analyze calendar "Mon..Fri 09:30"    # 显示下次触发时间
+systemd-analyze calendar "0 2 * * *"         # 确认含义
+
+# 把现有 crontab 迁移为 timer（crontab 一行 → 两个文件）
+# 原 crontab： 0 2 * * * /opt/scripts/backup.sh
+# backup.service
+# [Service]
+# Type=oneshot
+# ExecStart=/opt/scripts/backup.sh
+# backup.timer
+# [Timer]
+# OnCalendar=*-*-* 02:00:00
+# RandomizedDelaySec=10m
+# Persistent=true
+# [Install]
+# WantedBy=timers.target
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now backup.timer
+systemctl list-timers backup.timer          # 查看下次触发时间
+```
+
+> 💡 相比 cron，timer 白拿 journald 日志、Persistent 补执行、资源限制（**3.3 §6.3**）。迁移要点：service 用 `Type=oneshot`，timer 管时间，两个文件都要 `daemon-reload`。
+
+### 5.5 Ansible 进阶：幂等与演练
+
+```yaml
+# handlers/notify：配置变更后才重启，避免每次都重启 ⭐
+- name: 部署并重启 Web
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: 更新 nginx 配置
+      copy:
+        src: ./nginx.conf
+        dest: /etc/nginx/nginx.conf
+      notify: reload nginx          # 只有"真的改动了"才触发 handler
+
+  handlers:
+    - name: reload nginx
+      systemd:
+        name: nginx
+        state: reloaded
+```
+
+```yaml
+# when 条件：按主机/变量决定是否执行
+- name: 安装 MySQL 仅当是数据库主机
+  apt:
+    name: mysql-server
+    state: present
+  when: inventory_hostname in groups['dbservers']
+```
+
+```bash
+# 演练模式：--check 只"模拟"不生效 ⭐
+ansible-playbook -i inventory.ini deploy-web.yml --check
+ansible-playbook -i inventory.ini deploy-web.yml --check --diff   # 显示预期改动
+
+# 幂等性：同样的 playbook 跑多遍，结果一致、不重复改动
+# （apt/state=present、systemd/state=started 都是幂等模块）
+ansible-playbook -i inventory.ini deploy-web.yml   # 再跑一遍，应显示 ok 而不是 changed
+```
+
+> 💡 `--check` + 幂等模块是 Ansible 的安全底线：先演练再看实际差异，生产执行前心里有数。**关联 4.1 脚本**（把 playbook 当脚本一样做"先试运行"）。
+
+***
+
 ## 📝 实践项目
 
 ### 目标

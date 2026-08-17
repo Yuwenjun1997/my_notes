@@ -1,11 +1,11 @@
 ---
 url: /my_notes/index.md
-description: 小鱼开发笔记 —— 日常开发中使用的技术及参考，赛博朋克风格个人笔记站点
+description: 小鱼知识库 —— 技术知识、学习路线与参考文档，赛博朋克风格个人知识库站点
 ---
-# 小鱼开发笔记
+# 小鱼知识库
 ## 关于本站
 
-这里是「小鱼开发笔记」——一个记录日常开发中使用的技术与参考的赛博朋克风格个人笔记站点。
+这里是「小鱼知识库」——一个沉淀技术知识、系统学习路线与开发参考的赛博朋克风格个人知识库站点。
 
 **本站技术栈**：VuePress 2 · vuepress-theme-plume · Vite · TypeScript
 
@@ -22,6 +22,7 @@ description: 小鱼开发笔记 —— 日常开发中使用的技术及参考�
 
 ### 更新记录
 
+* 2026-08-17：站点更名为「小鱼知识库」，定位调整为个人知识库
 * 2026-08-16：首页 hero 特效由闪电背景改为交互点阵
 * 2026-08-15：首页升级为赛博朋克风格
 * 2026-08-15：迁移 Java / Linux / LangChain / Python 学习路线
@@ -4779,6 +4780,7 @@ url: /my_notes/notes/JAVA学习路线/index.md
 | 模块 | 核心内容 | 文档 |
 |:-----|:---------|:----:|
 | **2.1 Spring 全家桶** | IoC 容器 & DI、AOP 面向切面编程、Bean 生命周期；Spring MVC DispatcherServlet 流程、请求处理；Spring Boot 自动配置原理、Starter、Actuator；Spring Data JPA & MyBatis ORM 框架 | [📖 查看](./第二阶段-主流框架/2.1-Spring全家桶.md) |
+| **2.2 Starter 配置指南** | Web / JDBC / JPA / MyBatis / Security / Cache / Redis / RabbitMQ / Kafka 等常用 Starter 的 application.yml 配置教程，逐项解释每个配置项的作用 | [📖 查看](./第二阶段-主流框架/2.2-SpringBoot常用Starter配置.md) |
 
 ***
 
@@ -4865,7 +4867,7 @@ url: /my_notes/notes/JAVA学习路线/index.md
 | 5.2 DDD 领域驱动设计 | [📖 查看](./深度学习/05-设计模式与架构/5.2-DDD领域驱动设计.md) |
 | 5.3 系统设计真题解析 | [📖 查看](./深度学习/05-设计模式与架构/5.3-系统设计真题解析.md) |
 
-📌 深度学习总索引：[📖 查看完整深度索引](./深度学习/深度学习总索引.md)
+📌 深度学习总索引：[📖 查看完整深度索引](./深度学习/README.md)
 
 ***
 
@@ -5107,6 +5109,7 @@ url: /my_notes/notes/JAVA学习路线/第二阶段-主流框架/index.md
 # 第二阶段 · 主流框架
 
 * [Spring全家桶](./2.1-Spring全家桶.md)
+* [SpringBoot常用Starter配置](./2.2-SpringBoot常用Starter配置.md)
 
 ---
 
@@ -5947,6 +5950,8 @@ public class RedisProperties {
 </dependency>
 ```
 
+> 💡 以上各 Starter 的**完整配置教程**（application.yml 示例 + 每个配置项的作用逐条解释）见 [2.2-SpringBoot常用Starter配置](./2.2-SpringBoot常用Starter配置.md)。
+
 ### 3.3 Actuator 监控
 
 Spring Boot Actuator 提供了生产级的监控和管理功能。
@@ -6365,6 +6370,502 @@ public interface UserMapper {
 6. 参数校验（@Valid 注解）
 7. 统一异常处理（@ControllerAdvice）
 8. 分页查询（Pageable）
+
+---
+
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/2-springboot-chang-yong-starter-pei-zhi/index.md
+---
+# Spring Boot 常用 Starter 配置指南
+
+> 在 [2.1-Spring全家桶](./2.1-Spring全家桶.md) 中只列出了各 Starter 的 Maven 坐标，本文补齐它们**开箱即用所需的主流 `application.yml` 配置**，并逐项解释每个配置项的作用，让你拿到依赖就能跑起来。
+>
+> 本文默认 **Spring Boot 3.x**（依赖引入者自动获得括号内的默认值；配置前缀遵循 Boot 3 规范）。涉及的关键 2.x/3.x 前缀差异，在文末做了速查表。
+
+***
+
+## 一、Web 开发：spring-boot-starter-web
+
+**作用**：内置嵌入式 Tomcat，提供 Spring MVC（REST API + 静态资源 + 异常处理）。
+
+```yaml
+# application.yml
+server:
+  port: 8080                     # 服务端口（默认 8080）
+  address: 0.0.0.0               # 绑定网卡地址，0.0.0.0 允许所有网卡访问
+  servlet:
+    context-path: /api           # 统一访问前缀，如 localhost:8080/api/users
+    encoding:
+      charset: UTF-8             # 请求/响应字符编码
+      force: true                # 强制使用 UTF-8，忽略客户端声明的编码
+  tomcat:
+    max-threads: 200             # 最大工作线程数（默认 200）
+    min-spare-threads: 10        # 最小空闲线程数
+    max-connections: 10000       # 最大连接数
+    connection-timeout: 20000    # 连接超时（毫秒）
+
+spring:
+  mvc:
+    static-path-pattern: /**     # 静态资源映射路径
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss   # JSON 日期序列化格式
+    time-zone: GMT+8             # 时区，避免 Date 差 8 小时
+    default-property-inclusion: non_null  # 为 null 的字段不序列化输出
+    serialization:
+      write-dates-as-timestamps: false   # 日期不输出为时间戳
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `server.port` | 嵌入式 Tomcat 监听端口。同机多应用部署须各自改端口 |
+| `server.servlet.context-path` | 给所有接口加统一前缀，便于网关/反向代理区分应用，如网关转发 `lb://user-service/api/**` |
+| `server.servlet.encoding` | 解决中文乱码；`force: true` 使响应头强制声明 `UTF-8` |
+| `server.tomcat.max-threads` | Tomcat 处理请求的线程池上限，吞吐量瓶颈之一，配合连接数一起调 |
+| `spring.jackson.*` | 控制 `@ResponseBody` 的 JSON 序列化行为。`time-zone: GMT+8` 是新手最常见的"时间差 8 小时"坑的解法 |
+
+**✅ 提示**
+
+1. `spring-jackson` 与 `spring.mvc` 前缀下有大量可选项，够用即可，不必全部配置。
+2. 内嵌容器可切换：默认 Tomcat，把 `spring-boot-starter-web` 的 Tomcat 依赖 exclusions 掉，换上 `spring-boot-starter-jetty` 或 `spring-boot-starter-undertow` 依赖即可，配置项从 `server.tomcat.*` 换成 `server.jetty.*` / `server.undertow.*`。
+
+***
+
+## 二、数据访问：spring-boot-starter-jdbc
+
+**作用**：引入 JDBC + Spring 事务 + **HikariCP** 连接池（Boot 默认连接池）。只做 JDBC 不需要 ORM 时用这个。
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver   # MySQL 8 以上必须用 cj 驱动
+    hikari:
+      pool-name: MyHikariPool     # 连接池名称（便于日志区分）
+      maximum-pool-size: 20       # 最大连接数（默认 10）
+      minimum-idle: 5             # 最小空闲连接数
+      idle-timeout: 300000        # 空闲超时回收（毫秒，默认 10 分钟）
+      connection-timeout: 30000   # 获取连接超时（毫秒，默认 30s）
+      max-lifetime: 1800000       # 连接最大存活时间（毫秒，默认 30 分钟）
+      connection-test-query: SELECT 1  # 保活校验 SQL
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.datasource.url` | 连接串，`useSSL=false` 关闭 SSL 校验（本地）；`serverTimezone` 解决驱动 8 小时时区偏差 |
+| `driver-class-name` | MySQL 8+ 驱动类名为 `com.mysql.cj.jdbc.Driver`（旧版为 `com.mysql.jdbc.Driver`） |
+| `hikari.maximum-pool-size` | 连接池上限。**不是越大越好**：与 CPU/IO 相关，常规 Web 应用 10~20 即可，过大反而拖垮数据库 |
+| `hikari.idle-timeout` / `max-lifetime` | 前者回收空闲连接，后者兜底替换老化连接，防止数据库侧主动断开后客户端拿到半死连接 |
+| `connection-test-query` | 默认由 HikariCP 依据驱动自动判断，一般无需手写，MySQL 惯例配置 `SELECT 1` |
+
+**✅ 提示**
+
+* HikariCP 的池参数调优细节见 `第一阶段-核心基础/1.2-数据库基础.md` §3.1 §3.2。
+* 依赖还需引入对应数据库驱动（如 `mysql-connector-j`），starter-jdbc 只含池与抽象，不含驱动。
+
+***
+
+## 三、ORM 框架：spring-boot-starter-data-jpa
+
+**作用**：JPA 规范 + Hibernate 实现，实体/Repository 一键 CRUD（用法见 2.1 §四）。
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update            # 建表策略：none/validate/update/create
+    show-sql: true                # 控制台打印 SQL（调试用，生产关闭）
+    open-in-view: false           # 关闭 OSIV，避免长连接占会话（生产推荐 false）
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect   # 方言（Boot 自动推断，一般不用写）
+        format_sql: true          # 格式化打印的 SQL
+    database-platform: org.hibernate.dialect.MySQLDialect
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.jpa.hibernate.ddl-auto` | 建表策略：`create`（每次启动删表重建，仅开发）、`update`（增量更新结构，开发常用）、`validate`（只校验实体与表一致，不合则启动报错，生产推荐）、`none`（完全交 DBA 手动管理） |
+| `spring.jpa.show-sql` | 输出 Hibernate 生成的 SQL，调试 N+1 等问题的必备手段 |
+| `spring.jpa.open-in-view` | 默认 `true` 会让每个请求占用一个数据库连接直到响应结束，高并发下容易打满连接池；生产改为 `false` 并用事务管理器显式管理 |
+| `dialect` / `database-platform` | 指定数据库方言；Boot 依据 `spring.datasource.url` 自动推断，通常**无需手写** |
+
+**✅ 提示**
+
+* 生产环境强烈建议 `ddl-auto: validate`（或 `none`）+ 上线走 Flyway/Liquibase 迁移脚本，避免 Hibernate 自行改表导致数据丢失。
+* 反向生成 `spring.jpa.properties.hibernate.naming.physical-strategy` 可控制下划线命名转驼峰的映射策略。
+
+***
+
+## 四、ORM 框架：mybatis-spring-boot-starter
+
+**作用**：官方 MyBatis 集成 starter（数据库配置与 JPA 共用 `spring.datasource.*`）。在 2.1 §四.2 详述了 Mapper 写法，这里补上让 Mapper 生效的配套配置。
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml      # XML Mapper 扫描路径
+  type-aliases-package: com.example.entity          # 实体类别名包（XML 里可省写全限定名）
+  configuration:
+    map-underscore-to-camel-case: true   # 下划线列名自动映射为驼峰属性
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 控制台打印 SQL（调试）
+
+# Mapper 接口上需加 @Mapper 注解，或在启动类上加 @MapperScan("com.example.mapper")
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `mybatis.mapper-locations` | 指定 `*.xml` 的位置。`classpath*` 允许跨多个 jar/模块找到 mapper，微服务多模块项目必须用它 |
+| `mybatis.type-aliases-package` | 批量注册实体类别名，XML 里写 `resultType="User"` 而非全限定名 |
+| `mybatis.configuration.map-underscore-to-camel-case` | 自动把数据库 `create_time` 映射为实体 `createTime`，**不配置会让字段对应不上返回 null，最常见坑之一** |
+| `log-impl` | 打印 SQL 用于调试，生产可改为 slf4j 或移除 |
+
+**✅ 提示**
+
+* 与 JPA 二选一：**JPA 适合表结构规整、CRUD 为主**；**MyBatis 适合复杂 SQL、报表、遗留库**（2.1 §4.3 有完整对比）。
+* Mapper 必须在启动类 `@MapperScan` 或接口 `@Mapper` 二选一注册，否则启动即报"找不到 Bean"。
+
+***
+
+## 五、安全：spring-boot-starter-security
+
+**作用**：引入 Spring Security + 默认登录页与默认账号；一旦引入，所有请求默认被认证拦截。
+
+```yaml
+spring:
+  security:
+    user:
+      name: admin                # 默认登录账号（仅用默认认证时有效）
+      password: admin123         # 默认登录密码
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.security.user.name/password` | 引入 starter 后无需任何代码即可用此账密登录（默认名 `user`、随机密码打印在启动日志）。**仅用于快速验证，正式系统必须自定义 `SecurityFilterChain`** |
+
+**SecurityFilterChain 配置骨架（Spring Boot 3 / Spring Security 6）**
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())                        // 前后端分离关 CSRF
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 无状态（JWT）
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**", "/actuator/health").permitAll()  // 白名单
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")                // 角色控制
+                .anyRequest().authenticated())                                     // 其余需登录
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // 自定义 JWT 过滤器
+        return http.build();
+    }
+}
+```
+
+**✅ 提示**
+
+* `SecurityFilterChain` 是 Spring Security 6 的推荐写法（旧版 `WebSecurityConfigurerAdapter` 已废弃）。
+* 认证/授权/JWT/OAuth2 的完整讲解见 `第三阶段-进阶能力/3.3-安全.md`。
+
+***
+
+## 六、缓存：spring-boot-starter-cache
+
+**作用**：提供 Spring Cache 抽象（`@Cacheable` / `@CacheEvict` 等注解），配合缓存实现自动读写缓存。
+
+```yaml
+spring:
+  cache:
+    type: simple                 # 缓存实现：simple/caffeine/redis
+    cache-names: user, order     # 预声明缓存名（simple 类型必须声明才有容量）
+    redis:
+      time-to-live: 10m          # Redis 缓存过期时间（simple 类型不生效）
+      cache-null-values: false   # 是否缓存 null（默认 false 可防缓存穿透，但注意击穿）
+
+# Java 侧启用缓存：
+# @EnableCaching              —— 启动类上开启缓存注解
+# @Cacheable("user")          —— 方法结果进缓存，下次同 key 直接命中
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.cache.type` | 缓存存储后端。`simple`（进程内 ConcurrentHashMap，零依赖）、`caffeine`（本地高性能内存缓存，需另引依赖）、`redis`（分布式缓存，需配好 redis，见下节） |
+| `spring.cache.redis.time-to-live` | 缓存过期时间。**不设置时 Redis 缓存的 key 默认永不过期**，是"缓存越积越多"的常见来源 |
+| `spring.cache.cache-names` | 在启动时预创建缓存；`simple` 类型不预声明的话 key 数无容量限制会 OOM，务必配合 `specs` 限容量 |
+
+**✅ 提示**
+
+* 缓存穿透/击穿/雪崩与 `@Cacheable` 结合的最佳实践见 `第三阶段-进阶能力/3.1-缓存.md`。
+* 多实例部署时，`simple`/`caffeine` 是本地缓存，各实例数据不一致；要全局一致必须用 `redis`。
+
+***
+
+## 七、Redis：spring-boot-starter-data-redis
+
+**作用**：引入 Spring Data Redis（默认 Lettuce 客户端），提供 `RedisTemplate` / `StringRedisTemplate` 操作 Redis。
+
+```yaml
+spring:
+  data:
+    redis:
+      host: localhost            # Redis 服务地址
+      port: 6379                 # Redis 端口
+      password: redispwd         # 无密码可省略
+      database: 0                # 库下标（默认 0，多业务隔离常用 0/1/2）
+      timeout: 5s                # 连接/读写超时
+      lettuce:
+        pool:
+          max-active: 16         # 连接池最大活跃连接
+          max-idle: 8            # 连接池最大空闲连接
+          min-idle: 2            # 连接池最小空闲连接
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.data.redis.host/port` | **注意：Spring Boot 3 用 `spring.data.redis.*`；Spring Boot 2 用 `spring.redis.*`**，写错前缀会静默走默认值（localhost）连不上 |
+| `spring.data.redis.database` | Redis 默认 16 个库，用不同下标做业务隔离；生产更建议 key 前缀区分 |
+| `spring.data.redis.lettuce.pool.*` | Lettuce 默认**不使用池**（每次新建连接）只有配置了 `pool` 才启用；高并发下务必开池并合理调大 |
+| `timeout` | 连接建立与读写超时，防止网络抖动时线程长时间挂起 |
+
+**RedisTemplate 序列化配置（必配，否则 key 会出现 `\xac\xed\x00...` 乱码）**
+
+```java
+@Configuration
+public class RedisConfig {
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+        // key 用 String 序列化，避免默认 JDK 序列化产生乱码
+        StringRedisSerializer keySerializer = new StringRedisSerializer();
+        template.setKeySerializer(keySerializer);
+        template.setHashKeySerializer(keySerializer);
+        // value 用 JSON 序列化，便于读取与跨语言消费
+        GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer();
+        template.setValueSerializer(valueSerializer);
+        template.setHashValueSerializer(valueSerializer);
+        template.afterPropertiesSet();
+        return template;
+    }
+}
+```
+
+**✅ 提示**
+
+* **"key 乱码"和"对象反序列化失败"是 Spring Data Redis 两大经典坑**，根源都是默认 JDK 序列化，统一换 String + Jackson 即可。
+* Redis 数据结构与分布式锁详解见 `第三阶段-进阶能力/3.1-缓存.md`。
+
+***
+
+## 八、消息队列 - RabbitMQ：spring-boot-starter-amqp
+
+**作用**：引入 Spring AMQP，提供 `RabbitTemplate`（发送）与 `@RabbitListener`（消费）。
+
+```yaml
+spring:
+  amqp:                          # 可省略，Boot 自动推断地址
+  rabbitmq:
+    host: localhost
+    port: 5672                   # AMQP 端口（管理台 15672 是另一个端口）
+    username: guest              # 默认账号：guest/guest（仅本机可用）
+    password: guest
+    virtual-host: /              # 虚拟主机，多环境隔离常用
+    publisher-confirm-type: correlated   # 消息发送方确认（可靠性投递）
+    publisher-returns: true      # 不可路由的消息回退给生产者
+    listener:
+      simple:
+        acknowledge-mode: manual # 消费确认模式：manual/auto/none
+        prefetch: 10             # 单消费者预取数量（限流）
+        default-requeue-rejected: false   # 处理失败是否重回队列
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.rabbitmq.host/port` | 连接地址。`port 5672` 是消息端口，浏览器控制台用的 `15672` 是 Web 管理端口，不要混淆 |
+| `virtual-host` | 逻辑隔离，同一 RabbitMQ 实例按环境/业务拆 vhost |
+| `publisher-confirm-type: correlated` | 开启发送方确认，`RabbitTemplate` 可回调拿到消息是否被 Broker 接收，解决"发出去丢没丢" |
+| `listener.simple.acknowledge-mode` | `manual` 手动 ACK（代码里 `basicAck`）、`auto` 自动确认、`none` 不确认。可靠性要求高用 `manual` 配合死信处理 |
+| `prefetch` | 消费者一次预取的未确认消息数，设置「小」可实现消费限流，防止堆积时把消费者打垮 |
+
+**✅ 提示**
+
+* Exchange 类型、消息可靠性（Confirm/ACK/DLQ 死信）、消费者组完整讲解见 `第三阶段-进阶能力/3.2-消息队列.md` §二。
+
+***
+
+## 九、消息队列 - Kafka：spring-kafka
+
+**作用**：引入 Spring 对 Kafka 的集成，提供 `KafkaTemplate`（生产）与 `@KafkaListener`（消费）。
+
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092    # Broker 地址（集群用逗号分隔多个）
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all                  # 可靠性：all = 所有副本确认（强一致）
+      retries: 3                 # 发送失败重试次数
+      compression-type: snappy   # 压缩，降低网络与磁盘占用
+    consumer:
+      group-id: order-group      # 消费组（必配，决定消费水平扩展）
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest   # 无 offset 时从头消费（latest 则只消费新消息）
+      enable-auto-commit: false  # 关闭自动提交，配合手动提交保证至少一次
+```
+
+**各项作用解释**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.kafka.bootstrap-servers` | Kafka Broker 地址列表，多个逗号分隔 |
+| `producer.acks` | 写入确认级别：`0`（不等确认，最快但会丢）、`1`（leader 确认）、`all`（全部 ISR 副本确认，最可靠，默认就是这个） |
+| `consumer.group-id` | 消费组 ID，**必配**。同组内消息分摊消费、实现水平扩展；不同组各自消费全量 |
+| `auto-offset-reset` | 首次消费（无已提交 offset）时的策略：`earliest` 从最早开始、`latest` 只消费之后的新消息 |
+| `enable-auto-commit: false` | 默认 true 自动提交可能"丢了消息"（poll 后崩溃），关掉改代码里手动 `acknowledgment.acknowledge()` 实现至少一次语义 |
+
+**✅ 提示**
+
+* Kafka 分区/副本/消费者组/顺序性完整讲解见 `第三阶段-进阶能力/3.2-消息队列.md` §三。
+
+***
+
+## 十、参数校验：spring-boot-starter-validation
+
+**作用**：引入 Jakarta Validation（Hibernate Validator 实现），与 `@Valid` / `@Validated` 配合做请求参数声明式校验。
+
+```yaml
+# 无需强制配置；如需自定义错误提示语言，可声明：
+spring.messages.basename: i18n/messages   # 校验消息 i18n 资源路径
+```
+
+**用法示例**
+
+```java
+public class UserCreateRequest {
+    @NotBlank(message = "用户名不能为空")        // 非空
+    private String name;
+
+    @Email(message = "邮箱格式不正确")           // 邮箱格式
+    private String email;
+
+    @Size(min = 6, max = 20, message = "密码长度 6~20 位")
+    private String password;
+
+    @Min(1) @Max(120)                           // 数值范围
+    private Integer age;
+}
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    @PostMapping
+    public Result<User> create(@Valid @RequestBody UserCreateRequest request) {  // @Valid 触发校验
+        ...
+    }
+}
+```
+
+**✅ 提示**
+
+* 校验注解有：`@NotBlank`/`@NotNull`/`@Email`/`@Size`/`@Min`/`@Max`/`@Pattern`/`@Future` 等，全为 JSR-380 标准注解。
+* 校验失败默认抛出 `MethodArgumentNotValidException`，需配合 `@RestControllerAdvice` 统一兜底返回 `{"code":400,"message":...}`（2.1 §五实践项目做了示范）。
+* `@Validated` 用于类上开启分组校验，或对 `@RequestParam` 参数做校验。
+
+***
+
+## 十一、监控：spring-boot-starter-actuator
+
+**作用**：暴露 `/actuator/*` 监控端点（健康检查、指标、线程转储等），为容器探针 / 监控系统提供数据。
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+```
+
+**✅ 提示**
+
+* **详细配置、端点清单、自定义 `HealthIndicator` 已在 `2.1-Spring全家桶.md` §3.3（Actuator 监控）完整覆盖，此处不再重复。** 直接去那里看即可。
+
+***
+
+## 十二、测试：spring-boot-starter-test
+
+**作用**：聚合 JUnit 5 + AssertJ + Mockito + JSONPath 等测试全家桶（`<scope>test</scope>`）。
+
+```yaml
+# 一般无需 yaml 配置；关键在注解选择
+```
+
+**常用测试注解分工**
+
+| 注解 | 用途 |
+|------|------|
+| `@SpringBootTest` | 加载完整 Spring 上下文做集成测试（最重，慢） |
+| `@WebMvcTest` | 只加载 Web 层（Controller/MVC），其他 Bean 用 `@MockBean` 打桩，快 |
+| `@DataJpaTest` | 只加载 JPA 层，默认用内嵌数据库（H2）测 Repository |
+| `@MockBean` / `@MockitoBean` | 替换真实 Bean 为 Mock（Boot 3.4 起推荐 `@MockitoBean`） |
+| `@TestConfiguration` | 测试内补充的配置类，不会污染生产 |
+
+**✅ 提示**
+
+* 测试需分隔环境配置：`src/test/resources/application-test.yml` 配内嵌库（H2）+ 独立端口，避免连到开发库。
+
+***
+
+## 附：Spring Boot 2.x vs 3.x 配置前缀速查
+
+| 配置项 | Spring Boot 2.x | Spring Boot 3.x |
+|--------|-----------------|-----------------|
+| Redis 地址 | `spring.redis.host` | `spring.data.redis.host` |
+| Redis 连接池 | `spring.redis.lettuce.pool.*` | `spring.data.redis.lettuce.pool.*` |
+| JPA 方言 | `spring.jpa.database-platform`（同） | 同 |
+| `@SpringBootTest` Mock | `@MockBean` | `@MockBean`（3.4 起推荐 `@MockitoBean`） |
+| Web 安全配置 | `WebSecurityConfigurerAdapter` 继承 | 无继承，`SecurityFilterChain` Bean |
+| 自动配置注册 | `META-INF/spring.factories` | `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` |
+| Jackson 默认时间戳 | 输出为时间戳 | 输出为 ISO 时间字符串 |
+
+**最常见迁移坑**：Boot 2 → 3 升版后 Redis 连不上，绝大多数是 `spring.redis` 前缀忘了改成 `spring.data.redis`。
 
 ---
 
@@ -9761,7 +10262,189 @@ Nacos → 超过 15 秒未收到心跳 → 标记为不健康
 Nacos → 超过 30 秒未收到心跳 → 移除实例
 ```
 
-### 1.3 API 网关（Spring Cloud Gateway）
+### 1.3 服务发现（Eureka）
+
+Eureka 是 Spring Cloud Netflix 体系中的注册与发现组件（源自 Netflix Eureka），采用 **Server / Client** 架构：服务启动后向 Eureka Server 注册自身实例信息，消费者再从 Server 拉取目标服务的实例列表。
+
+**注册与发现原理**
+
+```text
+Eureka Server（注册中心，独立部署）
+    ▲             ▲
+    | 注册+心跳    | 注册+心跳
+ user-service   order-service
+    ↓
+ServiceC 调用 user-service
+    ↓
+从 Eureka Server 拉取 user-service 实例列表（默认每 30s 拉取并缓存 30s）
+    ↓
+负载均衡策略选择实例 → 发起远程调用
+    ↓
+实例宕机 → 心跳超时（90s）→ 剔除实例
+```
+
+**Eureka Server 部署**
+
+第一步：引入依赖
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+```
+
+第二步：启动类加注解
+
+```java
+@SpringBootApplication
+@EnableEurekaServer
+public class EurekaServerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EurekaServerApplication.class, args);
+    }
+}
+```
+
+第三步：配置
+
+```yaml
+server:
+  port: 8761                    # Eureka Server 默认端口（8761）
+
+spring:
+  application:
+    name: eureka-server
+
+eureka:
+  instance:
+    hostname: localhost         # 本机地址（集群时填各自主机名）
+  client:
+    register-with-eureka: false # 注册中心不注册自己（单节点）
+    fetch-registry: false       # 不拉取服务列表（单节点）
+    service-url:
+      defaultZone: http://localhost:8761/eureka/   # 本注册中心的地址
+  server:
+    enable-self-preservation: false  # 关闭自我保护（生产建议保留默认 true）
+```
+
+**Server 配置项作用**
+
+| 配置项 | 作用 |
+|--------|------|
+| `eureka.client.register-with-eureka` | Server 是否把自己也注册为服务。单节点设为 `false`，否则控制台会出现一个自引用实例 |
+| `eureka.client.fetch-registry` | 是否拉取服务注册表。Server 自己不需要消费服务，单节点设为 `false` |
+| `eureka.client.service-url.defaultZone` | 注册中心地址列表，是客户端上线连接的目标 |
+| `eureka.server.enable-self-preservation` | 自我保护开关，见下方「自我保护模式」 |
+
+**高可用集群**
+
+生产至少部署 2 个 Server 互相同步：每个 Server 都注册到对方（此时 `register-with-eureka: true`），`defaultZone` 填对方地址，通过主机名互相发现。
+
+```yaml
+# 节点 1（peer1）
+server:
+  port: 8761
+eureka:
+  instance:
+    hostname: peer1
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://peer2:8762/eureka/
+
+# 节点 2（peer2）
+server:
+  port: 8762
+eureka:
+  instance:
+    hostname: peer2
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://peer1:8761/eureka/
+```
+
+**客户端接入（服务提供方 / 消费方）**
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+```
+
+```java
+@SpringBootApplication
+@EnableDiscoveryClient   // 或 Netflix 专用的 @EnableEurekaClient
+public class UserServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(UserServiceApplication.class, args);
+    }
+}
+```
+
+```yaml
+spring:
+  application:
+    name: user-service          # 服务名（注册到 Eureka 的标识，调用方靠它寻址）
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    lease-renewal-interval-in-seconds: 30   # 心跳间隔（默认 30s）
+    lease-expiration-duration-in-seconds: 90  # 超过此时长未收到心跳视为宕机（默认 90s）
+    prefer-ip-address: true                 # 注册 IP 而非主机名（容器/虚拟环境必开）
+    ip-address: 10.0.0.5                    # 显式指定要注册的 IP（多网卡机器用）
+```
+
+**客户端配置项作用**
+
+| 配置项 | 作用 |
+|--------|------|
+| `spring.application.name` | 服务名，是实例注册后的业务标识，消费方通过它发起调用，**必填** |
+| `eureka.client.service-url.defaultZone` | 指定要连接的注册中心地址 |
+| `lease-renewal-interval-in-seconds` | 心跳发送间隔，调小能更快感知实例宕机，但会增大 Server 压力 |
+| `lease-expiration-duration-in-seconds` | 心跳超时阈值，超过即剔除实例；必须大于心跳间隔 |
+| `prefer-ip-address` | 注册 IP 而非主机名；在容器/K8s 里 hostname 常不可解析，**不设会导致发现后调用失败** |
+
+**自我保护模式（Self-Preservation）**
+
+```text
+正常情况：Server 每 90s 收不到某实例心跳 → 剔除该实例
+异常情况（网络分区、Server 负载过高）：15 分钟内续约比例 < 85%
+    ↓
+Server 进入自我保护模式
+    ↓
+不再剔除任何实例 —— 宁可保留疑似已死的实例，也不因网络抖动误删所有实例
+```
+
+| 关注点 | 说明 |
+|--------|------|
+| 触发条件 | 15 分钟内收到的续约心跳低于期望值的 85% |
+| 表现 | 停止剔除任何实例，注册表保持现状，直到心跳比例恢复 |
+| 代价 | 已宕机的实例仍留在注册表，消费方可能调用到"死节点" |
+| 建议做法 | 开发环境置 `enable-self-preservation: false` 便于调试；**生产保留默认 true**，同时让服务优雅下线（ShutdownHook 主动注销），并配合负载均衡重试/熔断兜底死节点 |
+
+**Eureka vs Nacos 对比**
+
+| 维度 | Eureka（Spring Cloud Netflix） | Nacos（Spring Cloud Alibaba） |
+|------|-------------------------------|-------------------------------|
+| 定位 | 注册中心（仅服务发现） | 注册中心 + 配置中心 |
+| 一致性 | AP（可用性优先，去中心化） | 默认 AP，支持切 CP（Raft） |
+| 健康检查 | 客户端心跳（默认 30s） | 心跳 + 可扩展主动健康检查 |
+| 配置管理 | ❌ | ✅ Nacos Config |
+| 控制台 | 基础（英文，功能较少） | 丰富（命名空间/分组/灰度/配置） |
+| 生态现状 | **已进入维护模式** | 活跃（Spring Cloud Alibaba 主导） |
+| 适用建议 | 存量旧系统 / 面试必备 | 新项目首选 |
+
+> ⚠️ Spring Cloud Netflix 自 2021 年起进入维护模式，Eureka / Hystrix / Ribbon 等组件不再增加新功能。**新项目推荐 Nacos 或 Consul**，但存量系统与面试题中 Eureka 依然高频出现，理解其"注册 → 心跳 → 自我保护"的机制是微服务入门必修课。
+
+### 1.4 API 网关（Spring Cloud Gateway）
 
 Spring Cloud Gateway 是基于 WebFlux 的响应式 API 网关。
 
@@ -9916,7 +10599,7 @@ public class RequestLoggingGatewayFilterFactory
 }
 ```
 
-### 1.4 服务间调用（OpenFeign）
+### 1.5 服务间调用（OpenFeign）
 
 OpenFeign 是声明式的 HTTP 客户端，让服务间调用像调用本地方法一样简单。
 
@@ -44976,6 +45659,7 @@ url: /my_notes/notes/Linux学习路线/index.md
 | **2.4 进程管理与系统监控** | ps/top/htop 进程查看、kill/pkill 信号控制、后台运行（&/nohup）、systemd 服务管理、free/df/du/iostat 资源监控 | [📖 查看](./第二阶段-Shell与常用命令/2.4-进程管理与系统监控.md) |
 | **2.5 软件包管理** | apt/dpkg 包管理、PPA 添加与管理、snap 与 flatpak、源码编译安装（./configure && make && make install）、常见开发环境搭建（JDK/Node/Python） | [📖 查看](./第二阶段-Shell与常用命令/2.5-软件包管理.md) |
 | **2.6 文本查看与编辑** | less/more 分页查看、vim 编辑器进阶（模式/多文件/分屏/.vimrc）、nano 快速编辑、工具对比与选择 | [📖 查看](./第二阶段-Shell与常用命令/2.6-文本查看与编辑.md) |
+| **2.7 文本操作命令进阶** | cat 高阶用法（-A/-s/heredoc/拼接）、查看命令全家桶速查（nl/rev/od）、vim 进阶技巧（宏/可视块/寄存器/批量替换）、nano 进阶配置 | [📖 查看](./第二阶段-Shell与常用命令/2.7-文本操作命令进阶.md) |
 
 ***
 
@@ -45015,7 +45699,7 @@ url: /my_notes/notes/Linux学习路线/index.md
     │  概述 → 安装 → 文件系统 → 用户权限
     ▼
 第二阶段：Shell 与常用命令（3-4周）
-    │  Shell基础 → 文件操作 → 文本处理 → 进程管理 → 包管理 → 文本查看编辑
+    │  Shell基础 → 文件操作 → 文本处理 → 进程管理 → 包管理 → 文本查看编辑 → 文本操作进阶
     ▼
 第三阶段：系统管理进阶（2-3周）
     │  磁盘管理 → 网络配置 → systemd → 日志分析 → 定时任务
@@ -45145,6 +45829,7 @@ url: /my_notes/notes/Linux学习路线/第二阶段-Shell与常用命令/index.m
 * [进程管理与系统监控](./2.4-进程管理与系统监控.md)
 * [软件包管理](./2.5-软件包管理.md)
 * [文本查看与编辑](./2.6-文本查看与编辑.md)
+* [文本操作命令进阶](./2.7-文本操作命令进阶.md)
 
 ---
 
@@ -45430,6 +46115,99 @@ sudo apt update && sudo apt upgrade -y     # 更新成功才升级
 git pull || echo "拉取失败，请检查网络"      # 失败时输出提示
 mkdir -p /app/logs && cd /app/logs || exit 1  # 目录创建成功才进入
 ```
+
+***
+
+## 七、Bash 进阶：让命令更高效
+
+### 7.1 历史记录与行编辑
+
+```bash
+history                      # 查看命令历史
+history | grep docker        # 搜索历史命令
+!!                           # ⭐ 重复上一条命令
+!$                           # 上一条命令的最后一个参数
+!n                           # 执行历史中第 n 条命令
+!docker                      # 执行最近一条以 docker 开头的命令
+sudo !!                      # ⭐ 上一条命令忘了加 sudo，补 sudo 执行
+
+Ctrl+R                       # ⭐ 反向搜索历史（输入关键词，多次按继续往前找）
+```
+
+历史带上时间戳（写入 `~/.bashrc`）：
+
+```bash
+export HISTTIMEFORMAT="%F %T  "
+export HISTSIZE=10000        # 内存中保留的命令数
+export HISTFILESIZE=20000    # 磁盘 history 文件保留条数
+```
+
+### 7.2 Bash 扩展机制
+
+```bash
+# 大括号展开
+echo {1..5}                  # 1 2 3 4 5
+echo {a..e}                  # a b c d e
+mkdir -p {2024,2025}/{01..06}  # 批量建目录（2.2 的 file{1,2,3}.txt 就是它）
+
+# 命令替换：把命令输出当"值"用
+echo "今天是 $(date +%F)"     # ⭐ 推荐写法
+echo "今天是 `date +%F`"      # 旧写法（反引号），易与引号混淆
+
+# 算术展开
+echo $((10/3))               # 3（整数除法）
+echo $((2**10))              # 1024
+
+# 波浪号展开
+cd ~                        # 家目录
+cd ~alice                   # alice 用户的家目录
+cd ~-                       # 相当于 cd -（$OLDPWD）
+```
+
+### 7.3 启动文件加载顺序
+
+```bash
+# 登录交互 shell（SSH 登录）：
+#   /etc/profile → ~/.profile → ~/.bashrc
+# 非登录交互 shell（打开终端）：
+#   ~/.bashrc（Ubuntu 默认终端走这条）
+# 非交互 shell（运行脚本）：
+#   以上都不读，只继承父进程环境
+```
+
+> ⚠️ **"环境变量不生效"排查**：写进 `~/.bashrc` 的变量，在**脚本里读不到**——因为脚本是非交互 shell，不读 `.bashrc`。要在脚本里用，就在启动脚本前显式 `export`，或脚本内 `source ~/.bashrc`。排查用：`grep -n 变量名 ~/.bashrc ~/.profile /etc/profile`。
+
+### 7.4 alias 与函数
+
+```bash
+alias ll='ls -lah'           # 定义别名
+alias grep='grep --color=auto'
+unalias ll                  # 删除别名
+type -a ll                  # 查看别名定义
+
+# 别名只对交互 shell 生效，脚本里不展开 ⚠️
+```
+
+**alias vs 函数**：别名只是文本替换，不能带参数逻辑；需要参数/条件判断时用函数。
+
+```bash
+mytar() { tar -czvf "$1.tar.gz" "$1"; }   # 函数：mytar logs 把 logs 打成 logs.tar.gz
+export -f mytar             # 导出函数给子 shell 使用
+```
+
+### 7.5 进程替换与 here-string
+
+```bash
+# 进程替换 <(...)：把命令输出当"文件"传给需要文件名参数的命令
+diff <(ls dirA) <(ls dirB)         # ⭐ 对比两个目录内容差异
+grep -f <(grep -r "TODO" src/) file.txt
+
+# here-string <<<：把一行字符串塞进 stdin
+grep -n "ERROR" <<< "a b ERROR c"      # 结果：1:ERROR
+bc <<< "10 + 20"                       # 30（给计算器喂表达式）
+```
+
+> 💡 与管道/重定向的区别：`<(cmd)` 把命令输出放进**临时文件**，适合需要"文件名"的命令（`diff`/`comm`）；here-string `<<<` 是直接喂 stdin，比 `echo xxx |` 少一次管道。heredoc `<<` 是**多行**版本（**2.7 §1.3** 深化了引号与缩进细节）。
 
 ***
 
@@ -45727,6 +46505,100 @@ rsync -avz user@host:/remote/dir/ /local/dir/    # 远程 → 本地
 rsync -avP --exclude='node_modules' --exclude='.git' \
     ~/projects/ /backup/projects/
 ```
+
+***
+
+## 五、进阶技巧与常见坑
+
+### 5.1 find 高效处理：-exec、-delete 与 xargs
+
+```bash
+# 三种"找到后处理"的方式
+find . -name "*.tmp" -delete                      # 直接删除（最快）
+find . -name "*.log" -exec rm {} \;               # 每个文件起一个 rm
+find . -name "*.log" -exec rm {} +                # ⭐ 合并参数一次处理（比 \; 高效）
+find . -name "*.log" | xargs rm                   # 通过 xargs 传参
+
+# ⭐ 文件名含空格/特殊字符时，必须用 NUL 分隔防拆分
+find . -name "*.log" -print0 | xargs -0 rm        # -print0 与 -0 配套使用
+find . -name "*.log" -print0 | xargs -0 grep -l "ERROR"
+
+# 批量重命名实战
+find . -name "*.txt" -exec mv {} {}.bak \;        # 全部加 .bak 后缀
+find . -name "*.txt" -print0 | xargs -0 -I{} mv {} {}.md   # 改成 .md
+```
+
+> ⚠️ **空格陷阱**：`find ... | xargs rm` 遇到文件名含空格会被拆成多个参数，产生误删风险。**生产环境批量删除务必 `-print0 | xargs -0`**。xargs 的更多选项（`-n`/`-P`/`-d`）见 **2.3 §五**。
+
+### 5.2 glob 与 find 的差异、特殊文件名的坑
+
+```bash
+# glob（通配符）由 Shell 展开，默认只匹配当前目录
+ls *.log                    # 只匹配当前目录的 .log
+shopt -s globstar           # 开启后 ** 可递归（bash 4+）
+
+# find 更强大：递归 + 按条件组合
+find . -name "*.log"        # 递归查找
+
+# 以 - 开头的文件
+rm -- -file.txt             # ⭐ -- 告诉命令"后面是文件名，不是选项"
+ls ./-file.txt              # 或用 ./ 前缀规避
+
+# ls -a 与 ls -d .* 的区别
+ls -a                       # 显示 . 和 .. 及所有隐藏文件
+ls -d .*                    # 只显示隐藏文件（含 . 和 ..）
+```
+
+### 5.3 tar 进阶：排除、校验与流式备份
+
+```bash
+# 排除指定路径
+tar -czvf backup.tar.gz \
+    --exclude='node_modules' \
+    --exclude='.git' \
+    --exclude='*.log' \
+    ~/projects/
+
+# 从文件读排除规则（-X）
+printf 'node_modules\n*.log\n' > exclude.txt
+tar -czvf backup.tar.gz -X exclude.txt ~/projects/
+
+# 校验归档完整性
+tar -tvf backup.tar.gz              # 查看内容列表
+gzip -t backup.tar.gz               # ⭐ 校验 gzip 压缩包完整性
+
+# 流式远程备份（不落地中间文件）⭐
+tar czf - ~/projects/ | ssh user@host 'cat > /backup/projects.tar.gz'
+tar czf - ~/projects/ | ssh user@host 'tar xzf - -C /remote/dir/'
+```
+
+### 5.4 rsync 增量备份：--link-dest
+
+```bash
+# ⭐ 硬链接增量备份：每次"全量"，但未变化的文件复用上次的硬链接，不占空间
+rsync -av --link-dest=/backup/2026-08-15/ ~/projects/ /backup/2026-08-16/
+
+# 演练：只列出会传输的文件，不实际传输
+rsync -avn /source/ /dest/          # -n = --dry-run
+rsync -av --list-only /source/ /dest/
+```
+
+> 💡 `--link-dest` 是"时间点备份"（snapshot）的经典做法：每天一份完整目录树，只占一份实际空间，还能随时回滚到任一天。改坏了文件直接 `cp --reflink` 或从备份目录取回。
+
+### 5.5 touch 精确改时间、mv 的本质
+
+```bash
+# 精确设置时间戳
+touch -t 202608151730 file.txt       # 设置为 2026-08-15 17:30
+touch -d "2026-08-15 17:30:00" f.txt # 更可读的写法
+stat file.txt                        # 验证 atime/mtime/ctime
+
+# mv 的两种本质
+mv a.txt b.txt          # 同文件系统 → rename 系统调用，瞬时完成
+mv /mnt/data/a.txt ~/   # ⭐ 跨文件系统 → 先复制再删除（慢！）
+```
+
+> 💡 `mv` 大文件跨磁盘（如从 `~/` 移到挂载盘）会"复制+删除"，耗时比预想长。用 `df -T ~/` 和 `df -T /mnt/data` 对比文件系统类型，不同即跨盘。
 
 ***
 
@@ -46142,6 +47014,112 @@ ZZ              保存并退出（等同 :wq）
 
 ***
 
+## 七、进阶技巧与常见坑
+
+### 7.1 grep 进阶：-P / -o / -f / -q
+
+```bash
+# -P 使用 PCRE 语法（更接近 Java/JS 正则）⭐
+grep -P '\bERROR\b' app.log             # \b 单词边界
+grep -P '(?<=prefix)\d+' app.log        # 向后断言
+
+# -o 只输出匹配的部分（配合统计）⭐
+grep -o 'GET [^ ]*' access.log          # 只输出 GET 后的路径
+grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' access.log | sort | uniq -c
+
+# -f 从文件读多个模式
+grep -f blacklist.txt access.log        # 命中黑名单任一模式即输出
+grep -vf blacklist.txt access.log       # 过滤掉黑名单
+
+# -L 列出"不匹配"的文件（与 -l 相反）
+grep -L "ERROR" *.log                   # 哪些日志里没有 ERROR
+
+# -q 静默模式：只看退出码，用于脚本条件判断 ⭐
+if grep -q "ERROR" app.log; then
+  echo "发现 ERROR，发送告警"           # 退出码 0 = 有匹配
+fi
+```
+
+### 7.2 sed 地址范围进阶
+
+```bash
+# 从文件头匹配到第一个 /re/ 出现（区别于 1,/re/ 只在第一行匹配时才成立）
+sed -n '0,/error/p' app.log            # 从开头打印到第一个 error
+
+# 相对范围：匹配行及其后 N 行
+sed -n '/Exception/,+5p' app.log       # 打印 Exception 行及之后 5 行 ⭐
+sed -n '/start/,/end/p' app.log        # 打印 start 到 end 之间的行
+sed -n '$p' file.txt                   # $ 代表最后一行
+sed -n '1~2p' file.txt                 # 打印奇数行（1~2 = 从第1行起隔2行）
+
+# 只打印被替换过的行（-n + s///p 组合）⭐
+sed -n 's/port=8080/port=9090/p' app.properties   # 只显示实际发生替换的行
+
+# -e 组合多个脚本
+sed -e 's/old/new/g' -e '/^#/d' file.txt          # 替换 + 删注释
+
+# 用其他分隔符避免转义（路径中含 / 时）
+sed -n 's|/etc/nginx|/etc/apache|p' file.txt
+```
+
+### 7.3 awk 内建变量与 getline
+
+```bash
+# 内建变量：FILENAME / NR / NF / FS / OFS / ARGC / ARGV
+awk '{print FILENAME, NR, $0}' a.txt b.txt    # 打印来源文件名 + 行号
+awk 'END {print NR " 行"}' file.txt           # 总行数
+
+# getline：读取下一行（手动控制循环）
+awk '{sum += $1; getline; sum += $1} END {print sum}' file.txt
+
+# sub / gsub：在字段内替换
+awk '{gsub(/ms/,"",$NF); print $NF}' access.log    # 去掉列里的 ms 单位
+awk '{sub(/^0+/,"",$1); print $1}' file.txt        # 去掉数字前导 0
+
+# BEGIN/END 统计聚合
+awk 'BEGIN {total=0} {total += $NF} END {printf "总耗时 %.2f ms\n", total}' access.log
+```
+
+### 7.4 sort / uniq 的 locale 坑
+
+```bash
+# ⭐ locale 影响排序结果：中文字符、字母大小写的顺序在不同 locale 下不同
+sort file.txt                    # 默认按当前 locale（UTF-8）排序
+LC_ALL=C sort file.txt           # 按字节序排序（更稳定、更快）⭐
+LC_ALL=C sort -u file.txt        # 排序并去重（避免大小写/中文差异）
+
+# 多列排序：先按第 1 列，再按第 2 列数字
+sort -t',' -k1,1 -k2,2n data.csv
+
+# uniq -w 只比较前 N 个字符去重
+sort file.txt | uniq -w 3        # 只看每行前 3 个字符判断重复
+```
+
+> 💡 生产脚本里做去重/排序统计，建议显式 `LC_ALL=C`，结果可预测，且 `LC_ALL=C sort` 比 UTF-8 排序快。
+
+### 7.5 xargs 高效处理：-n / -I / -0 / -P
+
+```bash
+# -n 每次传 N 个参数给命令
+echo 1 2 3 4 | xargs -n 2 echo      # 每批 2 个：1 2 / 3 4
+
+# -I 占位符（对每个输入替换 {}）
+cat file.txt | xargs -I{} echo "处理 {} 完成"
+
+# -d 自定义分隔符（不依赖空格）
+echo "a,b,c" | xargs -d ',' echo    # a b c
+
+# -P 并行执行 N 个进程 ⭐
+cat urls.txt | xargs -P 8 -I{} curl -sO {}
+find . -name "*.gz" -print0 | xargs -0 -P 4 -I{} gzip -d {}
+
+# 与 find -exec + 对比：xargs 更适合复杂管道；exec + 语法内聚
+```
+
+> ⚠️ 默认 `xargs` 按空格/换行切分，遇到含空格的路径会错乱，务必配合 `find -print0 | xargs -0`（**2.2 §5.1**）。无参数命令不要给 `-I` 占位符，`-P` 并行对 CPU 敏感任务要控制数量。
+
+***
+
 ## 📝 实践项目
 
 ### 目标
@@ -46496,6 +47474,105 @@ journalctl -u nginx -p err             # 只看 ERROR 级别
 
 ***
 
+## 六、进阶：僵尸进程、/proc 与资源限制
+
+### 6.1 僵尸进程的产生与回收
+
+```bash
+# 僵尸进程（Z）：子进程已退出，但父进程没有调用 wait() 回收它的退出状态
+# 产生原因：父进程 fork 后没 wait、或父进程本身是常驻服务没处理 SIGCHLD
+
+# 找到所有僵尸进程 ⭐
+ps -eo pid,ppid,stat,cmd | awk '$3 ~ /^Z/'
+ps aux | awk '$8 ~ /^Z/'
+
+# 僵尸进程杀不掉（kill -9 无效），只能：
+# 1. 让父进程处理：kill -HUP 父进程，或重启父进程（父进程退出后由 init 收养回收）
+# 2. 如果父进程是 init(1)，僵尸会尽快被回收
+kill -HUP <PPID>        # 提示父进程重新读取配置/回收子进程
+```
+
+> 💡 少量僵尸进程无害；大量僵尸说明**父进程存在 bug**（没 wait），排查方向是父进程，而不是僵尸本身。
+
+### 6.2 /proc/PID/ —— 进程的"体检报告"
+
+```bash
+# 每个进程在 /proc 下都有一个目录，内核实时暴露进程信息 ⭐
+PID=$(pgrep -f "app.jar" | head -1)
+
+cat /proc/$PID/status        # 状态、内存、线程数（Threads 字段）
+ls -l /proc/$PID/fd          # 该进程打开的所有文件描述符 ⭐
+cat /proc/$PID/cmdline | tr '\0' ' '   # 完整启动命令行（含空格，用 \0 分隔）
+cat /proc/$PID/environ | tr '\0' '\n'  # 进程的环境变量
+cat /proc/$PID/limits        # 进程的资源限制（含 nofile 软硬上限）
+ls /proc/$PID/task           # 该进程的所有线程
+
+# 实时监控：/proc/meminfo /proc/loadavg /proc/cpuinfo
+head -5 /proc/meminfo
+cat /proc/loadavg
+```
+
+> 💡 排查"进程占了多少内存 / 打开了哪些文件 / 环境变量是什么"这类问题，`/proc/PID/` 是最权威的第一手数据，比 `top`/`ps` 更细。
+
+### 6.3 cgroup 与 systemd 资源限制
+
+```bash
+# systemd 运行任意命令并附加资源限制 ⭐
+sudo systemd-run --scope -p MemoryMax=512M -p CPUQuota=50% java -jar app.jar
+
+# 对已有服务设置资源上限（立即生效 + 写入配置）
+sudo systemctl set-property nginx.service MemoryMax=1G
+sudo systemctl set-property nginx.service CPUQuota=80%
+
+# 查看 cgroup 实际用量
+systemd-cgtop                    # 类似 top 的 cgroup 资源视图
+cat /sys/fs/cgroup/memory.events # OOM 事件计数
+```
+
+> 💡 这是防止"单进程吃光内存/CPU"的现代做法，比 `ulimit` 更细粒度（可针对单个服务）。与 **4.3 内核参数调优**、**4.4 容器资源限制**衔接。
+
+### 6.4 后台运行的会话细节与 tmux
+
+```bash
+# & vs nohup vs setsid 的差异核心：控制终端与 SIGHUP
+#   cmd &            ：仍是当前会话的作业，关终端发 SIGHUP 被终止
+#   nohup cmd &      ：忽略 SIGHUP，但没有完全脱离会话（3.3 已讲）
+#   setsid cmd       ：创建新会话，完全脱离终端 ⭐
+
+setsid java -jar app.jar > app.log 2>&1 &
+disown -h %1          # 标记后台任务不响应 SIGHUP（配合 & 使用）
+
+# ⭐ 推荐：长任务用 tmux/screen，会话级保持 + 可重连
+sudo apt install tmux -y
+tmux new -s deploy            # 新建会话（关终端任务继续跑）
+tmux attach -t deploy         # 重新连接
+tmux ls                       # 列出会话
+```
+
+> 💡 `nohup` 只能防 SIGHUP；`tmux`/`screen` 提供的是**完整会话保持**：中途断线可 `attach` 重连，还能看回历史输出。远程操作长时间任务首选。
+
+### 6.5 ulimit 与 "Too many open files"
+
+```bash
+ulimit -n                    # 查看当前进程打开文件数上限
+ulimit -n 65535              # 临时调高（当前会话）
+
+# 永久设置（用户级）写入 /etc/security/limits.conf
+# alice soft nofile 65535
+# alice hard nofile 65535
+
+# 服务级（systemd 服务）在 unit 文件里设
+# [Service]
+# LimitNOFILE=65535
+
+# 全局内核上限
+sysctl fs.file-max           # 系统所有进程可打开的 fd 总数
+```
+
+> ⚠️ **"Too many open files"** 是 Java/中间件高并发下的经典报错：连接数/文件句柄超过 `ulimit -n` 默认值（常为 1024）。排查顺序：`ulimit -n` → 服务是否降级了限制 → 提高软硬上限后重启服务。与 **4.3 连接数排查**、**4.4 容器限制**联动。
+
+***
+
 ## 📝 实践项目
 
 ### 目标
@@ -46839,6 +47916,102 @@ sudo apt install -y \
     python3 python3-pip
 
 echo "✅ 开发环境安装完成！"
+```
+
+***
+
+## 七、进阶：版本锁定、多版本共存与故障修复
+
+### 7.1 apt-mark 版本锁定与下载
+
+```bash
+# 锁定/解锁软件包版本（apt upgrade 时不会升级）⭐
+sudo apt-mark hold redis          # 锁定 redis 版本
+sudo apt-mark unhold redis        # 解锁
+apt-mark showhold                 # 列出所有被锁定的包
+
+# 只下载 deb 不安装（可离线/审计）
+apt-get download redis            # 当前目录得到 redis*.deb
+apt download nginx                # apt 语法同样支持
+
+# apt-file 查找"文件属于哪个包"（解决缺头文件/库文件报错）⭐
+sudo apt install apt-file -y
+sudo apt-file update
+apt-file search string.h          # 哪个包提供 string.h
+```
+
+### 7.2 deb822 源格式与 signed-by
+
+```bash
+# 新版 Ubuntu（22.04+）源默认改用 deb822 格式：
+# /etc/apt/sources.list.d/ubuntu.sources
+
+# 手动添加第三方源的推荐姿势（signed-by 明确绑定 GPG 密钥）⭐
+curl -fsSL https://example.com/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/example.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/example.gpg] https://example.com/ubuntu noble main" \
+  | sudo tee /etc/apt/sources.list.d/example.list
+
+# 验证源配置
+apt-cache policy example-tool     # 看能否解析到版本
+```
+
+> ⚠️ **弃用 `apt-key add`**：它在 `/etc/apt/trusted.gpg.d` 里全局信任所有源，一旦密钥泄露影响面大。新姿势是每源一个密钥文件 + `signed-by` 绑定（**1.2 换源**已有说明）。2.5 §1.2 里的 `apt-key adv --recv-keys` 是遗留写法，仅作应急参考。
+
+### 7.3 dpkg 维护与 broken 包修复
+
+```bash
+# 检查包数据库一致性
+sudo dpkg --audit                       # 找出未配置/半安装的包
+
+# 重新触发配置（改配置后想让服务重新生成配置）
+sudo dpkg-reconfigure tzdata            # 重新配置时区
+sudo dpkg-reconfigure openssh-server
+
+# broken 包修复标准流程 ⭐
+sudo dpkg --configure -a                # 修复未配置的包
+sudo apt install -f                     # 修复损坏依赖
+sudo apt update && sudo apt upgrade -y  # 恢复更新
+
+# 查看包被哪些文件占用/包状态字段
+dpkg -S /usr/sbin/nginx
+dpkg-query -W -f='${Package} ${Version} ${Status}\n' nginx
+```
+
+### 7.4 update-alternatives：多版本共存切换
+
+```bash
+# 一个命令有多个候选版本时，用 alternatives 统一管理 ⭐
+update-alternatives --list java                    # 列出所有候选
+sudo update-alternatives --config java             # 交互式切换
+sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-17-openjdk-amd64/bin/java 1700
+sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-21-openjdk-amd64/bin/java 2100
+#   最后一个数字是优先级，数值大者默认生效
+
+# 手动切到指定版本
+sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+# 移除候选
+sudo update-alternatives --remove java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+```
+
+> 💡 比"改 `~/.bashrc` 的 PATH"更规范：alternatives 把版本切换做成系统级、可逆的，装多个 JDK/Node/Python 时用它（`update-java-alternatives` 是其 Java 专用封装，§6.1 已用到）。
+
+### 7.5 apt 版本 pin 与 snap 进阶
+
+```bash
+# 版本 pin：锁定软件包的"来源/版本"优先级（/etc/apt/preferences.d/）
+# 文件 99-pin
+# Package: redis-server
+# Pin: version 7.*
+# Pin-Priority: 1001      # >1000 表示强制安装该版本
+
+# snap 隔离等级
+sudo snap install nvim --classic      # classic：无完整沙箱（如 IDE、CLI）
+snap info nvim                        # 查看 confinement（confined/classic）
+
+# snap 服务管理
+snap services                         # 列出 snap 提供的服务 ⭐
+sudo snap restart <snap>.service
+snap connections nvim                  # 查看可插拔接口
 ```
 
 ***
@@ -47191,6 +48364,94 @@ nano -l file.txt       # 显示行号
 
 ***
 
+## 七、进阶：环境变量、崩溃恢复与插件
+
+> 本节与 **2.7 文本操作命令进阶** 分工：2.7 讲 vim 的**宏/可视块/寄存器/批量替换**；本节讲 less/vim 的**环境、恢复与集成**，都是"让日常更稳"的进阶。
+
+### 7.1 less 环境变量与 lesspipe
+
+```bash
+# LESS 环境变量：默认参数（~/.bashrc 里设一次，之后 less 全生效）⭐
+export LESS="-N -R"            # 自动行号 + 保留颜色
+export LESS="-N -R -i"         # + 搜索忽略大小写
+
+# lesspipe：预处理脚本，让 less 直接读压缩包/归档 ⭐
+# （Ubuntu 的 less 已自动配置，可直接：）
+less app.log.gz               # 压缩日志直接分页查看
+less archive.tar.gz           # 自动列出 tar 内容（无需先解压）
+
+# 其他实用启动参数
+less -M file                  # 底部显示文件路径与百分比
+less +G file                  # 打开即跳到文件末尾 ⭐（配合 -F 等于实时跟踪）
+less +F /var/log/syslog       # 打开即实时跟踪（等价 tail -f）
+```
+
+### 7.2 vim 的 swap、备份与崩溃恢复
+
+```bash
+# 崩溃恢复：编辑中途终端掉线/断电，vim 会留下 .filename.swp ⭐
+vim file.txt                  # 提示 "Swap file already exists"
+vim -r file.txt               # 用 swap 恢复未保存内容
+vim -r file.txt -c 'saveas ~/recovered.txt'   # 恢复到新文件再退出
+
+# 编辑时保存原始文件备份
+:set backup                   # 写文件前生成 file~ 备份
+:set backupdir=~/.vim/backup  # 备份放到独立目录（避免污染源码目录）
+
+# 预防：经常 :w 保存；处理完确认无 .swp 残留
+ls -la | grep .swp
+```
+
+> ⚠️ 终端掉线是远程编辑的最高发事故。出现 `E325` swap 提示时：先判断是自己上次残留（`vim -r` 恢复后删除 `.swp`），还是另一个进程正在编辑（别动，等它结束）。**2.7 宏/可视块等批量操作都建立在"及时保存"上**。
+
+### 7.3 只读模式与 less 联动
+
+```bash
+vim -R config.conf            # 只读打开（误操作会被拒绝写入）
+view /etc/fstab               # 等同 vim -R，只读查看 ⭐
+vim -M file                   # 强制只读（连 vim 命令都禁用）
+
+# less 里按 v 直接进入 vim 编辑当前文件 ⭐
+less -N app.log               # 看到第 100 行 → 按 v → vim 打开第 100 行
+#   在 vim 改完 :wq 退出后，会回到 less 继续翻页
+```
+
+> 💡 检查系统配置只用 `view`/`less`，防止手滑改动生产配置；真正要改再用 `sudo vim`。less 的 `v` 是"只读浏览 → 紧急编辑"的桥。
+
+### 7.4 运行时配置扩展：list / cursorline / fileformat
+
+```vim
+" 追加到 ~/.vimrc 后 :source ~/.vimrc 生效
+set list                     " 显示不可见字符：Tab 显示为 ^I，行尾显示 $
+set listchars=tab:»\ ,trail:· " 自定义符号（trail 标出行尾空格）
+set cursorline               " 高亮当前行
+set fileformat=unix          " 写文件用 LF 换行（去掉 ^M）⭐
+set wrapscan                 " 搜索到文件末尾后回到开头
+```
+
+> 💡 与 **2.7 的 `cat -A`** 呼应：vim 里 `set list` 也能看不可见字符；发现 `^M` 时 `set fileformat=unix` + `:w` 即修复 DOS 换行。
+
+### 7.5 插件入门：原生键位练熟后的进阶
+
+```vim
+" 安装 vim-plug（Ubuntu）：
+" curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+"   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+" ~/.vimrc 中声明插件
+call plug#begin('~/.vim/plugged')
+  Plug 'tpope/vim-surround'      " ys/cs/ds 快速加/改/删成对符号 ⭐
+  Plug 'tpope/vim-commentary'    " gc 快速注释/取消注释 ⭐
+  Plug 'preservim/nerdtree'      " 文件树（可选）
+call plug#end()
+
+" 安装：vim 里 :PlugInstall
+```
+
+> 💡 不要一上来装一堆插件——先把原生键位（**2.3 §六**、**2.6 §四**、**2.7 §三**）练熟。surround/commentary 是"加/改引号括号、注释"的高频刚需，两个就够。生产服务器上常没有插件环境，原生能力才是底线。
+
+***
+
 ## 📝 实践项目
 
 ### 目标
@@ -47246,6 +48507,406 @@ nano -l file.txt       # 显示行号
 * 用 vim 分屏同时对比两个配置文件（`vim -d a.conf b.conf` 或 `:vsp`）。
 * 写一份自己的 `~/.vimrc`，用 `:source ~/.vimrc` 立即生效。
 * 用 `crontab -e` 打开定时任务编辑器（默认是 nano），添加一条定时任务（关联 **3.5 定时任务与自动化**）。
+
+---
+
+---
+url: >-
+  /my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/7-wen-ben-cao-zuo-ming-ling-jin-jie/index.md
+---
+# 文本操作命令进阶
+
+**2.6 文本查看与编辑** 讲了 less/vim/nano 的完整键位；本篇是它的"进阶武器"篇——**不再重复快捷键表**，而是聚焦三件事：把 `cat` 从"查看"升级为"构建文件"、一张速查卡收齐所有查看命令、把 vim 的快捷键用成可复用的**工作流**（宏、可视块、寄存器、批量替换）。
+
+## 一、cat 高阶用法：从"查看"到"构建文件"
+
+`cat` 的基础用法（`cat` / `cat -n` / `tac`）已在 **2.2 §1.4 查看文件内容** 讲过。这一节只讲 2.2 没有的**选项与文件构建能力**——记住：`cat` 的核心是**把文件当作字节流**，既能读出来，也能拼起来、写进去。
+
+### 1.1 显示不可见字符
+
+```bash
+cat -A config.txt          # ⭐ 显示所有不可见字符（最常用）
+cat -E config.txt          # 只显示行尾（每行末尾加 $）
+cat -T config.txt          # 只显示制表符（Tab 显示为 ^I）
+cat -s config.txt          # 压缩连续空行为一个空行
+cat -b config.txt          # 给非空行编号（空行不编号）
+
+# 实战：检测 Windows 换行符（DOS 回车显示为 ^M）
+cat -A app.log | head      # 看到行尾有 ^M 说明是 DOS 格式（\r\n）
+# 实战：检查配置文件是否有多余空格/制表符
+cat -A /etc/nginx/nginx.conf | grep '\$$'   # 找出行尾有多余空格的行
+```
+
+| 选项 | 作用 | 典型场景 |
+|:-----|:-----|:---------|
+| `-n` | 给所有行编号（含空行） | 2.2 已讲，展示代码/日志行号 |
+| `-b` | 只给非空行编号 | 编号时跳过空行 |
+| `-A` | 显示所有不可见字符（= `-vET`） | ⭐ 诊断换行符、多余空格、Tab |
+| `-E` | 行尾显示 `$` | 单独检查行尾空白 |
+| `-T` | Tab 显示为 `^I` | 检查缩进是空格还是 Tab |
+| `-s` | 压缩连续空行 | 清理脚本输出、压缩日志空行 |
+
+### 1.2 多文件拼接与追加
+
+```bash
+cat a.txt b.txt > c.txt            # ⭐ 合并多个文件到 c.txt
+cat a.txt >> b.txt                 # 把 a 追加到 b 末尾
+cat file1.txt file2.txt file3.txt  # 依次输出三个文件
+cat *.md > 全部.md                  # 通配符拼接目录下所有 md
+cat part1 part2 > 完整文件          # 还原被 split 分卷的文件（split -b 见 3.1）
+
+# 用 cat 临时合并后交给其他命令
+cat a.log b.log | grep ERROR       # 合并两个日志再搜索
+```
+
+> 💡 **拼接 vs 复制**：`cat a b > c` 是**内容流**操作，把 a、b 的内容依次写入 c；`cp`/`mv` 是**文件级**操作（保留权限、复制整个 inode）。要给文件加"头"或合并多个配置片段，用 `cat` 最顺手。
+
+### 1.3 heredoc：一次性写文件
+
+heredoc 的概念已在 **2.1 §5.3 输入输出重定向与管道** 讲过，这里深化两个容易踩的细节：**引号与缩进**。
+
+```bash
+# 写法一：EOF 加单引号 → 内容原样写入，变量不展开
+cat > /tmp/config.conf << 'EOF'
+server {
+    port = ${APP_PORT}     # 原样保留 ${APP_PORT}，不替换
+    host = "10.0.0.1"
+}
+EOF
+
+# 写法二：EOF 不带引号 → 变量会展开 ⭐
+PORT=8080
+cat > /tmp/app.env << EOF
+APP_PORT=$PORT             # 被替换为 APP_PORT=8080
+APP_HOME=/opt/app
+EOF
+
+# 写法三：<<- 忽略行首 Tab（适合在缩进的脚本里写配置）
+cat > /tmp/conf.ini <<- 'EOF'
+	[key]                   # 行首的 Tab 会被去掉
+	value = 1
+	EOF
+
+# 追加而不是覆盖：<< 配合 >> 即可
+cat >> /tmp/app.env << 'EOF'
+APP_LOG=info
+EOF
+```
+
+> ⚠️ **坑**：
+>
+> * `EOF` 结束标记必须**顶格写**（行首不能有空格），除非用 `<<-`。
+> * 不加引号的 `EOF` 会做变量/命令展开，如果内容里有 `$`（如正则、配置文件里的 `$` 变量），务必加引号 `'EOF'`。
+> * heredoc 不只是 `cat` 的专利，`tee` 也能用：`tee config.txt << 'EOF' ... EOF`，区别是 tee 会同时输出到屏幕（还能追加 `-a`）。
+
+**四选一：往文件写内容用哪个？**
+
+| 工具 | 特点 | 适用场景 |
+|:-----|:-----|:---------|
+| `cat > file` | 逐行输入直到 Ctrl+D，或配合 heredoc | ⭐ 多行内容、生成配置文件 |
+| `echo "..." > file` | 简单一行文本 | 写单行、写变量值 |
+| `printf "..." > file` | 支持格式串 `%s`/`%d`/`\n` | 需要格式化输出时 |
+| `tee file` | 一边写文件一边显示在终端，支持 `-a` 追加 | 需要"所见即所得"的确认 |
+
+### 1.4 cat 常见坑
+
+> ⚠️ **大文件别用 cat 看**：`cat 大文件 | head` 会先把整份文件读进管道，触发 SIGPIPE 报 `Broken pipe`。直接 `head 大文件`、`less 大文件` 更高效（**2.6 §二**）。
+> ⚠️ **cat 二进制会乱码**：`cat binary.img` 会往终端喷乱码。要看二进制用 `od -c` / `xxd`（见 **2.3 特殊查看技巧**）。
+> 💡 想实时看文件尾部变化，用 `tail -f` 而不是 `cat`（**2.2 §1.4**）。
+
+***
+
+## 二、查看命令全家桶速查卡
+
+**2.6 §一** 的对比表覆盖了 cat/head/tail/more/less/vim/nano。这里补上没进那张表的 `tac`/`nl`/`rev`/`od`，构成一张完整的"查看命令全家桶"。
+
+### 2.1 全景速查卡
+
+| 命令 | 方向 | 翻页 | 搜索 | 行号 | 实时跟踪 | 编辑 | 典型场景 |
+|:-----|:-----|:----:|:----:|:----:|:--------:|:----:|:---------|
+| `cat` | 从头到尾 | ❌ | ❌ | `-n` | ❌ | ❌ | 小文件、拼接 |
+| `tac` | 从尾到头 | ❌ | ❌ | ❌ | ❌ | ❌ | 逆序输出（倒看日志） |
+| `nl` | 从头到尾 | ❌ | ❌ | ✅ | ❌ | ❌ | 编号输出（比 cat -n 灵活） |
+| `rev` | 每行反转 | ❌ | ❌ | ❌ | ❌ | ❌ | 逐行字符反转 |
+| `head` | 开头 N 行 | ❌ | ❌ | ❌ | ❌ | ❌ | 看文件头 |
+| `tail` | 末尾 N 行 | ❌ | ❌ | ❌ | `-f/-F` | ❌ | 看日志最新、实时跟踪 |
+| `less` | 自由 | ✅ | ✅ | `-N` | `F` | ❌ | ⭐ 大文件、长输出分页 |
+| `more` | 仅向下 | 部分 | 有限 | ❌ | ❌ | ❌ | 老习惯（已被 less 取代） |
+| `od` | 从头到尾 | ❌ | ❌ | ❌ | ❌ | ❌ | 八进制/十六进制看二进制 |
+
+> 💡 记忆口诀：**看方向找 tac/rev，看开头 head、看结尾 tail，分页搜索全用 less，乱码诊断找 od**。
+
+### 2.2 nl 与 cat -n 的区别
+
+`cat -n` 只能简单编号，`nl` 可控制**编号格式、宽度、是否包含空行**：
+
+```bash
+nl file.txt                    # 默认：非空行编号，空行不编号
+nl -ba file.txt                # ⭐ 所有行编号（含空行）= cat -n
+nl -w 3 file.txt               # 编号宽度占 3 位（右对齐补空格）
+nl -s '. ' file.txt            # 编号和正文之间用 ". " 分隔
+nl -n ln file.txt              # 编号左对齐（ln）/右对齐(rn)/补零(z1)
+nl -v 100 file.txt             # 起始编号从 100 开始
+```
+
+### 2.3 特殊查看技巧
+
+```bash
+tail -n +10 file.txt           # ⭐ 从第 10 行开始显示（跳过前 9 行）
+head -n -3 file.txt            # 显示除最后 3 行外的所有行（负数 = 去掉末尾 N 行）
+sed -n '10,20p' file.txt       # 只取第 10-20 行（中段，sed 详见 2.3 §三）
+sed -n '10p' file.txt          # 只取第 10 行
+
+rev file.txt                   # 每行字符左右反转（如 1234 → 4321）
+rev file.txt | sort | rev      # 按"行尾内容"排序的取巧技巧
+
+od -c file.bin | head          # 按字符查看二进制（乱码诊断）⭐
+od -An -tx1 file.bin           # 纯十六进制字节
+xxd file.bin                   # 十六进制 + 左侧 ASCII 对照（更直观）
+xxd file.bin | head            # 查看文件头几个字节（校验魔数，如 PNG 的 89 50 4E 47）
+```
+
+> 💡 `tail -n +N` 常用于"跳过表头取数据"：`tail -n +2 data.csv` 取掉 CSV 首行表头。
+
+***
+
+## 三、vim 进阶技巧：把快捷键用成工作流
+
+前提：已掌握 **2.3 §六 vim 基础操作** 和 **2.6 §四 vim 完整快捷键**。本节**不再罗列键位表**，只讲把键位组合成可复用工作流的四类技巧。
+
+### 3.1 宏录制（q）—— 把重复操作录成"一键"
+
+宏是 vim 里最划算的进阶技能：录一遍，回放 N 遍。
+
+```text
+操作流程：
+q a          开始录制到寄存器 a
+   ...执行要重复的操作（插入、删除、替换、移动...）
+q            结束录制
+@a           回放一次
+5@a          回放 5 次
+@@           重复上一次回放
+```
+
+```text
+实战：给 20 行数据每行加 "name:" 前缀
+1. gg 到第一行 → q a → I  → 输入 name: → Esc → j（下一行）→ q
+2. 20@a  批量执行 20 次（每次回到行首、加前缀、跳到下一行）
+```
+
+```text
+实战：把日志行转成 CSV（把空格分隔替换为逗号）
+1. 光标在第一行 → q b → :s/ \+/,/g → 回车 → j → q
+2. 99@b  把前 100 行全部转成 CSV
+```
+
+> 💡 宏配对的黄金套路：**让宏以"回到起始位置 + 移动到下一行"收尾**（如 `I...Esc j`），这样重复执行时才会逐行推进，不会卡在同一行。
+
+### 3.2 可视块编辑（Ctrl+v）—— 多列同时改
+
+```text
+Ctrl+v       进入可视块模式（选中矩形区域）
+  移动 j/k/l/h  框住要操作的列
+I 内容 Esc   批量插入（每行选中的列前都插入）⭐
+d / x        批量删除选中的列
+~            批量切换大小写
+> / <        批量缩进 / 反缩进
+```
+
+```text
+实战：给 50 行配置批量加注释（# 加到行首）
+1. Ctrl+v → 框选 1-50 行的第一列 → I → 输入 # → Esc
+   所有选中行行首同时出现 #  ⭐
+实战：删除每行开头的 4 个空格缩进
+1. Ctrl+v → 框选前 4 列 → d
+```
+
+> ⚠️ 批量插入 `I` 后必须按 `Esc` 才会真正应用到所有选中行，而且插入的内容会保留，注意先看状态栏确认仍在可视块模式。
+
+### 3.3 寄存器应用 —— vim 的多块剪贴板
+
+**2.6 §4.2** 列过寄存器基础键位，这里讲**应用场景**：vim 有多个独立的"剪贴板"，互不覆盖。
+
+| 寄存器 | 名称 | 内容 | 适用场景 |
+|:-------|:-----|:-----|:---------|
+| 无名寄存器 | `""` | 最近一次删除/复制 | 日常 `dd`/`yy`/`p` |
+| 编号寄存器 | `"0`-`"9` | 最近 10 次操作历史 | `"0p` 找回刚才误删的内容 |
+| 命名寄存器 | `"a`-`"z` | 用户指定 | ⭐ 临时保存多段内容 |
+| 黑洞寄存器 | `"_` | 丢弃 | 删除但不想污染剪贴板 |
+| 系统剪贴板 | `"+` | 与系统剪贴板互通 | 复制到系统粘贴到别处 |
+
+```text
+实用场景：
+"ayy    复制当前行到寄存器 a
+"ap     粘贴寄存器 a 的内容
+"+yy    复制到系统剪贴板（可在浏览器/IDE 里 Ctrl+V）⭐
+"+p     粘贴系统剪贴板内容
+dd      删错了 → "0p  把刚才删的那一行找回来 ⭐
+"_dd    删除但不覆盖剪贴板（黑洞）
+:reg    查看所有寄存器的内容
+```
+
+### 3.4 多文件批量操作 —— diff、bufdo、vimgrep
+
+**2.6 §4.2** 已讲多文件/分屏/标签的键位，这里补充**以"批量"为目的**的用法：
+
+```bash
+vim -d a.conf b.conf        # ⭐ diff 模式打开两个文件对比
+```
+
+| 按键/命令 | 作用 |
+|:----------|:-----|
+| `]c` / `[c` | 跳到下一处 / 上一处差异 |
+| `do` | 把对方文件的差异"取过来"（diff obtain） |
+| `dp` | 把当前差异"推过去"（diff put） |
+| `:diffupdate` | 手动重新计算差异 |
+| `:diffthis` | 在普通分屏中开启 diff |
+
+```bash
+# 批量替换所有打开文件（缓冲）中的内容：bufdo = 对每个缓冲执行
+:bufdo %s/8080/9090/g | update    # ⭐ 每个文件替换后自动保存
+
+# 多文件搜索（vimgrep，结果可用 :copen 查看）
+:vimgrep /ERROR/ src/**/*.java    # 在 src 下所有 java 文件搜 ERROR
+:copen                            # 打开结果列表，回车跳转
+:cnext / :cprev                   # 下一个 / 上一个匹配
+```
+
+> 💡 运维场景：改了端口要同步到多个配置，`vim a.conf b.conf c.conf` 打开后 `:bufdo %s/8080/9090/g | update` 一键搞定，再 `:qall` 退出。
+
+### 3.5 查找替换进阶 —— 从"替换"到"删除/范围/正则"
+
+**2.3 §6.2** 讲了 `:%s/old/new/g`。这里补充更强大的变体：
+
+```text
+删除匹配行 / 保留匹配行
+:g/pattern/d         删除所有匹配 pattern 的行 ⭐
+:g!/pattern/d        删除所有"不匹配"的行（只保留匹配行）
+:v/pattern/d         同 :g! 的简写
+
+范围替换
+:1,10s/old/new/g     只替换第 1-10 行
+:.,$s/old/new/g      从当前行到文件末尾
+:/start/,/end/s/old/new/g   在两个标记之间的范围替换
+
+正则进阶（配合 2.3 §2.2 的正则基础）
+:%s/\v(\w+)@\w+\.com/@example.com/g    \v = very magic 模式，\1 = 第一组捕获
+:%s/\v(^\s*)(#.*)?/\1#\2/              给非注释行批量加注释（保留原缩进）
+```
+
+```text
+表达式替换（:s 的结果里用 \= 调用 vim 表达式）—— 在普通替换里做"计算"
+:%s/^/\=printf('%-3d ', line('.'))/    每行行首插入行号（2.3 实践项目出现过）
+:%s/\v(\d+)/\=submatch(1)*2/g          把所有数字翻倍
+```
+
+***
+
+## 四、nano 进阶配置 —— 轻量也顺手
+
+**2.6 §五** 讲了 nano 的基础键位和适用场景。这里补配置与多缓冲，让它日常改配置更顺手。
+
+### 4.1 .nanorc 配置文件
+
+nano 的用户配置在 `~/.nanorc`（全局在 `/etc/nanorc`），保存后立即生效：
+
+```text
+# ~/.nanorc 示例
+set linenumbers        # 显示行号 ⭐
+set tabsize 4          # Tab 宽度 4
+set autoindent         # 自动缩进
+set nowrap             # 长行不自动换行
+set mouse              # 支持鼠标点击定位
+
+# 启用常见语法高亮（Debian/Ubuntu 自带语法定义）
+include /usr/share/nano/*.nanorc
+```
+
+### 4.2 多缓冲与正则替换
+
+nano 的编辑能力弱于 vim，但几个进阶键能显著提速：
+
+| 按键 | 作用 |
+|:-----|:-----|
+| `M-,` / `M-.` | 切换到上一个 / 下一个缓冲（打开多个文件时） |
+| `M-<` / `M->` | 跳到文件开头 / 末尾 |
+| `M-R` | 正则表达式替换 ⭐（如 `M-R` 后 `^ *` 可去行首空格） |
+| `M-U` / `M-E` | 撤销 / 重做 |
+| `M-\\` | 补全单词 |
+
+> 💡 没有宏、没有可视块、没有 `:g`，nano 的批量能力确实弱（**2.6 §5.3** 已说明取舍）。超过"改几行配置"的重活，回 vim 用第三章的宏/可视块/批量替换。
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+用高级文本技巧完成一次"文件处理流水线"：从诊断、生成、拼接到批量编辑。
+
+### 步骤
+
+1. **诊断换行符并修复**
+
+   ```bash
+   printf 'a\r\nb\r\nc\n' > dos.txt
+   cat -A dos.txt        # 看到 ^M 说明是 DOS 换行
+   sed -i 's/\r$//' dos.txt    # 去掉行尾 ^M（sed 详见 2.3 §三）
+   cat -A dos.txt        # 确认 ^M 消失
+   ```
+
+2. **heredoc 生成配置 + cat 拼接**
+
+   ```bash
+   cat > app.env << 'EOF'
+   PORT=8080
+   LOG=info
+   EOF
+   cat header.txt app.env footer.txt > 完整配置.conf   # 三段拼接
+   cat -n 完整配置.conf
+   ```
+
+3. **查看命令全家桶练习**
+
+   ```bash
+   seq 1 100 > nums.txt
+   nl -ba nums.txt | tail -5        # 编号 + 只看末尾 5 行
+   tail -n +95 nums.txt             # 跳过前 94 行
+   rev <(echo "hello")              # 输出 olleh（进程替换见 2.1）
+   xxd nums.txt | head              # 用十六进制看文件头
+   ```
+
+4. **vim 宏批量加序号前缀**
+
+   ```text
+   打开 20 行数据 → gg → q a → I → 输入 "1. " → Esc → j → q
+   改数字后（2. 3. ...）用可视块批量递增：Ctrl+v 框住行首数字 → 然后 20@a 前先手动改一列
+   简化练习：只加统一前缀 "item-" → q a → I item- → Esc → j → q → 19@a
+   ```
+
+5. **可视块批量注释 / 反注释**
+
+   ```text
+   vim 一个 30 行的 shell 脚本 → Ctrl+v 框住前 1 列 → I → 输入 # → Esc
+   全部加注释；再次框选 → d 全部取消注释
+   ```
+
+6. **:bufdo 批量替换端口**
+
+   ```bash
+   mkdir -p ~/txt-practice && cd ~/txt-practice
+   echo 'port=8080' > a.conf && echo 'port=8080' > b.conf
+   vim a.conf b.conf        # 打开后：
+   #   :bufdo %s/8080/9090/g | update   两个文件都替换并保存
+   #   :qall                             全部退出
+   ```
+
+### 进阶挑战
+
+* 用宏把一段 `access.log`（空格分隔）转成 CSV，再统计转换后的行数。
+* 用 `vimdiff`（`vim -d a.conf b.conf`）对比并同步两个配置文件的差异。
+* 写一份自己的 `~/.nanorc`（含 `set linenumbers` + 语法高亮），并验证改配置时行号生效。
+* 用 `od -An -tx1` 查看任意文件的**魔数**（前 8 字节），验证它是不是正确的文件类型。
 
 ---
 
@@ -47458,6 +49119,101 @@ rm ./test
 ```
 
 > ⚠️ **注意事项**：`dd` 命令非常强大但也非常危险（俗称 disk destroyer）。使用前务必确认 `of=` 参数指向正确的目标，`of=/dev/sda` 会直接覆盖整个硬盘！
+
+***
+
+## 六、进阶：故障恢复、swap 调优与磁盘健康
+
+### 6.1 fstab 错误与 emergency mode 恢复
+
+```bash
+# 场景：fstab 写错（挂载点/设备不存在）→ 开机进入 emergency mode 或卡在 fsck
+# 恢复流程：
+# 1. 输入 root 密码进入 emergency shell，重新挂载根为可写
+mount -o remount,rw /
+
+# 2. 查看 fstab 并修复（最常见的坑：用设备路径而非 UUID、目录不存在）
+cat /etc/fstab
+lsblk -f                        # 核对 UUID
+
+# 3. 修复后测试
+mount -a                        # 全部挂载一次，报错会指出问题行
+
+# 4. 重启验证
+reboot
+```
+
+> ⚠️ **预防**：改 fstab 前 `cp /etc/fstab /etc/fstab.bak`；生产环境优先用 **UUID** 而非 `/dev/sdX` 路径（盘符会随插拔变化）；新挂载点先 `mkdir` 再挂。
+
+### 6.2 swap 调优与监控
+
+```bash
+# 查看 swap 使用
+swapon --show                  # 列出 swap 设备/文件及优先级
+free -h | grep -i swap
+
+# ⭐ swap 倾向性：值越低越优先用物理内存，越高越早用 swap
+cat /proc/sys/vm/swappiness    # 默认 60
+# 调低到 10（服务器优先保内存，减少 swap 抖动）
+echo 10 | sudo tee /proc/sys/vm/swappiness
+echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf   # 永久生效
+```
+
+> 💡 swap 本身在实践项目里已创建；这里补的是"用多少、何时用"的调优。数据库/中间件服务器通常希望 `swappiness` 调低（如 10）；内存紧张的小机器保留默认即可。与 **4.3 内核参数调优** 联动。
+
+### 6.3 "df 满但找不到大文件"与磁盘配额
+
+```bash
+# 场景：df -h 显示满，但 du 找不出占用——文件被进程删除但未释放
+lsof +L1                      # ⭐ 列出"已删除但仍被占用"的文件
+lsof +L1 | grep -v '^COMMAND' | head
+# 处理：重启对应进程，或重启服务释放 fd；必要时直接重启系统
+
+# 磁盘配额（XFS）
+sudo xfs_quota -x -c 'report' /data
+sudo xfs_quota -x -c 'limit -u bsoft=90g bhard=100g alice' /data
+```
+
+> ⚠️ 日志/临时文件被进程持有而删除（最常见是 rsyslog、应用日志），重启进程后空间才会真正释放。这是运维高频坑。
+
+### 6.4 LVM 快照与在线缩容
+
+```bash
+# ⭐ LVM 快照：秒级生成一致性快照，用于备份/回滚
+sudo lvcreate -s -L 5G -n data-snap /dev/vg0/data     # 为 data 建 5G 快照
+sudo mount /dev/vg0/data-snap /mnt/snap               # 从快照读取
+sudo lvremove /dev/vg0/data-snap                       # 用完删除
+
+# 在线缩容（ext4 可缩，XFS 只能扩不能缩 ⚠️）
+sudo umount /data
+sudo e2fsck -f /dev/vg0/data
+sudo lvreduce -L -5G /dev/vg0/data                     # 先缩逻辑卷
+sudo resize2fs /dev/vg0/data                           # 再缩文件系统
+# XFS：xfs_growfs 只能扩容，缩容必须先重建
+```
+
+> 💡 快照是 LVM 相对分区方案的最大优势：升级前打快照，出事秒级回滚。注意快照会随写入增长，别长期占用空间。
+
+### 6.5 磁盘健康检查
+
+```bash
+# SMART 健康检测 ⭐（需安装 smartmontools）
+sudo apt install smartmontools -y
+sudo smartctl -a /dev/sda            # 完整健康报告
+sudo smartctl -H /dev/sda            # 只看健康状态
+sudo smartctl -t short /dev/sda      # 后台自检（几分钟）
+sudo smartctl -t long /dev/sda       # 完整自检（数小时）
+# 关注字段：Reallocated_Sector_Ct、Pending_Sector、UDMA_CRC_Error
+
+# 坏道检查（危险，只在已备份的空盘上做）
+sudo badblocks -sv /dev/sdb
+
+# dd 安全写入/备份
+sudo dd if=/dev/sda of=/backup/disk.img bs=4M status=progress   # 显示进度 ⭐
+sudo dd if=/dev/sda of=/backup/disk.img bs=4M conv=fsync        # 写入同步落盘
+```
+
+> 💡 服务器上定期 `smartctl -H` + 关注 SMART 属性，是"磁盘提前预警"最便宜的手段；出现 `Reallocated_Sector_Ct` 增长就该计划换盘了。
 
 ***
 
@@ -47701,6 +49457,109 @@ sudo ufw status verbose
 ├── 6. 检查防火墙规则  → sudo ufw status
 └── 7. 抓包分析       → sudo tcpdump -i any host 目标IP
 ```
+
+***
+
+## 五、进阶：TCP 原理、DNS 深入与 curl 脚本化
+
+### 5.1 netplan 排障与渲染器
+
+```bash
+# ⭐ netplan try：应用配置并等待确认，超时自动回滚（防自己锁死）
+sudo netplan try                 # 120 秒内回车确认，否则回滚
+
+# 查看实际生效的网络配置
+networkctl status                # systemd-networkd 状态
+networkctl list
+
+# 渲染器（renderer）决定后端
+#   networkd：轻量，服务器默认，适合无桌面
+#   NetworkManager：桌面环境（GNOME 控制面板），WiFi 支持
+cat /etc/netplan/00-installer-config.yaml   # 看 renderer 字段
+
+# 排障顺序：netplan get 检查解析 → netplan try 试应用 → networkctl status 看生效
+```
+
+> 💡 如果改完网络配置连不上，但没机会确认 `netplan try`：让机器保持重启（配置会在重试后回滚）或用带外控制台（VNC/IPMI）进去 `sudo netplan revert`。
+
+### 5.2 TCP 三次握手/四次挥手与抓包解读
+
+```text
+三次握手（建连）              四次挥手（断开）
+客户端       服务器            客户端       服务器
+  │--SYN------→│                │--FIN------→│
+  │←--SYN+ACK--│                │←--ACK------│
+  │--ACK-------→│  建立         │←--FIN------│
+                                    │--ACK------→│
+```
+
+```bash
+# 抓包看握手（在服务器上抓访问的 80 端口）
+sudo tcpdump -i eth0 port 80 -n
+#   12:00:01.1 IP 10.0.0.2.50000 > 10.0.0.1.80: Flags [S]   ← 客户端 SYN
+#   12:00:01.1 IP 10.0.0.1.80 > 10.0.0.2.50000: Flags [S.]  ← SYN+ACK
+#   12:00:01.1 IP 10.0.0.2.50000 > 10.0.0.1.80: Flags [.]   ← ACK
+
+# 大量 TIME_WAIT 的排查（主动关闭方产生）
+ss -tan | grep TIME_WAIT | wc -l
+# TIME_WAIT 多通常无害（端口复用有默认 60s），持续打满才需关注（联动 4.3）
+```
+
+> 💡 读 `Flags [S]`/`[S.]`/`[.]`/`[F]`/`[R]`：S=SYN、.=ACK、F=FIN、R=RST。能看懂握手/挥手，很多"连不上/断连"问题就能定位是卡在哪一步。
+
+### 5.3 DNS 深入：解析链路与缓存
+
+```bash
+# resolv.conf 通常是软链，指向 systemd-resolved 管理
+ls -l /etc/resolv.conf            # 看到 → /run/systemd/resolve/...
+
+# 完整的 DNS 解析链路
+cat /etc/nsswitch.conf | grep hosts   # hosts: files dns  → 先查 /etc/hosts 再查 DNS
+
+# 递归追踪 DNS 查询（定位是哪一层解析慢/失败）⭐
+dig +trace example.com
+
+# systemd-resolved 缓存管理与刷新
+resolvectl statistics                # 缓存命中统计
+sudo resolvectl flush-caches         # 刷新 DNS 缓存
+resolvectl query example.com
+
+# 测试解析耗时
+time dig example.com | grep "Query time"
+```
+
+> 💡 "浏览器打不开但 ping IP 通"十有八九是 DNS 问题。排查顺序：`cat /etc/resolv.conf` 看服务器 → `dig 目标` 看能否解析 → `resolvectl flush-caches` 刷缓存。
+
+### 5.4 ufw 与 iptables/nftables 的关系
+
+```bash
+# ufw 只是 iptables 的前端，规则最终落到内核 netfilter
+sudo ufw status verbose
+sudo ufw status numbered
+
+# 查看 ufw 实际生成的 iptables 规则
+sudo iptables -L -n | head -30        # 传统 iptables 语法
+sudo nft list ruleset | head -40      # ⭐ 新一代 nftables（Ubuntu 默认内核）
+```
+
+> 💡 **演进**：iptables → nftables。Ubuntu 22.04+ 内核已默认 nftables 框架，`iptables` 命令是兼容层。日常用 ufw 管理；需要细粒度规则（按时间、按用户、日志）时，学习 nftables 语法是进阶方向。**4.2 安全加固**、**4.4 Docker 端口映射**都会涉及 netfilter。
+
+### 5.5 curl 脚本化监控
+
+```bash
+# 监控脚本常用参数 ⭐
+curl --resolve example.com:443:127.0.0.1 https://example.com/   # 指定解析到本机（测试本地 HTTPS）
+curl -k https://10.0.0.1/          # 跳过证书校验（内网自签证书测试）
+curl -L http://example.com/        # 跟随重定向
+curl --max-time 5 URL              # 超时 5 秒（脚本里必须有，防卡死）⭐
+curl -s -o /dev/null -w '%{http_code}' URL   # 只输出状态码
+
+# 完整的健康检查一行流 ⭐
+curl -s -o /dev/null -w 'HTTP %{http_code} | DNS %{time_namelookup}s | 连接 %{time_connect}s | TTFB %{time_starttransfer}s | 总耗时 %{time_total}s\n' \
+  https://example.com/api/health
+```
+
+> 💡 脚本化监控注意：`--max-time` 防超时挂死、`-s` 静默、`-o /dev/null` 丢弃 body、`-w` 输出指标。这构成一个简易的 HTTP 探活器（联动 **3.5 定时任务** 定时跑、**3.4 日志** 记录结果）。
 
 ***
 
@@ -47970,6 +49829,105 @@ systemctl list-timers                    # 查看定时任务
 
 ***
 
+## 六、进阶：依赖语义、drop-in 与资源加固
+
+### 6.1 systemd 依赖语义
+
+```bash
+# 四种依赖的区别（配置在 [Unit] 段）
+#   After=/Before=    只控制启动顺序，不建立依赖（A 先启动，但 A 失败不影响 B）
+#   Wants=            软依赖：B 会启动，但 B 失败不影响 A 的状态
+#   Requires=         硬依赖：B 启动失败会连带 A 失败
+#   PartOf=           组件关系：B 重启/停止会联动 A
+
+# 查看依赖树与启动链路 ⭐
+systemctl list-dependencies nginx             # 启动 nginx 需要/会拉起哪些
+systemd-analyze critical-chain nginx          # 启动链路瓶颈分析（看哪一步最慢）
+systemd-analyze blame | head -20              # 各 Unit 启动耗时排行
+```
+
+> 💡 排查"服务启动失败但找不到原因"时，`systemd-analyze critical-chain` + `journalctl -u 服务 -b` 能快速定位是卡在等待哪一步（常见：等网络/等数据库超时）。
+
+### 6.2 systemctl edit：drop-in 覆盖
+
+```bash
+# 直接改 /lib/systemd/system/ 下的自带 unit 会被升级覆盖。
+# 正确姿势是 drop-in 覆盖 ⭐
+sudo systemctl edit nginx                    # 打开覆盖文件，另存后自动生效
+
+# 等价手写：/etc/systemd/system/nginx.service.d/override.conf
+# [Service]
+# LimitNOFILE=65535
+# ExecStart=
+# ExecStart=/usr/sbin/nginx -g 'daemon off;'   # ExecStart 需先清空再重写
+# ProtectSystem=strict
+
+sudo systemctl daemon-reload
+sudo systemctl restart nginx
+
+# 验证实际生效的属性
+systemctl show nginx -p LimitNOFILE -p ProtectSystem
+```
+
+> 💡 升级系统包后自带 unit 更新，但 `/etc/systemd/system/*.d/` 的覆盖文件不会被动——所以"改第三方服务"一律用 drop-in，别改原始文件。
+
+### 6.3 service 文件资源限制与安全加固
+
+```ini
+[Service]
+# 资源限制（对应 ulimit）
+LimitNOFILE=65535          # 打开文件数上限（联动 2.4 §6.5）
+LimitNPROC=4096            # 进程/线程数上限
+MemoryMax=1G               # 内存上限（超限触发 OOM kill）
+CPUQuota=80%               # CPU 使用上限
+TasksMax=512               # 允许的任务数
+
+# 安全加固 ⭐
+ProtectSystem=strict       # 除白名单目录外只读
+ProtectHome=true           # 屏蔽家目录访问
+PrivateTmp=true            # 独立的 /tmp
+NoNewPrivileges=true       # 禁止提权（suid 失效）
+RestrictSUIDSGID=true      # 禁止创建 setuid/setgid 文件
+ReadWritePaths=/var/lib/myapp   # 配合 ProtectSystem 放行写目录
+```
+
+> 💡 与 **4.2 安全加固** 呼应：systemd 沙箱选项让"即使被攻破也难扩大影响"。新 service 建议至少 `NoNewPrivileges=true` + `PrivateTmp=true`。用 `systemctl show 服务 -p 属性` 验证是否生效。
+
+### 6.4 journald 与 rsyslog 协同、历史与校验
+
+```bash
+# journald 配置（/etc/systemd/journald.conf）
+#   Storage=persistent     持久化到磁盘（默认 auto）
+#   ForwardToSyslog=yes    转发给 rsyslog（让 /var/log/syslog 也收到）
+#   SystemMaxUse=500M      日志磁盘占用上限
+
+# 按启动轮次定位历史 ⭐
+journalctl --list-boots             # 列出历史启动及时间范围
+journalctl -b -1                    # 上一次启动的日志
+journalctl -b 0 -p err              # 本次启动的错误
+
+# 校验 journal 完整性（排查日志丢失/损坏）
+sudo journalctl --verify
+```
+
+### 6.5 journalctl 结构化字段过滤
+
+```bash
+# journal 按字段存储，可精确过滤 ⭐
+journalctl -u myapp _PID=12345              # 指定进程 PID
+journalctl -u myapp _COMM=java              # 按可执行名过滤
+journalctl _SYSTEMD_UNIT=nginx.service _UID=0
+journalctl PRIORITY=3 _HOSTNAME=web-01      # err 级 + 指定主机
+
+# 查看一条日志的全部字段
+journalctl -u myapp -n 1 --output=verbose   # ⭐ 显示 _PID/_BOOT_ID/_GID 等
+
+# 组合查询：nginx 最近 5 分钟的 root 用户错误
+journalctl -u nginx --since "5 minutes ago" PRIORITY=3 _UID=0
+```
+
+***
+
 ## 📝 实践项目
 
 ### 目标
@@ -48186,6 +50144,106 @@ sudo logrotate -f /etc/logrotate.d/myapp    # 强制执行
 | ELK | 高 | 中~大 | 功能最强，资源消耗大 |
 | Loki | 中 | 中 | 轻量，与 Grafana 集成好 |
 | 云服务 | 低 | 不限 | 免运维，按量付费 |
+
+***
+
+## 五、进阶：远程日志、轮转选择与查询实战
+
+### 5.1 rsyslog 远程日志传输（轻量集中式）
+
+```bash
+# 服务器端（收集端）：开启 UDP 接收
+# /etc/rsyslog.conf 追加
+# module(load="imudp")
+# input(type="imudp" port="514")
+
+# 客户端（发送端）/etc/rsyslog.d/60-forward.conf
+sudo tee /etc/rsyslog.d/60-forward.conf << 'EOF'
+*.* @192.168.1.50:514        # @ 用 UDP，@@ 用 TCP（更可靠）
+EOF
+sudo systemctl restart rsyslog
+
+# 验证：服务器上 tail -f /var/log/syslog 应能看到客户端日志
+```
+
+> 💡 这是比 ELK 轻量得多的"集中日志"方案：所有机器日志汇聚到一台，`grep`/`tail -f` 统一排查。规模大了再上 Loki/ELK。
+
+### 5.2 logrotate：copytruncate vs create
+
+| 方案 | 适用场景 | 代价 |
+|:-----|:---------|:-----|
+| `create` + postrotate 发信号 | 应用支持 reopen（nginx/syslog） | 无日志丢失 |
+| `copytruncate` | 不支持 reopen 的应用（部分 Java 自写文件日志） | 丢截断瞬间极少量日志 |
+
+```bash
+# 手动触发与状态文件
+sudo logrotate -f /etc/logrotate.d/myapp    # 强制执行
+sudo logrotate -d /etc/logrotate.d/myapp    # 调试（dry-run）
+cat /var/lib/logrotate/status               # ⭐ 状态文件：记录上次轮转时间/文件
+```
+
+> ⚠️ Java 应用如果自己写文件而不 reopen，务必用 `copytruncate`——否则轮转后应用仍往"已改名"的旧文件写，新日志文件永远是空的。
+
+### 5.3 journald 字段过滤与 logger
+
+```bash
+# 精确过滤结构化字段 ⭐
+journalctl _SYSTEMD_UNIT=nginx.service _PID=123
+journalctl PRIORITY=3 --since "10 min ago"     # 只看 err 及以上
+journalctl -u myapp --output=verbose -n 1      # 看一条日志的全部字段
+
+# logger：脚本往 syslog 写自定义日志 ⭐
+logger -t mydeploy "部署开始"
+logger -p local0.info "应用健康检查通过"       # 配合 2.3 规则进 /var/log/myapp.log
+
+# 简易告警脚本
+if ! curl -s http://localhost:8080/health > /dev/null; then
+  logger -p local0.err "8080 健康检查失败"
+fi
+```
+
+### 5.4 日志分析实战管道
+
+```bash
+# 时间窗口内错误聚合：哪一小时的错误最多 ⭐
+grep -E "^2026-08-17" /var/log/myapp.log \
+  | grep -i "error" \
+  | awk '{print $2}' | cut -d: -f1 \
+  | sort | uniq -c | sort -rn
+
+# 统计某接口的响应码分布
+grep "GET /api/user" access.log | awk '{print $NF}' | sort | uniq -c | sort -rn
+
+# 聚合 Top 报错（取每行关键字段再计数）
+grep -i "exception" app.log | awk '{print $1,$2,$NF}' | sort | uniq -c | sort -rn | head
+```
+
+> 💡 分析组合拳：**grep 过滤 → awk 取列 → sort 排序 → uniq -c 计数 → sort -rn 倒序 → head**（关联 **2.3 文本处理命令**）。一行管道即可回答"哪类错误最多、哪个时段高发"。
+
+### 5.5 Loki + Promtail 最小方案
+
+```bash
+# promtail 最小配置 /etc/promtail/config.yml
+server: { http_listen_port: 9080 }
+clients: [{ url: http://loki:3100/loki/api/v1/push }]
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log
+```
+
+```text
+LogQL 基础查询（Grafana 里）：
+{job="varlogs"}                               # 所有 /var/log 日志
+{job="varlogs"} |= "ERROR"                    # 含 ERROR 的行
+{job="varlogs"} |= "ERROR" |= "nginx"         # 多条件过滤
+count_over_time({job="varlogs"} |= "ERROR"[1h])   # 每小时错误数
+```
+
+> 💡 Loki 只索引标签不索引全文，存储成本远低于 ELK；配合 Grafana 可做告警与仪表盘。**关联 4.4 容器日志**（常与 Docker/Prometheus 栈一起部署）。
 
 ***
 
@@ -48470,6 +50528,141 @@ ansible all -i inventory.ini -m apt -a "name=nginx state=present" --become
 # 执行 Playbook
 ansible-playbook -i inventory.ini deploy-web.yml
 ```
+
+***
+
+## 五、进阶：cron 排障、timer 迁移与 Ansible 实战
+
+### 5.1 cron 排障三件套
+
+```bash
+# 1. 任务真的执行了吗？—— 查 syslog 的 CRON 行
+grep CRON /var/log/syslog | tail -20          # 每行记录执行时间与 CMD
+journalctl -u cron | tail -20
+
+# 2. 禁掉执行失败时的系统邮件（否则会堆到 /var/mail）
+MAILTO=""                                     # crontab 顶部设置，禁用邮件 ⭐
+
+# 3. cron 环境极简（PATH=/usr/bin:/bin、无自定义变量），规避清单：
+#    - 命令和脚本用绝对路径：/usr/bin/xxx 而不是 xxx
+#    - 脚本内部也写全 PATH：#!/bin/bash 后加 export PATH=...
+#    - 所有输出重定向：>> /var/log/xxx.log 2>&1
+#    - 不依赖 ~/.bashrc 里的别名/变量（cron 不读 .bashrc）
+0 2 * * * /opt/scripts/backup.sh >> /var/log/backup.log 2>&1
+```
+
+> ⚠️ "cron 任务没生效"90% 是环境问题：PATH 不对、脚本没执行权限、路径是相对路径。先 `grep CRON /var/log/syslog` 确认有没有被调度，再手动跑脚本对比。
+
+### 5.2 crontab 备份恢复与用户控制
+
+```bash
+# 备份当前用户的 crontab
+crontab -l > crontab-backup.txt
+
+# 从文件恢复（会整体覆盖当前 crontab）
+crontab crontab-backup.txt
+
+# 一键迁移：把用户 A 的 crontab 复制给用户 B
+crontab -l | sudo crontab -u alice -
+
+# 限制谁能用 crontab（存在即生效）
+sudo touch /etc/cron.allow          # 白名单：只有列出的用户能用
+# /etc/cron.deny                    # 黑名单：默认所有用户可用
+```
+
+### 5.3 anacron：错过任务的补执行
+
+```bash
+# anacron 负责 cron.daily/weekly/monthly：机器关机错过的时间，下次开机补执行
+cat /etc/anacrontab
+#   PERIOD DELAY JOB-IDENTIFIER COMMAND
+#   1    5     cron.daily    run-parts /etc/cron.daily
+#   7    25    cron.weekly   run-parts /etc/cron.weekly
+# （数字越大越靠后执行）
+
+# 对比：cron 只认"绝对时间"，关机就错过；anacron 保证"至少执行一次"
+# 所以日常维护放 /etc/cron.daily/，精确时间点任务才用 crontab
+```
+
+> 💡 服务器定时任务要在"每天几点整"跑（如凌晨 2 点备份），用 crontab；只要"每天跑一次、错过后补"，把脚本放进 `/etc/cron.daily/` 即可（由 anacron 调度）。
+
+### 5.4 timer 进阶：错峰与迁移
+
+```bash
+# 错峰执行：同一时刻大量任务触发会打满 IO，用 RandomizedDelaySec 打散 ⭐
+# /etc/systemd/system/backup.timer
+[Timer]
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=15m        # 2:00 后随机 0-15 分钟执行
+Persistent=true               # 错过则下次开机补执行
+Unit=backup.service
+
+# 校验日历表达式 ⭐
+systemd-analyze calendar "Mon..Fri 09:30"    # 显示下次触发时间
+systemd-analyze calendar "0 2 * * *"         # 确认含义
+
+# 把现有 crontab 迁移为 timer（crontab 一行 → 两个文件）
+# 原 crontab： 0 2 * * * /opt/scripts/backup.sh
+# backup.service
+# [Service]
+# Type=oneshot
+# ExecStart=/opt/scripts/backup.sh
+# backup.timer
+# [Timer]
+# OnCalendar=*-*-* 02:00:00
+# RandomizedDelaySec=10m
+# Persistent=true
+# [Install]
+# WantedBy=timers.target
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now backup.timer
+systemctl list-timers backup.timer          # 查看下次触发时间
+```
+
+> 💡 相比 cron，timer 白拿 journald 日志、Persistent 补执行、资源限制（**3.3 §6.3**）。迁移要点：service 用 `Type=oneshot`，timer 管时间，两个文件都要 `daemon-reload`。
+
+### 5.5 Ansible 进阶：幂等与演练
+
+```yaml
+# handlers/notify：配置变更后才重启，避免每次都重启 ⭐
+- name: 部署并重启 Web
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: 更新 nginx 配置
+      copy:
+        src: ./nginx.conf
+        dest: /etc/nginx/nginx.conf
+      notify: reload nginx          # 只有"真的改动了"才触发 handler
+
+  handlers:
+    - name: reload nginx
+      systemd:
+        name: nginx
+        state: reloaded
+```
+
+```yaml
+# when 条件：按主机/变量决定是否执行
+- name: 安装 MySQL 仅当是数据库主机
+  apt:
+    name: mysql-server
+    state: present
+  when: inventory_hostname in groups['dbservers']
+```
+
+```bash
+# 演练模式：--check 只"模拟"不生效 ⭐
+ansible-playbook -i inventory.ini deploy-web.yml --check
+ansible-playbook -i inventory.ini deploy-web.yml --check --diff   # 显示预期改动
+
+# 幂等性：同样的 playbook 跑多遍，结果一致、不重复改动
+# （apt/state=present、systemd/state=started 都是幂等模块）
+ansible-playbook -i inventory.ini deploy-web.yml   # 再跑一遍，应显示 ok 而不是 changed
+```
+
+> 💡 `--check` + 幂等模块是 Ansible 的安全底线：先演练再看实际差异，生产执行前心里有数。**关联 4.1 脚本**（把 playbook 当脚本一样做"先试运行"）。
 
 ***
 
@@ -48943,6 +51136,119 @@ echo "DEBUG: 当前行号=$LINENO"
 
 ***
 
+## 九、进阶：lint、参数解析、并行与健壮性
+
+### 9.1 shellcheck：把严格模式落到工具
+
+```bash
+sudo apt install shellcheck -y
+shellcheck deploy.sh
+```
+
+| 高频规则 | 含义 | 正确写法 |
+|:---------|:-----|:---------|
+| SC2086 | 变量未加引号（分词风险） | `echo "$var"` |
+| SC2164 | `cd` 失败未检查 | `cd "$dir" || exit 1` |
+| SC2046 | 命令替换未加引号 | `ls -l "$(pwd)"` |
+| SC2148 | 缺少 shebang | 文件首行加 `#!/bin/bash` |
+
+```bash
+# 修复典型问题
+cd "$SCRIPT_DIR" || exit 1        # SC2164
+echo "文件: $file"                 # SC2086
+result="$(grep foo "$f")"          # SC2046
+```
+
+> 💡 严格模式（`set -euo pipefail`）+ `shellcheck` 双保险：前者运行时兜底，后者静态扫描把隐患挡在发布前。
+
+### 9.2 getopts：命令行参数解析
+
+```bash
+# 替代手写 $1/$2，支持 -u 带值、-v 开关
+usage() { echo "用法: $0 [-u 用户名] [-v]"; exit 1; }
+
+VERBOSE=0
+while getopts "u:v" opt; do
+  case "$opt" in
+    u) USER="$OPTARG" ;;      # -u 后的值存入 OPTARG
+    v) VERBOSE=1 ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))         # ⭐ 跳过已解析选项，剩下的是位置参数
+
+echo "用户: ${USER:-默认}  剩余参数: $*"
+```
+
+### 9.3 并行提速：& 与 wait、xargs -P
+
+```bash
+# 多任务并行 + 等待全部完成 ⭐
+compress() { gzip "$1"; }
+for f in *.log; do
+  compress "$f" &             # 后台并发
+done
+wait                          # 等所有后台任务结束再继续
+
+# 控制并发数量（防资源打满）
+pids=()
+for f in *.log; do
+  compress "$f" &
+  pids+=("$!")
+  [[ ${#pids[@]} -ge 4 ]] && { wait "${pids[@]}"; pids=(); }   # 每批最多 4 个
+done
+wait
+
+# xargs -P 更简单的并行（关联 2.3 §7.5）
+find . -name "*.gz" -print0 | xargs -0 -P 4 -I{} gzip -d {}
+```
+
+### 9.4 健壮性：trap ERR 与 flock
+
+```bash
+# trap ERR：任何命令失败立即走 handler（比 set -e 多一个收尾钩子）⭐
+set -Eeuo pipefail            # -E 让 ERR 陷阱在函数/子 shell 中也生效
+trap 'echo "第 $LINENO 行出错，退出码 $?"' ERR
+
+# flock 文件锁：防止脚本被重复运行 ⭐
+exec 9>/var/lock/myscript.lock
+flock -n 9 || { echo "脚本已在运行，退出"; exit 1; }
+
+# mktemp + trap 清理（§六 已有基础，这里强调组合）
+readonly TMPD=$(mktemp -d)
+trap 'rm -rf "$TMPD"' EXIT
+```
+
+> 💡 `flock -n` 对 **3.5 cron 里的长任务** 尤其重要：防止上一次没跑完、下一次又启动，导致重复处理。
+
+### 9.5 子 shell 与变量隔离
+
+```bash
+# ( ) 子 shell：括号内修改不影响父 shell ⭐
+x=1
+(x=99; echo "子 shell: $x")    # 子 shell: 99
+echo "父 shell: $x"            # 父 shell: 1
+
+# { } 当前 shell：修改会保留
+y=1
+{ y=99; }
+echo "$y"                       # 99
+
+# export 只向下传递：子进程可见，父/兄弟进程看不到
+export Z=10
+( echo "子进程见 Z=$Z" )        # 子进程见 Z=10
+
+# source 与直接执行的差别
+#   source script.sh  ：当前 shell 运行，变量/函数留在本 shell
+#   ./script.sh       ：开子进程运行，改动不影响父 shell
+source deploy.sh       # 共享变量；./deploy.sh 则隔离
+
+# $$ vs $BASHPID
+echo "$$ vs $BASHPID"           # 脚本内一致；子 shell 里 $$ 不变、$BASHPID 变 ⭐
+```
+
+***
+
 ## 📝 实践项目
 
 ### 目标
@@ -49219,6 +51525,126 @@ sudo grep "Failed password" /var/log/auth.log | tail -5
 echo "可 sudo 的用户:"
 grep -v '^#' /etc/group | grep "^sudo:" | cut -d: -f4
 ```
+
+***
+
+## 六、进阶：sshd 校验、fail2ban 自定义与加固清单
+
+### 6.1 sshd\_config 更多安全项与 sshd -T 校验
+
+```text
+# /etc/ssh/sshd_config 追加（1.1 已讲核心项，这里是纵深）
+AllowTcpForwarding no        # 禁止 TCP 转发（防内网穿透）
+AllowStreamLocalForwarding no
+LoginGraceTime 30            # 登录超时 30 秒
+MaxStartups 3:50:10          # 防连接洪水（前 3 个连接后按 50% 概率拒绝）
+Banner /etc/issue.net        # 登录横幅（告警/法律声明）
+
+# 条件块：按来源/用户给不同策略 ⭐
+Match Address 10.0.0.0/8
+    PasswordAuthentication yes      # 内网段允许密码登录
+Match User deploy
+    AllowTcpForwarding yes          # 部署用户允许转发
+```
+
+```bash
+# ⭐ sshd -T：打印"实际生效"的配置（含默认值和 Match 合并结果）
+sudo sshd -T | grep -E 'permitrootlogin|passwordauth|port'
+sudo sshd -t                     # 语法检查（1.1 已讲）
+```
+
+> 💡 改完 sshd 配置：`sshd -t` 查语法 + `sshd -T` 看生效值，再 `systemctl reload sshd`（不中断现有连接）。比盲改后重启安全得多。
+
+### 6.2 fail2ban 自定义与 ufw 联动
+
+```bash
+# 自定义 filter：写自己的正则匹配规则
+sudo tee /etc/fail2ban/filter.d/myapp.conf << 'EOF'
+[Definition]
+failregex = ^.*AUTH_FAIL.*IP <HOST>.*$
+EOF
+
+# 先用真实日志测试正则 ⭐
+sudo fail2ban-regex /var/log/myapp.log /etc/fail2ban/filter.d/myapp.conf
+```
+
+```text
+# jail.local 启用自定义 jail，并联动 ufw 封禁
+# [myapp]
+# enabled = true
+# filter = myapp
+# logpath = /var/log/myapp.log
+# banaction = ufw           # 用 ufw 封禁（比默认更直观，可 ufw status 看到）
+```
+
+```bash
+# 封禁管理
+sudo fail2ban-client status myapp
+sudo fail2ban-client set myapp unbanip 1.2.3.4       # 解封
+sudo fail2ban-client set sshd bantime 7200            # 临时调整封禁时长
+sudo tail -f /var/log/fail2ban.log
+```
+
+### 6.3 auditd 规则深化：execve 与 auid
+
+```bash
+# 记录所有命令执行（execve），并关联真实用户身份 auid ⭐
+sudo auditctl -a always,exit -F arch=b64 -S execve -k command_exec
+# 永久写入 /etc/audit/rules.d/audit.rules
+
+# 查询：今天谁执行过 rm / sudo
+sudo ausearch -k command_exec -ts today | grep -E 'comm="rm"|comm="sudo"' | head
+
+# 时间维度报表 ⭐
+sudo aureport -ts today -te now         # 今日全部安全事件
+sudo aureport -a --start today          # 今日认证失败统计
+sudo aureport -l                        # 登录失败报表
+```
+
+> 💡 auid（audit user id）记录"登录时归属的真实用户"：即使通过 `sudo` 提权，也能追溯到最初登录者。这是审计最重要的概念。
+
+### 6.4 sudo 最小权限审计
+
+```bash
+# 用户能执行哪些 sudo 命令（最小权限）⭐
+sudo -l -U alice                 # 查看 alice 的 sudo 权限
+sudo -l                          # 看自己的权限
+
+# sudo 调用记录在 auth.log
+sudo grep sudo /var/log/auth.log | tail -10
+
+# sudoers 加固（visudo 编辑）：给白名单而非 ALL
+# alice ALL=(ALL) /usr/bin/systemctl restart nginx, /bin/systemctl status *
+
+# 限制 PATH，防同目录同名恶意命令
+# Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# 记录所有 sudo 命令
+# Defaults log_input, log_output
+```
+
+> 💡 生产建议：普通用户默认不给 `ALL`，只给常用命令白名单；定期 `sudo -l` 核对账号实际权限。与 **1.4 用户与权限** 联动。
+
+### 6.5 系统加固清单
+
+```bash
+# 服务最小化：关闭不需要的服务
+systemctl list-units --type=service --state=running | wc -l   # 数一数常驻服务
+sudo systemctl disable --now <不用的服务>
+
+# 内核安全参数（/etc/sysctl.d/99-security.conf）⭐
+net.ipv4.conf.all.rp_filter = 1        # 反 IP 欺骗（反向路径过滤）
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.tcp_syncookies = 1            # SYN 洪水保护
+
+# 禁用 IPv6（纯 IPv4 环境可选）
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+
+# 应用后生效
+sudo sysctl --system
+```
+
+> 💡 加固思路是"默认拒绝 + 白名单"：服务、端口、sudo 权限、系统调用都朝最小化收。用 **3.4 日志** + auditd 持续观察异常。与 **4.3 内核参数调优** 是同一套 sysctl 机制的不同侧重。
 
 ***
 
@@ -49508,6 +51934,120 @@ sudo lsof -i :<PORT>
 sudo nginx -t               # nginx
 sudo apache2ctl configtest  # Apache
 ```
+
+***
+
+## 五、进阶：火焰图、Java 排查与监控误读
+
+### 5.1 perf 火焰图与 sar 历史数据
+
+```bash
+# perf：内核级采样，找出 CPU 热点函数 ⭐
+sudo apt install linux-tools-common linux-tools-generic -y
+sudo perf top                    # 实时查看热点（定位到函数/符号）
+sudo perf record -F 99 -a -g -- sleep 30     # 采样 30 秒，记录调用栈
+sudo perf report                # 交互式查看采样结果
+
+# 火焰图（把 perf record 结果转成图）
+sudo perf script > out.perf
+# 用 FlameGraph 工具（github.com/brendangregg/FlameGraph）
+# ./stackcollapse-perf.pl out.perf > out.folded
+# ./flamegraph.pl out.folded > flame.svg   # 浏览器打开
+
+# sar：历史性能数据（sysstat 持续采集）⭐
+sudo apt install sysstat -y
+sudo sar -u 1 3                 # CPU 使用率
+sudo sar -r                     # 内存
+sudo sar -d                     # 磁盘
+sudo sar -n DEV                 # 网络
+# 默认每 10 分钟存一次，可回看昨天
+sudo sar -u -f /var/log/sysstat/sa$(date +%d -d yesterday)
+```
+
+> 💡 `top` 只能看"当下"，`sar` 能回看"过去"（凌晨的故障第二天复盘），`perf` 能定位"哪一行代码"。三者配合才完整。
+
+### 5.2 Java 应用专属排查（后端必备）⭐
+
+```bash
+# JDK 自带诊断工具
+jps                     # 列出 Java 进程及 PID
+jstack <PID>            # 线程快照（找死锁/线程卡住）⭐
+jmap -heap <PID>        # 堆内存概况
+jmap -histo <PID> | head -20   # 对象实例统计（内存泄漏排查）
+jstat -gcutil <PID> 1000       # GC 实时监控（每 1 秒刷新）
+
+# 一条命令：挖出"CPU 最高的 Java 线程在干嘛"
+top -Hp <PID>           # 找到 CPU 最高的线程 TID
+printf '%x\n' <TID>     # 转十六进制
+jstack <PID> | grep -A30 "nid=0x<十六进制>"   # 定位到该线程调用栈
+
+# GC 日志（启动参数加）
+# -Xlog:gc:file=/var/log/app-gc.log,uptime   （现代 JVM）
+
+# strace 联动：Java 进程"卡住"往往是系统调用在等待
+sudo strace -f -p <PID> 2>&1 | head -50
+```
+
+> 💡 面向后端读者：JVM 问题 90% 先看 `jstat`（GC 是否频繁）+ `jstack`（线程卡在哪）+ `jmap -histo`（内存谁在涨）。这是把 **§2 strace/lsof** 用到 Java 场景。
+
+### 5.3 网络故障定位
+
+```bash
+# 连接状态汇总
+ss -s                          # ⭐ 各状态连接总数（ESTAB/SYN/TIME_WAIT 等）
+ss -tan | awk '{print $1}' | sort | uniq -c | sort -rn
+
+# 内核网络统计（丢包、重传）
+nstat -az | head -30           # 重点看 TcpRetransSegs / TcpExtTCPLostRetransmit
+sudo dmesg | grep -i "drop\|overflow"    # 缓冲区溢出丢包
+
+# 连接数打满排查（与 2.4 §6.5 联动）
+cat /proc/sys/net/ipv4/ip_local_port_range    # 本地端口范围
+sysctl fs.file-max                            # 全局 fd 上限
+ulimit -n                                     # 进程 fd 上限
+ss -s | grep -i "connections"
+```
+
+> 💡 高并发下"连不上"先看端口是否耗尽：`ss -s` 看 TIME\_WAIT 是否堆积，`ip_local_port_range` 看可用端口，fd/连接数逐一排查。
+
+### 5.4 iostat 解读误区
+
+```text
+iostat -x 1
+Device  r_await  w_await  %util
+sda        0.50    2.10    30.0
+```
+
+> ⚠️ **两个常见误读**：
+>
+> * **%util 100% 未必是瓶颈**：%util 是"设备有请求排队的时间占比"。对 NVMe 这类多队列设备，单设备 100% 仍可能远未达到吞吐上限，要看真实的 `r_await`/`w_await`（请求延迟）是否恶化。
+> * **await 是平均等待**：`svctm` 字段已废弃无意义；`await` 高可能是队列等待（I/O 压力大），也可能是设备本身慢。结合 `w_await` 与 `iowait` 一起判断。
+
+```bash
+# iowait 的正确解读：它是"CPU 等 I/O 的空闲比例"；高负载机器上它低反而是好事
+top -1 | grep -E "wa|Cpu"     # wa 列
+uptime                        # 负载 vs 核心数
+```
+
+### 5.5 排查方法论：硬件与启动错误
+
+```bash
+# 硬件错误（内存 ECC、磁盘 MCE）——首选 dmesg ⭐
+sudo dmesg -T | grep -iE "mce|ecc|hardware error|blocked|failed" | tail -30
+# -T 把内核时间转成可读时间戳，便于对照业务故障时间点
+
+# 本次启动的错误聚合
+sudo journalctl -p 3 -b        # -p 3 = err 及以上，-b = 本次启动 ⭐
+sudo journalctl -k -b          # 本次启动的内核日志
+
+# 时间线联动法：业务日志 + 系统日志 + 内核日志三线对齐
+# 1. 确定业务故障时间点（如 14:32）
+# 2. journalctl --since "14:30" --until "14:35"
+# 3. sudo dmesg -T | grep "14:3[0-5]"
+# 4. sudo sar -u -f ... （看当时 CPU）
+```
+
+> 💡 一套可复用的排障顺序：**业务日志 → journald 时间窗 → dmesg 硬件错误 → sar 历史指标**，四线交叉定位，而不是逐条猜。
 
 ***
 
@@ -49850,6 +52390,137 @@ docker compose pull                     # 拉取最新镜像
 
 ***
 
+## 六、进阶：网络模式、数据卷、镜像瘦身与监控
+
+### 6.1 网络模式详解
+
+```bash
+# 四种网络模式
+docker run --network bridge  nginx   # 默认：容器通过 veth + NAT 访问外网
+docker run --network host    nginx   # 共享宿主机网络（无隔离，性能最好）
+docker run --network none    nginx   # 无网络
+docker run --network container:web1 nginx   # 复用另一个容器的网络
+
+# 端口映射的本质：iptables DNAT ⭐
+docker run -d -p 8080:80 nginx
+sudo iptables -t nat -L -n | grep 8080   # 看到 DNAT 规则把 8080 转发到容器 IP
+
+# 自定义 bridge：容器间用服务名互访（compose 默认就是这个）
+docker network create mynet
+docker run -d --network mynet --name db mysql
+docker run -d --network mynet --name app myapp   # app 里可用 "db:3306" 访问
+docker network inspect mynet     # 查看网络成员与 IP
+```
+
+> 💡 compose 里 `app` 能通过 `mysql:3306` 连数据库，就是自定义 bridge 提供的**容器 DNS**。理解 bridge（隔离）与 host（性能）的取舍是关键。
+
+### 6.2 数据卷与镜像分层
+
+```bash
+# 三种持久化方式对比 ⭐
+# 1. bind mount：-v /宿主机路径:/容器路径（用绝对路径）
+docker run -v /opt/data:/app/data nginx
+# 2. named volume：-v 卷名:/容器路径（由 Docker 管理生命周期）
+docker run -v mydata:/app/data nginx
+docker volume ls
+docker volume inspect mydata
+docker volume prune              # 清理无用卷 ⚠️
+# 3. 匿名卷 / tmpfs（内存盘，重启丢失）
+
+# overlayfs 分层：镜像=只读层 + 容器=可写层 ⭐
+docker history nginx:1.25        # 看每一层
+docker diff myapp                # 容器相对镜像改了哪些文件
+
+# 镜像缓存：Dockerfile 每一层有缓存，行顺序决定命中率
+# 常用技巧：先 COPY 依赖（慢变），再 COPY 源码（快变），提升构建缓存命中
+```
+
+### 6.3 镜像瘦身与安全
+
+```dockerfile
+# 从零构建（静态二进制）→ 镜像最小
+FROM scratch
+COPY app /
+ENTRYPOINT ["/app"]
+```
+
+```bash
+# 镜像安全扫描 ⭐
+sudo apt install trivy -y
+trivy image nginx:1.25            # 扫描已知漏洞（CVE）
+trivy fs --severity HIGH,CRITICAL .   # 扫描当前目录依赖
+
+# 私有 registry（离线/内网分发）
+docker run -d -p 5000:5000 --name registry registry:2
+docker tag myapp:1.0 localhost:5000/myapp:1.0
+docker push localhost:5000/myapp:1.0
+docker pull localhost:5000/myapp:1.0
+
+# 安全基线：非 root + 只读根文件系统
+docker run --read-only --tmpfs /tmp myapp
+```
+
+### 6.4 compose 进阶
+
+```yaml
+# .env 变量化（compose 目录下放 .env）
+# MYSQL_ROOT_PASSWORD=root123
+# 引用：${MYSQL_ROOT_PASSWORD}
+
+services:
+  app:
+    build: .
+    env_file: .env                    # 整文件注入环境变量
+    depends_on:
+      mysql:
+        condition: service_healthy    # ⭐ 等 mysql 健康后再启动
+    healthcheck:                      # 容器自身健康检查
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  web:
+    image: nginx
+    profiles: ["frontend"]            # ⭐ 只在特定 profile 启动
+```
+
+```bash
+docker compose up -d --scale web=3        # ⭐ 扩到 3 个实例（配合负载均衡）
+docker compose --profile frontend up -d   # 启动指定 profile
+docker compose config                      # 校验并展开最终配置
+```
+
+### 6.5 容器日志与监控
+
+```bash
+# 日志 driver 对比（daemon.json 或 run 时指定）
+#   json-file：默认，文件存储（2.2 里已配 max-size/max-file 限制）
+#   journald：进系统 journal，journalctl -u docker 查看
+#   loki：配合 Loki+Grafana 集中式（3.4 §5.5）
+docker logs --since 1h --tail 200 myapp
+
+# 退出码解读 ⭐
+docker run myapp; echo $?
+#   0    正常退出
+#   137  = 128+9  = 被 SIGKILL（常因 OOM，查 OOMKilled 字段）
+#   143  = 128+15 = 被 SIGTERM（docker stop 的默认信号）
+
+docker inspect myapp -f '{{.State.OOMKilled}}'   # 是否 OOM 被杀 ⭐
+docker events --filter container=myapp            # 实时事件流
+docker stats --no-stream myapp
+
+# 监控栈：cAdvisor + Prometheus + Grafana
+# docker run -d --name cadvisor -p 8081:8080 \
+#   -v /:/rootfs:ro -v /var/run:/var/run:ro -v /sys:/sys:ro \
+#   gcr.io/cadvisor/cadvisor
+#（Prometheus 抓 cadvisor:8081/metrics，Grafana 展示；日志配 3.4 的 Loki）
+```
+
+> 💡 排错先看退出码：137 → OOM（调内存/查泄漏），143 → 被 stop（是不是误杀）。结合 `docker inspect` 的 OOMKilled + `docker logs` 定位。
+
+***
+
 ## 📝 实践项目
 
 ### 目标
@@ -50019,6 +52690,91 @@ Ubuntu 23.10      →  2023年10月发布，非LTS（9个月支持）
 | **仓库（Repository）** | 软件包的远程存储服务器 |
 | **Root** | 超级用户，拥有系统最高权限 |
 | **守护进程（Daemon）** | 后台运行的服务进程 |
+
+***
+
+## 五、进阶：版本识别、内核解读与心智模型
+
+### 5.1 /etc/os-release：脚本里判断发行版的标准姿势
+
+```bash
+cat /etc/os-release
+# NAME="Ubuntu"
+# VERSION="24.04.1 LTS (Noble Numbat)"
+# ID=ubuntu
+# VERSION_ID="24.04"
+# VERSION_CODENAME=noble
+# ID_LIKE=debian
+# PRETTY_NAME="Ubuntu 24.04.1 LTS"
+
+# 脚本里取关键字段（比解析 lsb_release 更通用）⭐
+. /etc/os-release && echo "发行版: $ID $VERSION_ID, 代号: $VERSION_CODENAME"
+
+# 判断发行版系，决定用 apt 还是 dnf/yum
+. /etc/os-release
+case "$ID_LIKE" in
+  debian) echo "用 apt" ;;
+  rhel)   echo "用 dnf/yum" ;;
+esac
+```
+
+> 💡 `/etc/os-release` 被几乎所有主流发行版支持，是纯文本键值对，脚本里 `source` 它即可拿到稳定的 ID/版本号——运维脚本判断环境的通用做法。
+
+### 5.2 内核版本号逐段解读
+
+```bash
+uname -a
+# Linux hostname 6.8.0-31-generic #31-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
+#       ①主机名   ②内核版本          ③构建信息             ④架构
+```
+
+| 段 | 含义 |
+|:---|:-----|
+| `6` | 主版本号（大版本演进） |
+| `8` | 次版本号（功能新增；**奇数=开发版，偶数=稳定版**） |
+| `0` | 修订号（补丁/修复） |
+| `31` | Ubuntu 自有的补丁号 |
+| `generic` | 内核风味：generic（通用）、lowlatency（低延迟）、server |
+| `x86_64` | CPU 架构 |
+
+```bash
+uname -r      # 只显示内核版本
+uname -m      # 只显示架构
+uname -s      # 内核名（Linux）
+```
+
+### 5.3 Ubuntu 版本代号规律
+
+```bash
+lsb_release -a        # 发行版全信息
+lsb_release -c        # 只看代号
+lsb_release -r        # 只看版本号
+```
+
+> 💡 Ubuntu 代号规律：**形容词 + 动物名**，按字母序递增：20.04 `focal` → 22.04 `jammy` → 24.04 `noble`。**换 apt 源时"代号"必须和系统匹配**（1.2 §3 的坑）——用 `lsb_release -c` 或 `/etc/os-release` 的 `VERSION_CODENAME` 确认，别照抄网上的旧代号。
+
+### 5.4 Linux vs Windows 心智模型对比
+
+| 维度 | Windows | Linux | 迁移要点 |
+|:-----|:--------|:------|:---------|
+| 盘符 | `C:` `D:` | 一个根 `/`，设备挂到目录下（`/home`、`/data`） | 没有盘符概念，看 `/` |
+| 路径分隔 | `\` | `/` | 大小写敏感：`File.txt` ≠ `file.txt` |
+| 软件安装 | 双击 .exe | 包管理器 `apt install` | 装软件先 `apt update` |
+| 权限 | 管理员/UAC | 每个文件有 owner/group/others + rwx | `sudo` 临时提权 |
+| 换行符 | `\r\n` (CRLF) | `\n` (LF) | 文件传 Windows 后可能出现 `^M`（**2.7 cat -A**） |
+| 服务 | 服务管理器 | systemd + systemctl | 开机自启用 `systemctl enable` |
+
+### 5.5 术语速查扩展
+
+在第四节速查表基础上补充三类高频术语：
+
+| 术语 | 说明 | 关联笔记 |
+|:-----|:-----|:---------|
+| **进程 / 线程** | 进程=独立内存空间的运行实例；线程=进程内共享内存的执行单元 | **2.4 进程管理** |
+| **标准流** | stdin(0) / stdout(1) / stderr(2)，每个进程默认的三条数据通道 | **2.1 §5 重定向** |
+| **文件描述符 fd** | 进程打开文件/网络的整数句柄；`lsof`/`/proc/PID/fd` 查看 | **4.3 §2 lsof** |
+
+> 💡 术语表不仅是背单词，更是后续学习的**索引**：遇到陌生词回这里看它属于哪条知识线。
 
 ***
 
@@ -50282,6 +53038,108 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 
 ***
 
+## 六、进阶：WSL2 调优、换源安全与 SSH 排障
+
+### 6.1 WSL2 调优：.wslconfig 与 WSLg
+
+```ini
+# %USERPROFILE%\.wslconfig（Windows 用户目录下）
+[wsl2]
+memory=8GB            # 限制 WSL2 占用内存（默认取宿主机一半）
+processors=4          # 限制 CPU 核数
+swap=2GB
+# 新版支持 GUI（WSLg），Windows 11 上可直接跑 Linux 图形应用
+```
+
+```bash
+# 在 WSL2 里启用 systemd（新版默认已开；旧版在 /etc/wsl.conf 加）
+# /etc/wsl.conf
+# [boot]
+# systemd=true
+# 然后 wsl --shutdown 重启 WSL 生效（关联 3.3 systemd）
+
+# /mnt/c 的性能注意：跨文件系统访问慢
+# 代码/编译产物放 Linux 侧（~/），不要放 /mnt/c，IO 差 10 倍以上 ⭐
+```
+
+> 💡 WSL2 本质是**轻量 VM**（微软定制内核），所以资源/IO 与原生有差距；但它有快照、无缝集成、启动快等优势，是 Windows 上学习 Linux 的最佳平衡。生产仍是原生 Linux。
+
+### 6.2 apt 换源的安全姿势（替代 §3 的旧写法）
+
+```bash
+# ⭐ 新版推荐：signed-by 绑定密钥 + deb822 源文件
+# Ubuntu 22.04+ 源默认在 /etc/apt/sources.list.d/ubuntu.sources（deb822 格式）
+cat /etc/apt/sources.list.d/ubuntu.sources
+
+# 手动加第三方源的标准姿势（如 Docker 官方源）
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu noble stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update
+```
+
+> ⚠️ **`apt-key` 已弃用**：它是全局信任，密钥泄露影响所有源。正确做法是每源一个密钥文件 + `signed-by` 绑定。细节见 **2.5 §7.2**。§3 里直接改 `sources.list` 的写法能用，但只适用于官方源换镜像（不涉及第三方 GPG）。
+
+### 6.3 SSH 排障：连不上时看什么
+
+```bash
+# 1. 先加 -v 看握手过程卡在哪一步 ⭐
+ssh -v user@server
+#   debug1: Connecting to server ...      ← 连接阶段（不通=网络/防火墙）
+#   debug1: Offering public key: ...      ← 认证阶段（报错=密钥/权限问题）
+
+# 2. 判断错误类型
+#   "Connection refused"   → SSH 服务没起来 / 端口被防火墙拒绝
+#   "Connection timed out" → 网络不通（路由/防火墙 DROP），不是 SSH 的问题
+nc -zv server 22        # 直接测端口通不通
+
+# 3. known_hosts 冲突修复（提示 host key 变化时）⭐
+ssh-keygen -R server        # 删除旧 host key 记录
+ssh user@server             # 重新确认并记录新 key
+
+# 4. 权限问题
+chmod 600 ~/.ssh/id_ed25519         # 私钥必须 600
+chmod 700 ~/.ssh
+chmod 644 ~/.ssh/authorized_keys    # 服务器端公钥 644（目录 700）
+```
+
+### 6.4 WSL2 与 /mnt/c 性能
+
+```bash
+# 慢的根源：/mnt/c 走 9P 协议跨内核文件系统访问
+# 优化建议：
+#   - 项目代码放 ~/（Linux 原生 ext4），不要放 /mnt/c
+#   - 需要共享给 Windows 的产物，构建后再 cp 到 /mnt/c
+#   - 大量小文件读写（node_modules/编译缓存）差异最明显
+time ls -R /mnt/c/Users/you/code 2>/dev/null | wc -l    # 对比 ~ 下的耗时
+```
+
+### 6.5 Oh My Zsh 的历史与别名
+
+```bash
+# ~/.zshrc 里配置历史与别名
+export HISTFILE=~/.zsh_history
+export HISTSIZE=10000
+export SAVEHIST=10000
+setopt HIST_IGNORE_DUPS        # 忽略连续重复命令
+setopt SHARE_HISTORY           # 多个终端共享历史
+
+alias ll='ls -lah'
+alias gs='git status'
+alias gd='git diff'
+alias ..='cd ..'
+# 定义后立即生效：source ~/.zshrc
+
+# zsh 历史在 ~/.zsh_history，bash 在 ~/.bash_history
+# 命令历史操作（!!、!$、Ctrl+R）在两个 shell 里通用（2.1 §7.1）
+```
+
+> 💡 别名/历史是每个终端用户的"第一生产力配置"。注意别名只在交互 shell 生效（**2.1 §7.4**），脚本里别依赖 `ll` 这类自定义别名。
+
+***
+
 ## 📝 实践项目
 
 ### 目标
@@ -50502,6 +53360,92 @@ UUID=abc-123-def  /data     ext4        defaults   0       2
 | **ZFS** | 数据完整性校验、快照、压缩 | NAS、数据安全场景 |
 | **NTFS** | Windows 默认文件系统 | 双系统数据共享 |
 | **tmpfs** | 内存文件系统、重启丢失 | /tmp、/run |
+
+***
+
+## 六、进阶：/proc、时间戳、inode 耗尽
+
+### 6.1 /proc 与 /sys 实战读法
+
+```bash
+# /proc：虚拟文件系统，内核实时暴露进程/系统信息（§1.1 只提了"虚拟"）
+cat /proc/meminfo | head -5         # 内存详情（MemTotal/MemAvailable）
+cat /proc/loadavg                   # 1/5/15 分钟负载
+cat /proc/version                   # 内核版本
+cat /proc/1/status | grep -E "Name|State|Threads"   # init 进程信息
+cat /proc/cpuinfo | grep "model name" | uniq         # CPU 型号
+
+# /proc/sys：内核运行参数，与 sysctl 一一对应 ⭐
+cat /proc/sys/net/ipv4/ip_forward   # 等同 sysctl net.ipv4.ip_forward
+cat /proc/sys/vm/swappiness         # swap 倾向性（3.1 §6.2 / 4.3 会调它）
+
+# /sys：设备和驱动信息（偏硬件/总线）
+ls /sys/block/                      # 块设备
+cat /sys/block/sda/queue/scheduler  # 磁盘调度器（4.3 §1.4 已见）
+```
+
+> 💡 `echo 1 > /proc/sys/...` 可临时改内核参数但重启失效；永久改要走 `sysctl` 配置（**4.3 §三**）。
+
+### 6.2 atime / mtime / ctime 与 stat 全解
+
+```bash
+stat file.txt
+#   Access: 2026-08-15 17:30:00  (atime)
+#   Modify: 2026-08-15 17:30:00  (mtime)
+#   Change: 2026-08-15 17:30:00  (ctime)
+```
+
+| 时间戳 | 含义 | 何时更新 |
+|:-------|:-----|:---------|
+| **atime** | 最后访问时间 | `cat`/`less` 读取时 |
+| **mtime** | 最后修改时间 | 内容被改写时 |
+| **ctime** | 元数据变化时间 | 权限/属主/链接数变化时（**不是创建时间**！） |
+
+> 💡 **ctime 不是"创建时间"**，是"状态（inode 元数据）变化时间"。挂载选项 `noatime` 就是"不更新 atime 以提升性能"（**3.1 §3.3**）。排查"文件被谁改过"看 mtime，"权限何时变"看 ctime。
+
+### 6.3 目录为何不能硬链接、软链接更新
+
+```bash
+# 目录不能硬链接：避免产生"目录环"（a→b→a 无限循环）
+# 内核只允许 . 和 .. 这两个特例目录链接，其余一律拒绝
+
+# 更新软链接要加 -n（否则可能把新链接建到原目录里）⭐
+ln -sn /new/target linkname     # 安全地重新指向
+readlink linkname               # 查看软链接指向的真实路径
+ls -l linkname                  # 末尾 -> 显示指向
+
+# 实际场景：切换 Java 版本，用软链接改默认
+ln -sn /usr/lib/jvm/java-17 /opt/java-default
+```
+
+### 6.4 inode 耗尽：磁盘"满"但空间充足
+
+```bash
+# 现象：df -h 还有空间，但创建文件报 "No space left on device"
+# 原因：inode 用尽（每个文件/目录都要占一个 inode）
+df -i                    # ⭐ 看 IUsed/IUse%，接近 100% 就是 inode 耗尽
+df -hi                   # 人类可读
+
+# 排查谁占用了大量 inode（小文件堆积：缓存/日志轮转失败/邮件队列）
+find / -xdev -type f | cut -d/ -f2 | sort | uniq -c | sort -rn | head
+find /var -xdev -type f | wc -l    # 看 /var 下文件总数
+
+# 清理方向：清空旧日志/缓存、删除海量小文件、让 logrotate 生效（3.4 §三）
+```
+
+> 💡 典型场景：应用疯狂写小日志、logrotate 没生效、/tmp 堆积。inode 与磁盘空间是两个独立维度，排查要同时看 `df -h` 和 `df -i`。
+
+### 6.5 文件系统类型与挂载详情
+
+```bash
+df -T                    # 显示每列的文件系统类型 ⭐
+df -hT                   # 类型 + 人类可读大小
+findmnt                  # 挂载树（比 mount 更清晰）⭐
+findmnt /data            # 看指定挂载点的设备/类型/选项
+mount -o remount,rw /     # 重新挂载（改只读→可写，3.1 §6.1 恢复会用到）
+```
+
+> 💡 判断"能否在线扩容/缩容"、"为什么 mv 跨盘很慢"（**2.2 §5.5**）都要先确认文件系统类型——`df -T`/`findmnt` 是最快方式。
 
 ***
 
@@ -50783,6 +53727,112 @@ w                                      # 更详细的登录信息
 last                                   # 最近登录记录
 lastlog                                # 所有用户最后登录时间
 ```
+
+***
+
+## 六、进阶：ACL、特殊权限与安全基线
+
+### 6.1 ACL：比 rwx 更细的权限控制
+
+```bash
+# 场景：文件既要给 alice 读、又要给 bob 写、其他人无权限——rwx 做不到，用 ACL ⭐
+sudo setfacl -m u:alice:r file.txt      # 给 alice 读权限
+sudo setfacl -m u:bob:rw file.txt       # 给 bob 读写
+sudo setfacl -m g:devs:r file.txt       # 给组读
+getfacl file.txt                        # 查看 ACL ⭐（ls -l 末尾会多一个 +）
+
+# 移除
+sudo setfacl -x u:alice file.txt        # 移除 alice 的 ACL
+sudo setfacl -b file.txt                # 清空所有 ACL
+
+# 目录递归默认 ACL（新文件自动继承）
+sudo setfacl -m d:g:devs:rw /shared/    # d: 表示默认 ACL
+```
+
+> 💡 `ls -l` 权限位末尾的 `+` 表示该文件有 ACL。ACL 在 rwx 之外按用户/组单独授权，多用户协作目录的标配。
+
+### 6.2 SUID / SGID / Sticky Bit
+
+| 位 | 数字 | 显示 | 作用 |
+|:---|:-----|:-----|:-----|
+| SUID | `4xxx` | 属主位 `s` | 执行时临时拥有属主身份（如 `/usr/bin/passwd`） |
+| SGID | `2xxx` | 组位 `s` | 文件：执行时临时拥有组身份；目录：新建文件继承目录组 ⭐ |
+| Sticky | `1xxx` | 其他位 `t` | 目录里只能删自己的文件（如 `/tmp`） |
+
+```bash
+ls -l /usr/bin/passwd
+# -rwsr-xr-x    ← s 在属主位 = SUID
+ls -ld /tmp
+# drwxrwxrwt     ← t 在末位 = Sticky
+
+# 设置/移除
+sudo chmod 4755 script          # 加 SUID
+sudo chmod 2755 dir/            # 加 SGID
+sudo chmod 1777 /tmp            # 加 Sticky
+sudo chmod u-s file             # 移除 SUID
+
+# ⭐ 排查异常 SUID/SGID（提权风险，联动 4.2 §4.2）
+find / -perm -4000 -o -perm -2000 2>/dev/null
+```
+
+> ⚠️ SUID 是最危险的位：普通用户执行带 SUID 的程序会临时提权。务必定期 `find / -perm -4000` 核对白名单。
+
+### 6.3 /etc/shadow 密码字段逐段解读
+
+```bash
+sudo cat /etc/shadow | grep alice
+# alice:$6$u9xQp0aB$VdxH...:19247:0:99999:7:::
+#   ①     ②            ③     ④ ⑤   ⑥  ⑦ ⑧⑨
+
+# ① 用户名
+# ② 加密后的密码：$算法$盐$哈希
+#    $6$ = SHA-512；$y$ = yescrypt（Ubuntu 24.04 新默认）；$1$ = MD5（弱，避免）
+# ③ 密码最后一次修改日期（距 1970-01-01 的天数）
+# ④ 最小修改间隔（0 = 可随时改）
+# ⑤ 最大有效期（99999 = 不过期）
+# ⑥ 到期前警告天数（7 天）
+# ⑦⑧⑨ 宽限期/过期禁用等
+
+# 用 chage 管理过期策略 ⭐
+sudo chage -l alice            # 查看策略
+sudo chage -M 90 -m 7 -W 7 alice   # 90 天过期、最小 7 天、提前 7 天警告
+sudo chage -d 0 alice          # 立即让密码过期（下次登录强制改）
+```
+
+### 6.4 sudo 的 timestamp 机制与审计
+
+```bash
+# sudo 缓存认证 15 分钟（默认 timestamp_timeout），期间免密
+sudo -v                    # 立即刷新凭证（保持有效）
+sudo -k                    # ⭐ 使缓存失效，下次 sudo 要重新输密码
+
+# 审计：sudo 每次调用的记录在 auth.log ⭐
+sudo grep sudo /var/log/auth.log | tail -10
+#   sudo: alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/apt update
+
+# 更严格：每次 sudo 都输密码
+# sudoers 里：Defaults timestamp_timeout=0
+```
+
+> 💡 安全习惯：离开终端 `sudo -k` 清掉缓存。被审计是常态——`/var/log/auth.log` 记下每个 sudo 命令（**4.2 §6.4** 讲最小权限审计）。
+
+### 6.5 umask 安全基线与 chmod -R 注意
+
+```bash
+# 生产建议 umask 0027（文件 640、目录 750），比默认 022 更紧
+umask 027
+echo 'umask 027' >> ~/.bashrc        # 持久化
+
+# ⚠️ chmod -R 的坑：目录需要 x 才能进入，文件不需要
+# 对目录和文件用同一个 755 会让文件也变成可执行，不干净
+find /app -type d -exec chmod 755 {} \;    # 目录 755
+find /app -type f -exec chmod 644 {} \;    # 文件 644
+
+# 或整树统一（简单但粗糙）
+chmod -R 750 /app
+```
+
+> 💡 `chmod -R` 一把梭会让"所有文件可执行"或"目录不可进"。部署目录建议 `find -type d` / `find -type f` 分开设权限。与 **4.2 安全加固** 的文件权限检查联动。
 
 ***
 

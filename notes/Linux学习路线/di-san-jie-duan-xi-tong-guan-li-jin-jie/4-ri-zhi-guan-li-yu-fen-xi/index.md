@@ -165,6 +165,106 @@ sudo logrotate -f /etc/logrotate.d/myapp    # 强制执行
 
 ***
 
+## 五、进阶：远程日志、轮转选择与查询实战
+
+### 5.1 rsyslog 远程日志传输（轻量集中式）
+
+```bash
+# 服务器端（收集端）：开启 UDP 接收
+# /etc/rsyslog.conf 追加
+# module(load="imudp")
+# input(type="imudp" port="514")
+
+# 客户端（发送端）/etc/rsyslog.d/60-forward.conf
+sudo tee /etc/rsyslog.d/60-forward.conf << 'EOF'
+*.* @192.168.1.50:514        # @ 用 UDP，@@ 用 TCP（更可靠）
+EOF
+sudo systemctl restart rsyslog
+
+# 验证：服务器上 tail -f /var/log/syslog 应能看到客户端日志
+```
+
+> 💡 这是比 ELK 轻量得多的"集中日志"方案：所有机器日志汇聚到一台，`grep`/`tail -f` 统一排查。规模大了再上 Loki/ELK。
+
+### 5.2 logrotate：copytruncate vs create
+
+| 方案 | 适用场景 | 代价 |
+|:-----|:---------|:-----|
+| `create` + postrotate 发信号 | 应用支持 reopen（nginx/syslog） | 无日志丢失 |
+| `copytruncate` | 不支持 reopen 的应用（部分 Java 自写文件日志） | 丢截断瞬间极少量日志 |
+
+```bash
+# 手动触发与状态文件
+sudo logrotate -f /etc/logrotate.d/myapp    # 强制执行
+sudo logrotate -d /etc/logrotate.d/myapp    # 调试（dry-run）
+cat /var/lib/logrotate/status               # ⭐ 状态文件：记录上次轮转时间/文件
+```
+
+> ⚠️ Java 应用如果自己写文件而不 reopen，务必用 `copytruncate`——否则轮转后应用仍往"已改名"的旧文件写，新日志文件永远是空的。
+
+### 5.3 journald 字段过滤与 logger
+
+```bash
+# 精确过滤结构化字段 ⭐
+journalctl _SYSTEMD_UNIT=nginx.service _PID=123
+journalctl PRIORITY=3 --since "10 min ago"     # 只看 err 及以上
+journalctl -u myapp --output=verbose -n 1      # 看一条日志的全部字段
+
+# logger：脚本往 syslog 写自定义日志 ⭐
+logger -t mydeploy "部署开始"
+logger -p local0.info "应用健康检查通过"       # 配合 2.3 规则进 /var/log/myapp.log
+
+# 简易告警脚本
+if ! curl -s http://localhost:8080/health > /dev/null; then
+  logger -p local0.err "8080 健康检查失败"
+fi
+```
+
+### 5.4 日志分析实战管道
+
+```bash
+# 时间窗口内错误聚合：哪一小时的错误最多 ⭐
+grep -E "^2026-08-17" /var/log/myapp.log \
+  | grep -i "error" \
+  | awk '{print $2}' | cut -d: -f1 \
+  | sort | uniq -c | sort -rn
+
+# 统计某接口的响应码分布
+grep "GET /api/user" access.log | awk '{print $NF}' | sort | uniq -c | sort -rn
+
+# 聚合 Top 报错（取每行关键字段再计数）
+grep -i "exception" app.log | awk '{print $1,$2,$NF}' | sort | uniq -c | sort -rn | head
+```
+
+> 💡 分析组合拳：**grep 过滤 → awk 取列 → sort 排序 → uniq -c 计数 → sort -rn 倒序 → head**（关联 **2.3 文本处理命令**）。一行管道即可回答"哪类错误最多、哪个时段高发"。
+
+### 5.5 Loki + Promtail 最小方案
+
+```bash
+# promtail 最小配置 /etc/promtail/config.yml
+server: { http_listen_port: 9080 }
+clients: [{ url: http://loki:3100/loki/api/v1/push }]
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log
+```
+
+```text
+LogQL 基础查询（Grafana 里）：
+{job="varlogs"}                               # 所有 /var/log 日志
+{job="varlogs"} |= "ERROR"                    # 含 ERROR 的行
+{job="varlogs"} |= "ERROR" |= "nginx"         # 多条件过滤
+count_over_time({job="varlogs"} |= "ERROR"[1h])   # 每小时错误数
+```
+
+> 💡 Loki 只索引标签不索引全文，存储成本远低于 ELK；配合 Grafana 可做告警与仪表盘。**关联 4.4 容器日志**（常与 Docker/Prometheus 栈一起部署）。
+
+***
+
 ## 📝 实践项目
 
 ### 目标
