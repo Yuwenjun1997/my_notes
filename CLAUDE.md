@@ -21,7 +21,7 @@ npm run docs:build    # 构建静态站点到 docs/.vuepress/dist
 
 ### 内容组织（docs/notes/）
 
-笔记是纯 Markdown，按目录结构组织，例如 `docs/notes/前端开发/js/01-工具函数.md`。文件用数字前缀（`01-`、`02-`…）控制排序。
+笔记是纯 Markdown，按目录结构组织，例如 `docs/notes/前端学习路线/第二阶段-JavaScript核心/2.7-JavaScript数组.md`。学习路线内文件用 `N.N-` 数字前缀控制排序。
 
 **侧边栏由 `config.js` 的 `collections` 数组驱动**：每个 doc 集合对应 `docs/notes/` 下一个内容目录，`sidebar: 'auto'` 让主题按目录层级递归生成侧边栏（目录名=分组标题，`X.Y-`/`01.` 数字前缀决定排序）。因此：
 
@@ -44,6 +44,7 @@ push 到 `main` 分支时触发：`npm ci` → `npm run docs:build` → 用 `pea
 
 ### 历史说明
 
-- 笔记已从旧目录（`docs/notes/javascript`、`typescript`、`vuejs` 等）迁移到 `docs/notes/前端开发/` 下的 `css`/`js`/`ts` 子目录，旧目录已删除。
+- 笔记已从旧目录（`docs/notes/javascript`、`typescript`、`vuejs` 等）迁移，现整合在 `docs/notes/前端学习路线/` 下的四个阶段目录中，旧目录已删除。
+- 2026-08-17：前端开发重构为「前端学习路线」，按 网页基础 → JavaScript核心 → TypeScript → 工程化与实战 四阶段组织，新增 HTML/CSS/JS 基础笔记与 Vite 入门。
 - 2026-08-15：从外部仓库迁移了 4 套学习路线（`JAVA学习路线` / `Linux学习路线` / `LangChain学习路线` / `Python学习路线`）到 `docs/notes/`，每套含 `README.md` 总览 + 各阶段目录（阶段目录下有 `README.md` 索引页）。导航栏每个路线一个下拉，侧边栏由对应 collection 的 `sidebar: 'auto'` 生成。
 - 与 VuePress 1 的差异：v2/plume 的侧边栏默认不显示页面内 h2/h3 子标题（旧版曾通过自定义 SidebarLink.vue 实现"仅激活页显示子标题"），当前接受默认行为。

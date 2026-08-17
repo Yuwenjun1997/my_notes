@@ -24,7 +24,7 @@ config:
         -
           theme: brand
           text: 马上开始
-          link: /notes/前端开发/js/
+          link: /notes/前端学习路线/
         -
           theme: alt
           text: Java 学习路线
@@ -37,24 +37,29 @@ config:
           target: _blank
   -
     type: features
-    title: 内容分类
-    description: 前端开发的三大阵地，以及本站内置的实用能力
+    title: 前端学习路线
+    description: 从 HTML/CSS 基础到工程化实战的阶段化学习路线，以及本站内置的实用能力
     features:
       -
-        title: CSS
-        icon: logos:css-3
-        details: 常用样式类与技巧，文本溢出省略、布局、响应式等
-        link: /notes/前端开发/css/
+        title: 第一阶段 · 网页基础
+        icon: logos:html-5
+        details: HTML 结构、表单、CSS 盒模型、flex/grid 布局、响应式与动画
+        link: /notes/前端学习路线/第一阶段-网页基础/
       -
-        title: JavaScript
+        title: 第二阶段 · JavaScript核心
         icon: logos:javascript
-        details: 工具函数、数组操作、图片上传预览、二维码生成、Excel 表格解析等
-        link: /notes/前端开发/js/
+        details: 语言基础、函数与闭包、原型与 this、异步与事件循环、DOM 与数组
+        link: /notes/前端学习路线/第二阶段-JavaScript核心/
       -
-        title: TypeScript
+        title: 第三阶段 · TypeScript
         icon: logos:typescript-icon
-        details: 编译、类型基础、接口、类、泛型、枚举、函数知识点等
-        link: /notes/前端开发/ts/
+        details: 编译流程、类型基础、接口、类、泛型、枚举等
+        link: /notes/前端学习路线/第三阶段-TypeScript/
+      -
+        title: 第四阶段 · 工程化与实战
+        icon: 🛠️
+        details: Vite 构建工具与常用实战技巧（工具函数、上传、二维码、表格解析）
+        link: /notes/前端学习路线/第四阶段-工程化与实战/
       -
         title: 图表可视化
         icon: 📊
@@ -72,6 +77,11 @@ config:
     title: 学习路线
     description: 从零到进阶的系统化学习路线，每个路线按阶段编排，侧边栏自动生成
     features:
+      -
+        title: 前端学习路线
+        icon: logos:html-5
+        details: HTML/CSS 基础 → JavaScript 核心 → TypeScript → 工程化与实战
+        link: /notes/前端学习路线/
       -
         title: Java 后端学习路线
         icon: logos:java
@@ -94,52 +104,23 @@ config:
         link: /notes/LangChain学习路线/
   -
     type: text-image
-    title: CSS 笔记
+    title: 前端学习路线
     image: /cyberpunk/css.svg
     width: 160
-    description: 日常开发中常用到的样式类与技巧，覆盖布局、文本、响应式等场景。<br><a href="./notes/前端开发/css/">查看全部 CSS 笔记 →</a>
+    description: 从 HTML/CSS 基础到 JavaScript 核心、TypeScript 与工程化实战的系统化前端学习指南。<br><a href="./notes/前端学习路线/">查看全部前端学习路线 →</a>
     list:
       -
-        title: '<a href="./notes/前端开发/css/chang-yong-yang-shi/">常用样式</a>'
-        description: 文本溢出省略、多行截断、常用工具样式类
-  -
-    type: image-text
-    title: JavaScript 笔记
-    image: /cyberpunk/js.svg
-    width: 160
-    description: 日常开发工具函数与交互技巧，从数组到图片上传、Excel 解析。<br><a href="./notes/前端开发/js/">查看全部 JS 笔记 →</a>
-    list:
+        title: '<a href="./notes/前端学习路线/第一阶段-网页基础/">第一阶段 · 网页基础</a>'
+        description: HTML、表单、CSS 盒模型、布局、响应式动画
       -
-        title: '<a href="./notes/前端开发/js/gong-ju-han-shu/">工具函数</a>'
-        description: 随机 ID 等日常开发工具函数
+        title: '<a href="./notes/前端学习路线/第二阶段-JavaScript核心/">第二阶段 · JavaScript核心</a>'
+        description: 语言基础、函数闭包、原型this、异步、ES6+、DOM、数组
       -
-        title: '<a href="./notes/前端开发/js/java-script-shu-zu/">JavaScript 数组</a>'
-        description: 数组常用方法整理与技巧
+        title: '<a href="./notes/前端学习路线/第三阶段-TypeScript/">第三阶段 · TypeScript</a>'
+        description: 编译、类型基础、接口、类、泛型、枚举
       -
-        title: '<a href="./notes/前端开发/js/shang-chuan-tu-pian-ji-yu-lan/">上传图片及预览</a>'
-        description: 图片上传、本地预览与回显
-      -
-        title: '<a href="./notes/前端开发/js/sheng-cheng-er-wei-ma/">生成二维码</a>'
-        description: 使用 qrcode 生成二维码
-  -
-    type: text-image
-    title: TypeScript 笔记
-    image: /cyberpunk/ts.svg
-    width: 160
-    description: 从编译入门到类型系统进阶，系统梳理 TS 核心知识点。<br><a href="./notes/前端开发/ts/">查看全部 TS 笔记 →</a>
-    list:
-      -
-        title: '<a href="./notes/前端开发/ts/lei-xing-ji-chu/">类型基础</a>'
-        description: 基础类型、类型推断与类型断言
-      -
-        title: '<a href="./notes/前端开发/ts/jie-kou/">接口</a>'
-        description: interface 的声明与合并
-      -
-        title: '<a href="./notes/前端开发/ts/lei/">类</a>'
-        description: 类的语法、继承与修饰符
-      -
-        title: '<a href="./notes/前端开发/ts/fan-xing/">泛型</a>'
-        description: 泛型函数、泛型类与泛型约束
+        title: '<a href="./notes/前端学习路线/第四阶段-工程化与实战/">第四阶段 · 工程化与实战</a>'
+        description: Vite 构建工具与常用前端实战技巧
   -
     type: text-image
     title: Java 学习路线
@@ -231,9 +212,7 @@ config:
 
 ### 快速导航
 
-- [CSS 笔记](/notes/前端开发/css/)
-- [JavaScript 笔记](/notes/前端开发/js/)
-- [TypeScript 笔记](/notes/前端开发/ts/)
+- [前端学习路线](/notes/前端学习路线/)
 - [Java 学习路线](/notes/JAVA学习路线/)
 - [Python 学习路线](/notes/Python学习路线/)
 - [Linux 学习路线](/notes/Linux学习路线/)
@@ -242,6 +221,7 @@ config:
 
 ### 更新记录
 
+- 2026-08-17：前端开发重构为「前端学习路线」，按四阶段系统化组织
 - 2026-08-17：站点更名为「小鱼知识库」，定位调整为个人知识库
 - 2026-08-16：首页 hero 特效由闪电背景改为交互点阵
 - 2026-08-15：首页升级为赛博朋克风格

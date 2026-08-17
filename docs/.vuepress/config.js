@@ -40,11 +40,13 @@ export default defineUserConfig({
     appearance: 'dark',
     navbar: [
       {
-        text: '前端开发',
+        text: '前端学习路线',
         items: [
-          { text: 'CSS', link: '/notes/前端开发/css/' },
-          { text: 'JavaScript', link: '/notes/前端开发/js/' },
-          { text: 'TypeScript', link: '/notes/前端开发/ts/' },
+          { text: '前端学习路线总览', link: '/notes/前端学习路线/' },
+          { text: '第一阶段 · 网页基础', link: '/notes/前端学习路线/第一阶段-网页基础/' },
+          { text: '第二阶段 · JavaScript核心', link: '/notes/前端学习路线/第二阶段-JavaScript核心/' },
+          { text: '第三阶段 · TypeScript', link: '/notes/前端学习路线/第三阶段-TypeScript/' },
+          { text: '第四阶段 · 工程化与实战', link: '/notes/前端学习路线/第四阶段-工程化与实战/' },
         ],
       },
       {
@@ -90,27 +92,13 @@ export default defineUserConfig({
         ],
       },
     ],
-    // 每个子目录一个 doc 集合 + 自动侧边栏 → 侧边栏按目录隔离
+    // 每个学习路线一个 doc 集合 + 自动侧边栏 → 侧边栏按目录递归生成
     collections: [
       {
         type: 'doc',
-        dir: 'notes/前端开发/css',
-        linkPrefix: '/notes/前端开发/css/',
-        title: 'CSS 笔记',
-        sidebar: 'auto',
-      },
-      {
-        type: 'doc',
-        dir: 'notes/前端开发/js',
-        linkPrefix: '/notes/前端开发/js/',
-        title: 'JavaScript 笔记',
-        sidebar: 'auto',
-      },
-      {
-        type: 'doc',
-        dir: 'notes/前端开发/ts',
-        linkPrefix: '/notes/前端开发/ts/',
-        title: 'TypeScript 笔记',
+        dir: 'notes/前端学习路线',
+        linkPrefix: '/notes/前端学习路线/',
+        title: '前端学习路线',
         sidebar: 'auto',
       },
       {
