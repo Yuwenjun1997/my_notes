@@ -1,0 +1,304 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/di-yi-jie-duan-python-ji-chu/1-huan-jing-da-jian-yu-gong-ju-lian/index.md
+---
+# 环境搭建与工具链
+
+## 一、Python 版本与安装
+
+### 1.1 版本选择
+
+Python 是一门解释型、动态类型的高级编程语言，社区活跃、生态丰富。选择版本时主要看两点：**是否 LTS 化的稳定版本** 与 **第三方库的兼容性**。
+
+**主流版本对比**
+
+| 版本 | 发布时间 | 维护状态 | 推荐度 |
+|:-----|:---------|:---------|:-------|
+| Python 3.9 | 2020-10 | 已停止维护（2025-10） | ❌ 不建议新项目使用 |
+| Python 3.10 | 2021-10 | 安全维护中 | ⚠️ 老项目兼容时使用 |
+| Python 3.11 | 2022-10 | 活跃维护 | ✅ 推荐（性能提升明显） |
+| Python 3.12 | 2023-10 | 活跃维护 | ✅ 推荐 |
+| Python 3.13 | 2024-10 | 活跃维护 | ✅ 尝鲜可用 |
+
+**选择建议**
+
+| 场景 | 推荐版本 |
+|:-----|:---------|
+| 学习 / 新项目 | 3.11+（文档与生态最匹配） |
+| 追求最新特性 | 3.13 |
+| 依赖旧库的老项目 | 3.10 |
+| 2.x 代码 | 不推荐，已停止维护 |
+
+**安装方式**
+
+```bash
+# Windows：官网下载安装包，安装时勾选 "Add Python to PATH"
+# macOS：使用 Homebrew
+brew install python@3.12
+
+# Ubuntu/Debian
+sudo apt update && sudo apt install python3 python3-pip python3-venv
+
+# 验证安装
+python3 --version
+```
+
+### 1.2 解释器与 `python -m` 约定
+
+Python 代码由 **CPython 解释器** 逐行编译并执行。`python` 与 `python3` 命令在不同平台命名略有差异。
+
+**常见的可执行模块（`python -m` 约定）**
+
+```bash
+# 以模块方式运行，而不是直接执行文件——保证使用当前环境
+python -m venv .venv        # 创建虚拟环境
+python -m pip install xxx   # 安装包（比直接 pip 更可控）
+python -m unittest          # 运行测试
+python -m http.server 8000  # 启动简易 HTTP 服务
+python -m pdb script.py     # 以调试模式运行
+```
+
+> 💡 **为什么要用 `python -m`？** 直接执行 `pip` / `venv` 等命令时，可能命中系统 PATH 中的另一个 Python 环境；用 `python -m xxx` 则明确绑定当前解释器，避免版本错乱。
+
+### 1.3 REPL 交互式解释器
+
+**REPL**（Read-Eval-Print Loop，读取-求值-打印循环）是 Python 自带的交互式编程环境，适合快速验证语法。
+
+```console
+$ python
+Python 3.12.4 (main, ...) [GCC 13.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> print("Hello, Python!")
+Hello, Python!
+>>> 2 ** 10        # 幂运算
+1024
+>>> exit()         # 退出
+```
+
+**增强工具 iPython**
+
+```bash
+pip install ipython
+ipython               # 支持 Tab 补全、彩色输出、魔法命令
+```
+
+```console
+In [1]: %timeit [x * 2 for x in range(1000)]   # 魔法命令：测量耗时
+```
+
+***
+
+## 二、开发工具与环境
+
+### 2.1 IDE 与编辑工具对比
+
+| 工具 | 适用场景 | 优点 | 缺点 |
+|:-----|:---------|:-----|:-----|
+| **VS Code** | 通用开发（推荐） | 免费、插件丰富（Python/ruff）、内置终端与调试 | 需自行配置插件 |
+| **PyCharm** | Python 专注 | 开箱即用、智能补全强、调试体验好 | 社区版功能受限、较吃内存 |
+| **Jupyter Notebook** | 数据分析、教学 | 交互式单元格、可视化内嵌 | 不适合大型工程 |
+| **Vim / Neovim** | 资深用户 | 轻量、可脚本化 | 学习曲线陡峭 |
+
+**VS Code 推荐插件**
+
+```text
+Python            # 官方语言支持（含调试、代码跳转）
+Pylance           # 类型检查与智能补全
+Ruff              # 代码检查与格式化（快）
+Jupyter           # 笔记本支持
+Error Lens        # 错误信息行内显示
+```
+
+**launch.json 调试配置**
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: 当前文件",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": { "PYTHONPATH": "${workspaceFolder}" }
+        }
+    ]
+}
+```
+
+### 2.2 代码质量工具
+
+**Ruff**（代码检查 + 格式化，Rust 编写，速度极快）
+
+```bash
+pip install ruff
+
+# 检查代码
+ruff check src/
+
+# 自动修复可修复的问题
+ruff check --fix src/
+
+# 格式化代码
+ruff format src/
+
+# 初始化配置文件（pyproject.toml 或 ruff.toml）
+ruff init
+```
+
+**Black**（代码格式化，风格固执）
+
+```bash
+pip install black
+black src/                    # 格式化整个目录
+black --check src/            # 仅检查，不修改
+```
+
+> ❌ **不要混用多个格式化工具**，会导致代码反复变样。新项目推荐统一用 `ruff format`。
+
+### 2.3 第一个脚本与入口约定
+
+```python
+# hello.py
+"""模块文档字符串：描述本模块的用途。"""
+
+
+def greet(name: str) -> str:
+    """返回问候语。"""
+    return f"Hello, {name}!"
+
+
+# 入口约定：仅当直接运行本文件时才执行
+if __name__ == "__main__":
+    print(greet("Python"))
+```
+
+```console
+$ python hello.py
+Hello, Python!
+```
+
+**`if __name__ == "__main__"` 的作用**
+
+| 场景 | `__name__` 值 | 行为 |
+|:-----|:--------------|:-----|
+| 直接运行本文件 | `"__main__"` | 执行入口代码 |
+| 被 import 导入 | 模块名（如 `"hello"`） | 不执行入口代码 |
+
+> 💡 把可执行代码放进 `if __name__ == "__main__":` 块，既可作为脚本运行，也可安全地被其他模块导入复用。
+
+***
+
+## 三、多版本管理与镜像配置
+
+### 3.1 pyenv 多版本管理
+
+当需要在本机同时维护多个 Python 版本（如项目 A 用 3.10、项目 B 用 3.12）时，使用 **pyenv** 按目录切换版本。
+
+```bash
+# macOS
+brew install pyenv
+
+# Windows：推荐 pyenv-win
+# 安装后重启终端
+pyenv --version
+
+# 查看可安装版本
+pyenv install --list | grep " 3.1[12]"
+
+# 安装指定版本
+pyenv install 3.12.4
+
+# 列出已安装版本
+pyenv versions
+
+# 设置全局默认版本
+pyenv global 3.12.4
+
+# 设置当前目录局部版本（会生成 .python-version 文件）
+pyenv local 3.11.9
+```
+
+**pyenv 的隔离原理**
+
+```
+pyenv 通过 PATH 前置注入 shims 目录，
+shims 依据 .python-version 文件将 python 命令重定向到对应版本。
+```
+
+### 3.2 pip 镜像源配置
+
+国内访问 PyPI 官方源较慢，配置 **清华 / 阿里** 镜像可显著提速。
+
+```bash
+# 临时使用镜像
+pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+# 永久配置（写入 ~/.pip/pip.conf 或 %APPDATA%\pip\pip.ini）
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
+
+# 查看当前配置
+pip config list
+```
+
+**常用镜像源对比**
+
+| 镜像源 | 地址 | 说明 |
+|:-------|:-----|:-----|
+| 清华 | `https://pypi.tuna.tsinghua.edu.cn/simple` | 国内首选，同步快 |
+| 阿里云 | `https://mirrors.aliyun.com/pypi/simple` | 稳定 |
+| 中科大 | `https://pypi.mirrors.ustc.edu.cn/simple` | 备选 |
+| 官方 PyPI | `https://pypi.org/simple` | 境外网络下使用 |
+
+> ❌ **不要全局信任不受信源的包**，镜像仅用于下载加速，安装第三方包前仍应确认其来源可信。
+
+***
+
+## 四、实践项目
+
+### 项目 1：搭建开发环境并跑通调试
+
+**目标**：搭建一套完整的 Python 开发环境（VS Code + venv + ruff），并运行带断点的调试。
+
+**步骤**：
+
+1. 安装 Python 3.11+，验证 `python --version`
+2. 使用 `python -m venv .venv` 创建虚拟环境并激活
+3. 在 VS Code 中安装 Python、Pylance、Ruff 插件
+4. 编写 `hello.py`，使用 `if __name__ == "__main__"` 入口
+5. 在 `greet` 函数处打断点，F5 启动调试观察变量
+6. 用 `ruff check .` 检查并修复代码问题
+
+**目录结构参考**：
+
+```
+python-dev-setup/
+├── .venv/               # 虚拟环境（不提交到 Git）
+├── .vscode/
+│   └── launch.json      # 调试配置
+├── pyproject.toml       # 项目配置与 ruff 规则
+└── hello.py             # 第一个脚本
+```
+
+### 项目 2：用 pyenv + 镜像源搭建多版本环境
+
+**目标**：安装两个 Python 版本，按项目目录切换，并配置国内 pip 镜像源。
+
+**步骤**：
+
+1. 用 pyenv 安装 3.11 和 3.12 两个版本
+2. 分别在两个目录执行 `pyenv local` 指定不同版本
+3. 配置 pip 清华镜像源
+4. 在两个目录分别运行 `python --version` 验证切换生效
+
+**目录结构参考**：
+
+```
+pyenv-demo/
+├── legacy-app/          # pyenv local 3.11.9
+│   └── .python-version  # 记录版本
+└── new-app/             # pyenv local 3.12.4
+    └── .python-version
+```

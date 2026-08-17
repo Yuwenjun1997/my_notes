@@ -1,0 +1,430 @@
+---
+url: >-
+  /my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/3-wen-ben-chu-li-ming-ling/index.md
+---
+# 文本处理命令
+
+文本处理是 Linux 命令行的核心优势之一。通过组合 grep、sed、awk 等工具，可以用一行命令完成 Windows 上需要专门软件才能做到的事情。
+
+## 一、文本查看与统计
+
+### 1.1 快速查看
+
+```bash
+cat file.txt              # 全部输出
+cat -n file.txt           # 带行号输出
+tac file.txt              # 反向输出（从最后一行开始）
+nl file.txt               # 更灵活的行号显示
+
+less file.txt             # ⭐ 分页查看（支持搜索、翻页）
+more file.txt             # 旧版分页查看器
+```
+
+### 1.2 统计命令 (wc)
+
+```bash
+wc file.txt               # 行数  单词数  字节数
+wc -l file.txt            # 只统计行数 ⭐ 最常用
+wc -w file.txt            # 只统计单词数
+wc -c file.txt            # 只统计字节数
+wc -m file.txt            # 只统计字符数（中文按一个字符算）
+
+# 实用组合
+find . -name "*.java" | xargs wc -l    # 统计所有 Java 文件总行数
+ps aux | wc -l                          # 统计进程数
+```
+
+### 1.3 排序与去重 (sort / uniq)
+
+```bash
+# sort — 排序
+sort file.txt                  # 字母序排序
+sort -n file.txt               # 按数字排序
+sort -r file.txt               # 逆序
+sort -t ',' -k2 file.txt       # 以逗号为分隔符，按第 2 列排序
+sort -h file.txt               # 按人类可读的大小排序（1K < 2M < 1G）
+sort -u file.txt               # 排序并去重
+
+# uniq — 去重（需先排序）
+sort file.txt | uniq                    # 去除重复行
+sort file.txt | uniq -c                 # 统计每行出现次数 ⭐
+sort file.txt | uniq -d                 # 只显示重复的行
+sort file.txt | uniq -u                 # 只显示唯一的行
+
+# 实战：分析访问日志中最多的 IP
+cat access.log | awk '{print $1}' | sort | uniq -c | sort -rn | head -10
+```
+
+***
+
+## 二、grep — 文本搜索利器
+
+### 2.1 基本用法
+
+```bash
+grep [选项] "模式" 文件
+
+grep "ERROR" app.log                   # 搜索包含 ERROR 的行
+grep -i "error" app.log                # 不区分大小写
+grep -v "DEBUG" app.log                # 反选：排除包含 DEBUG 的行
+grep -n "ERROR" app.log                # 显示行号
+grep -c "ERROR" app.log                # 统计匹配行数
+grep -r "TODO" src/                    # 递归搜索目录 ⭐
+grep -l "ERROR" *.log                  # 只显示文件名（不显示内容）
+grep -w "main" file.txt                # 匹配整个单词（不匹配 mainClass）
+grep -A 3 "ERROR" app.log              # 显示匹配行及后 3 行
+grep -B 2 "ERROR" app.log              # 显示匹配行及前 2 行
+grep -C 5 "ERROR" app.log              # 显示匹配行及前后各 5 行
+grep -E "ERROR|WARN|FATAL" app.log     # 扩展正则（多模式）⭐
+grep --color=auto "ERROR" app.log      # 高亮匹配内容
+```
+
+### 2.2 正则表达式基础
+
+```bash
+# 基本正则（grep 默认）
+.       任意单个字符
+*       前一个字符出现 0 次或多次
+^       行首
+$       行尾
+[abc]   字符集（a 或 b 或 c）
+[^abc]  排除字符集
+\       转义字符
+
+# 扩展正则（grep -E 或 egrep）
++       前一个字符出现 1 次或多次
+?       前一个字符出现 0 次或 1 次
+{n}     前一个字符出现恰好 n 次
+{n,}    前一个字符出现至少 n 次
+{n,m}   前一个字符出现 n 到 m 次
+|       或者（分支）
+()      分组
+```
+
+```bash
+# 实用示例
+grep "^2024-06-22" app.log                    # 以日期开头
+grep "ERROR$" app.log                          # 以 ERROR 结尾
+grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" access.log  # 匹配 IP 地址
+grep -E "^(ERROR|FATAL)" app.log               # 以 ERROR 或 FATAL 开头
+grep -E "Exception.*at com\.example" app.log   # Exception 后跟包名
+grep -v "^#" config.conf | grep -v "^$"        # 去除注释行和空行
+```
+
+### 2.3 常用搜索场景
+
+```bash
+# 搜索进程
+ps aux | grep nginx                    # 查找 nginx 进程
+
+# 搜索 Java 异常
+grep -A 20 "Exception" app.log
+
+# 搜索配置（排除注释）
+grep -v "^#" /etc/ssh/sshd_config | grep -v "^$"
+
+# 搜索大文件中的内容
+grep "keyword" large_file.log --binary-files=text
+
+# 统计接口调用次数
+grep -c "GET /api/user" access.log
+```
+
+***
+
+## 三、sed — 流编辑器
+
+### 3.1 替换操作
+
+```bash
+# 基本语法
+sed 's/旧/新/' file                    # 每行替换第一个匹配
+sed 's/旧/新/g' file                   # 全局替换
+sed 's/旧/新/2' file                   # 每行替换第 2 个匹配
+sed 's/旧/新/g' file > newfile         # 输出到新文件
+
+# 原地修改（⚠️ 谨慎使用）
+sed -i 's/old/new/g' file              # 直接修改文件（Linux）
+sed -i '' 's/old/new/g' file           # macOS 需要空字符串
+sed -i.bak 's/old/new/g' file          # 修改前备份为 file.bak ⭐ 推荐
+
+# 分隔符可以用其他字符（当路径中有 / 时）
+sed 's|/old/path|/new/path|g' file
+sed 's#http://old.com#https://new.com#g' file
+```
+
+### 3.2 行操作
+
+```bash
+# 删除行
+sed '3d' file                          # 删除第 3 行
+sed '2,5d' file                        # 删除 2-5 行
+sed '/pattern/d' file                  # 删除匹配行
+sed '/^$/d' file                       # 删除空行
+sed '/^#/d' file                       # 删除注释行
+
+# 打印行
+sed -n '5p' file                       # 只打印第 5 行
+sed -n '10,20p' file                   # 打印 10-20 行
+sed -n '/error/p' file                 # 打印匹配行
+
+# 插入与追加
+sed '2i\新行内容' file                  # 第 2 行前插入
+sed '5a\新行内容' file                  # 第 5 行后追加
+```
+
+### 3.3 实战示例
+
+```bash
+# 批量修改配置文件
+sed -i.bak 's/port=8080/port=9090/' application.properties
+
+# 替换所有 Java 文件中的包名
+find src/ -name "*.java" -exec sed -i 's/com\.old\.package/com.new.package/g' {} +
+
+# 删除日志中的时间戳前缀
+sed 's/^[0-9T:\.-]* //' app.log
+
+# 在文件每一行前加行号
+sed = file.txt | sed 'N;s/\n/\t/'
+
+# 提取 JSON 中的字段值（简单场景）
+echo '{"name":"Alice","age":30}' | sed 's/.*"name":"\([^"]*\)".*/\1/'
+```
+
+***
+
+## 四、awk — 数据处理神器
+
+### 4.1 基本语法
+
+```bash
+awk '条件 {动作}' 文件
+awk -F '分隔符' '{print $列号}' 文件
+
+# $0 = 整行, $1 = 第1列, $2 = 第2列, ..., $NF = 最后一列
+# NR = 行号, NF = 列数, FS = 输入分隔符, OFS = 输出分隔符
+```
+
+### 4.2 列操作
+
+```bash
+# 打印指定列
+awk '{print $1}' file.txt                       # 打印第 1 列
+awk '{print $1, $3}' file.txt                   # 打印第 1、3 列
+awk '{print $NF}' file.txt                      # 打印最后一列
+awk '{print $(NF-1)}' file.txt                  # 打印倒数第 2 列
+awk '{print NR, $0}' file.txt                   # 带行号打印
+
+# 指定分隔符
+awk -F ':' '{print $1, $6}' /etc/passwd          # 以 : 分隔
+awk -F ',' '{print $2}' data.csv                 # CSV 文件
+awk -F '[ ,]+' '{print $1, $3}' file.txt         # 多个分隔符（空格或逗号）
+```
+
+### 4.3 条件过滤
+
+```bash
+awk '$3 > 100' file.txt                          # 第 3 列大于 100 的行
+awk '$2 == "ERROR"' app.log                      # 第 2 列等于 ERROR
+awk '$1 ~ /^2024/' app.log                       # 第 1 列匹配正则
+awk 'NR >= 10 && NR <= 20' file.txt              # 只处理 10-20 行
+awk 'length($0) > 80' file.txt                   # 长度超过 80 字符的行
+```
+
+### 4.4 计算与格式化
+
+```bash
+# 求和
+awk '{sum += $1} END {print sum}' numbers.txt
+
+# 平均值
+awk '{sum += $1; count++} END {print sum/count}' data.txt
+
+# 最大值
+awk '$1 > max {max = $1} END {print max}' data.txt
+
+# 分组统计
+awk '{count[$1]++} END {for (k in count) print k, count[k]}' data.txt
+
+# 格式化输出
+awk '{printf "%-20s %10d\n", $1, $2}' data.txt
+```
+
+### 4.5 实战示例
+
+```bash
+# 分析 Nginx 访问日志：每个 IP 的请求次数
+awk '{ip[$1]++} END {for (i in ip) print i, ip[i]}' access.log | sort -k2 -rn
+
+# 统计所有 HTTP 状态码的出现次数
+awk '{print $9}' access.log | sort | uniq -c | sort -rn
+
+# 计算响应时间的平均值
+awk '{sum+=$NF; count++} END {print sum/count " ms"}' access.log
+
+# 提取进程的 PID 和 CPU 使用率
+ps aux | awk 'NR==1 || $3>1.0 {print $2, $3, $11}'
+
+# 查看磁盘使用率超过 80% 的分区
+df -h | awk 'NR>1 && +$5>80 {print $1, $5}'
+```
+
+***
+
+## 五、其他实用文本工具
+
+```bash
+# cut — 按分隔符切分
+cut -d ':' -f 1,6 /etc/passwd         # 以 : 分隔，取 1、6 列
+cut -c 1-10 file.txt                  # 取每行前 10 个字符
+
+# tr — 字符转换
+echo "HELLO" | tr 'A-Z' 'a-z'         # 大小写转换
+tr -d '\r' < dos.txt > unix.txt       # 删除回车符（DOS → Unix）
+tr -s ' '                              # 压缩连续空格为一个
+cat file | tr ',' '\t'                 # 逗号替换为制表符
+
+# paste — 合并文件
+paste file1.txt file2.txt              # 按列合并
+paste -d ',' file1.txt file2.txt       # 以逗号分隔
+
+# diff — 文件对比
+diff file1.txt file2.txt               # 逐行对比
+diff -u file1.txt file2.txt            # 统一格式（Git 风格）
+diff -r dir1/ dir2/                    # 目录递归对比
+
+# xargs — 将标准输入转为命令行参数
+find . -name "*.log" | xargs rm        # 删除所有 .log 文件
+find . -name "*.java" | xargs grep "TODO"  # 在所有 Java 文件中搜索
+cat file.txt | xargs -I {} echo "前缀 {} 后缀"
+```
+
+***
+
+## 六、vim 基础操作
+
+Linux 下最常用的文本编辑器，掌握基础操作即可应对日常编辑。
+
+### 6.1 三种模式
+
+```text
+普通模式 (Normal)  ── i/a/o ──→  插入模式 (Insert)
+      ↑                              │
+      │                              │
+      └──────── Esc ────────────────┘
+      │
+      └── : ──→ 命令模式 (Command)
+```
+
+### 6.2 基础操作速查
+
+```bash
+# ===== 模式切换 =====
+i        在光标前进入插入模式
+a        在光标后进入插入模式
+o        在下一行进入插入模式
+Esc      退出插入模式，回到普通模式
+:        进入命令模式
+
+# ===== 移动光标（普通模式）=====
+h j k l  左 下 上 右
+w        下一个单词开头
+b        上一个单词开头
+0        行首
+$        行尾
+gg       文件开头
+G        文件末尾
+:N       跳到第 N 行
+
+# ===== 编辑操作（普通模式）=====
+x        删除光标处字符
+dd       删除整行
+yy       复制整行
+p        粘贴到下一行
+u        撤销
+Ctrl+r   重做
+.        重复上一次操作
+
+# ===== 搜索与替换 =====
+/keyword        向下搜索
+?keyword        向上搜索
+n               下一个匹配
+N               上一个匹配
+:%s/old/new/g   全文替换
+:%s/old/new/gc  全文替换（每次确认）
+
+# ===== 保存与退出（命令模式）=====
+:w              保存
+:q              退出
+:wq             保存并退出
+:q!             强制退出（不保存）
+ZZ              保存并退出（等同 :wq）
+```
+
+> ⚠️ **注意事项**：vim 对于初学者最大的挑战是不知道自己在哪个模式。**进入 vim 后，先按 `i` 进入插入模式才能输入文字，完成后按 `Esc` 退出插入模式，再输入 `:wq` 保存退出。** 任何时候慌了就狂按 `Esc` 然后输 `:q!`。
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+用命令行完成一次完整的日志分析任务。
+
+### 步骤
+
+**生成测试日志**：
+
+```bash
+mkdir -p ~/text-practice && cd ~/text-practice
+
+cat > access.log << 'EOF'
+2024-06-22T10:00:01 192.168.1.100 GET /api/user 200 15ms
+2024-06-22T10:00:02 192.168.1.101 GET /api/order 404 8ms
+2024-06-22T10:00:03 192.168.1.100 POST /api/user 500 120ms
+2024-06-22T10:00:04 192.168.1.102 GET /api/product 200 5ms
+2024-06-22T10:00:05 192.168.1.100 GET /api/user 200 12ms
+2024-06-22T10:00:06 192.168.1.103 GET /api/order 200 10ms
+2024-06-22T10:00:07 192.168.1.102 GET /api/product 503 3000ms
+2024-06-22T10:00:08 192.168.1.101 POST /api/user 200 18ms
+2024-06-22T10:00:09 192.168.1.100 GET /api/user 200 14ms
+2024-06-22T10:00:10 192.168.1.103 GET /api/order 404 7ms
+EOF
+```
+
+**分析任务**：
+
+```bash
+# 1. 统计总请求数
+wc -l access.log
+
+# 2. 找出所有错误请求 (404 或 500)
+grep -E "\b(404|500|503)\b" access.log
+
+# 3. 统计每个 IP 的请求次数
+awk '{print $2}' access.log | sort | uniq -c | sort -rn
+
+# 4. 统计各 HTTP 状态码数量
+awk '{print $5}' access.log | sort | uniq -c | sort -rn
+
+# 5. 找出响应时间超过 100ms 的慢请求
+awk '$NF+0 > 100 {print $0}' access.log
+
+# 6. 计算平均响应时间
+awk '{gsub(/ms/,"",$NF); sum+=$NF; count++} END {print "平均响应时间:", sum/count "ms"}' access.log
+
+# 7. 提取所有独立访问的接口路径并排序
+awk '{print $4}' access.log | sort -u
+```
+
+### 进阶挑战
+
+用 vim 编辑生成的 `access.log`：
+
+1. 进入 vim：`vim access.log`
+2. 将所有的 `GET` 替换为 `GET_REQUEST`：`:%s/GET/GET_REQUEST/g`
+3. 删除包含 404 的行：`:g/404/d`
+4. 给每行加上行号：`:%s/^/\=printf('%-3d ', line('.'))/`
+5. 撤销所有修改：多次按 `u` 直到恢复
+6. 不保存退出：`:q!`

@@ -1,0 +1,119 @@
+---
+url: >-
+  /my_notes/notes/LangChain学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/1-lang-smith-ke-guan-ce-xing-yu-ping-gu/index.md
+---
+# LangSmith 可观测性与评估
+
+> Agent 越复杂，越需要"**看清它在干什么、干得好不好**"。LangSmith 就是官方的"监控摄像头 + 绩效考核系统"：横切 LangChain / LangGraph / Deep Agents 每一层，全程记录 + 打分。
+
+## 一、为什么需要"监控"Agent
+
+`create_agent` 和 Deep Agents 都是**模型自主决策**的黑盒：每一步为什么调这个工具、哪一步耗时最久、哪个环节答错了——**没有日志你根本无从下手**。生产环境不能靠"猜"。
+
+> 🧠 **类比**：上了流水线的质检员（你）需要两块表——**监控屏**（现在每条产线的实时状况）和**绩效考核表**（这个模型改版后表现到底变好没有）。LangSmith 就是这两块表。
+
+## 二、LangSmith 三大能力
+
+| 能力 | 官方名 | 大白话 | 解决什么问题 |
+|:-----|:-------|:-------|:-------------|
+| **追踪** | Tracing | 全程录像 | 每一步（模型调用、工具调用、耗时、token）都能回放 |
+| **评估** | Evaluation | 打分 | 用自动评测批量判断 Agent 回答质量 |
+| **数据集** | Dataset | 出题卷 | 把真实问题存成测试集，反复评测对比 |
+
+> 💡 **含义解释**：**Tracing** 是"事后回放每一步"；**Dataset** 是"攒一批标准考题"；**Evaluation** 是"拿考题批量给 Agent 打分"。三者配合 = 你既能**排查问题**，又能**验证改版是否真的更好**。
+
+## 三、环境变量配置
+
+LangSmith 的接入是"零代码"的：**只要配好环境变量，所有 LangChain/LangGraph/Deep Agents 调用自动上报**。
+
+```bash
+# 官方要求的三个变量（注意：旧变量名已失效）
+export LANGSMITH_API_KEY="lsv2_..."        # 从 LangSmith 后台获取
+export LANGSMITH_TRACING="true"            # 开启追踪
+export LANGSMITH_PROJECT="my-first-agent"  # 在哪个项目下看
+```
+
+> ⚠️ Windows 用户把 `export` 换成 `set`。配好后，代码里**不需要加任何东西**——跑一次任务，打开 LangSmith 后台就能看到整条调用链。
+
+## 四、看懂一条 Trace（追踪记录）
+
+在 LangSmith 里打开任意一次运行，你会看到一棵"调用树"：
+
+```text
+Trace: "把总结写进 summary.md"
+├── ChatModel（1 次调用，0.8s，1200 tokens）
+├── write_todos（工具调用）
+├── read_file  （工具调用，返回 3KB）
+├── ChatModel（1 次调用，2.1s，2400 tokens）
+└── write_file （工具调用）
+```
+
+| 信息 | 排查价值 |
+|:-----|:---------|
+| 每个节点的**耗时** | 找出最慢的环节（如某次检索特别慢） |
+| 每步的 **token 消耗** | 定位上下文膨胀、成本失控 |
+| 工具**入参/出参** | 确认模型是否用对了工具、传对了参数 |
+| 完整**消息链** | 回放模型"为什么这么想" |
+
+## 五、评估入门（Evaluation）
+
+### 5.1 为什么需要"打分"
+
+模型改版、换提示词后，"感觉变好了"不算数。**用固定数据集批量评测，用分数说话**，才能放心上线。
+
+### 5.2 最小流程
+
+```text
+1. 收集真实问题 → 建 Dataset（测试集）
+2. 用评测脚本对 Agent 批量跑测试集
+3. 看打分结果 → 判断"这版提示词是否真的更好"
+```
+
+```python
+# 伪代码：思路示意（完整 API 见官方 Evaluation 文档）
+from langsmith import Client
+from langsmith.evaluation import evaluate
+
+client = Client()
+
+def predict(inputs: dict) -> dict:
+    # 调用你的 Agent
+    return {"answer": agent.invoke({"messages": [{"role": "user", "content": inputs["question"]}]})["messages"][-1].content}
+
+# 在已有 dataset 上批量评测
+results = evaluate(
+    predict,
+    data="my-dataset",          # 数据集名
+    evaluators=[correctness_evaluator],   # 打分器（正确性/相关性等）
+)
+```
+
+> 💡 **含义解释**：`evaluate(predict, data, evaluators)` 三件套：**predict** 是你的 Agent、**data** 是考题集、**evaluators** 是评分标准（官方提供正确性、相关性等现成评分器）。跑完会给出整体分数报表。
+
+## 六、何时用哪个
+
+| 场景 | 用 LangSmith 的什么 |
+|:-----|:--------------------|
+| Agent 答错了，想知道哪一步出的错 | **Tracing**（回放调用链） |
+| 换了模型，想确认效果没变差 | **Evaluation**（批量打分对比） |
+| 收集真实问题，攒测试集 | **Dataset** |
+| 生产监控告警 | Tracing + 项目维度聚合 |
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+为你的 Deep Agent 开启追踪，并跑一次最小评估。
+
+### 步骤
+
+1. **配置环境变量**（上文第三节），确认 `LANGSMITH_TRACING=true`。
+2. **跑 3 个不同任务**：一个问答、一个读写文件、一个派子代理，观察它们都出现在 LangSmith 的同一个项目下。
+3. **点开一次 Trace**：找出"耗时最长的节点"和"token 最多的调用"，写一句结论。
+4. **建一个 Dataset**：手动录入 5 条"问题-标准答案"。
+5. **跑一次 evaluate**：用官方现成的正确性评分器，得到该 Agent 的评分报表。
+6. **改一版提示词再测**：对比两次评分，体验"用数据而不是感觉做决策"。
+
+> 🧠 **思考题**：你已经集齐全部能力。最后一步是把它们串成"一个真实可交付的 AI 助手"——下一节实战。

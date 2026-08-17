@@ -1,0 +1,326 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/shen-du-xue-xi/05-ai-engineering/3-ji-qi-xue-xi-ji-chu-yu-mo-xing-bu-shu/index.md
+---
+# 机器学习基础与模型部署
+
+> 面向 Python 后端开发者的机器学习入门与工程化指南：用 scikit-learn 完成建模与评估，掌握模型持久化，并将模型封装为 FastAPI 推理服务、部署到 Docker 容器。
+
+***
+
+## 一、scikit-learn 建模基础
+
+### 1.1 数据准备与划分
+
+**scikit-learn**：Python 最主流的传统机器学习库，统一了「数据预处理 → 训练 → 评估」的 API 范式（`fit` / `predict` / `score`）。
+
+**数据划分**：训练集（train）用于学习，测试集（test）用于评估泛化能力，防止"考原题"。
+
+```python
+from sklearn.model_selection import train_test_split
+import pandas as pd
+
+# 加载数据（示例：泰坦尼克号生存预测数据集）
+df = pd.read_csv("titanic.csv")
+X = df[["age", "fare", "pclass", "sex"]].copy()   # 特征
+y = df["survived"]                                 # 标签
+
+# 划分训练集 80% / 测试集 20%，固定随机种子保证可复现
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y,  # stratify 按标签分层，类别均衡
+)
+print(X_train.shape, X_test.shape)
+```
+
+> ❌ **常见错误**：用全量数据训练再评估，或把测试集泄露进预处理。
+> ✅ **正确做法**：只在训练集上 fit 预处理器，测试集用 `transform` 复用。
+
+### 1.2 特征工程
+
+**特征编码**：机器学习只能吃数值，分类特征需编码为数值。
+
+```python
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+
+# 列转换：类别特征独热编码，数值特征标准化
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), ["age", "fare"]),   # 数值 → 标准化(均值0方差1)
+        ("cat", OneHotEncoder(), ["sex", "pclass"]),  # 类别 → 独热编码
+    ]
+)
+
+# 缺失值填充：数值列用中位数
+from sklearn.impute import SimpleImputer
+imputer = SimpleImputer(strategy="median")
+```
+
+**特征工程要点**：
+
+| 操作 | 目的 | 常用方法 |
+|------|------|---------|
+| 缺失值处理 | 避免 NaN 报错 | 中位数/众数填充、删除行 |
+| 数值缩放 | 消除量纲影响 | StandardScaler / MinMaxScaler |
+| 类别编码 | 转为数值 | 独热编码 / 标签编码 |
+| 特征构造 | 挖掘隐含信息 | 组合特征、分箱、文本向量化 |
+
+### 1.3 模型训练与评估
+
+**训练评估流程**：选模型 → fit → predict → 用指标衡量。
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# 1. 构造完整流水线（预处理 + 模型）
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+# 2. 训练（流水线统一 fit）
+from sklearn.pipeline import Pipeline
+pipe = Pipeline(steps=[("pre", preprocessor), ("model", model)])
+pipe.fit(X_train, y_train)
+
+# 3. 预测与评估
+y_pred = pipe.predict(X_test)
+print("准确率:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))   # 精确率/召回率/F1 详细报告
+```
+
+**评估指标选择**：分类问题默认看准确率，但**类别不平衡**时（如欺诈检测正样本仅 1%）要看精确率、召回率、F1。
+
+| 指标 | 含义 | 适用场景 |
+|------|------|---------|
+| 准确率（Accuracy） | 全对比例 | 类别均衡时 |
+| 精确率（Precision） | 预测为正的里面真对的比例 | 误报代价高（垃圾邮件） |
+| 召回率（Recall） | 真正的正类被找出多少 | 漏报代价高（疾病筛查） |
+| F1 | 精确率与召回率的调和平均 | 平衡两者 |
+
+### 1.4 交叉验证与调参
+
+**交叉验证（CV）**：把训练集切成 K 份轮流做验证，评估更稳健，避免单次划分的偶然性。
+
+```python
+from sklearn.model_selection import cross_val_score, GridSearchCV
+
+# 5 折交叉验证：训练 5 次，取平均分
+scores = cross_val_score(pipe, X_train, y_train, cv=5)
+print(f"CV 平均分: {scores.mean():.3f} ± {scores.std():.3f}")
+
+# 网格搜索调参：自动尝试参数组合，选出最优
+param_grid = {"model__n_estimators": [50, 100, 200],
+              "model__max_depth": [None, 10, 20]}
+search = GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1)
+search.fit(X_train, y_train)
+print("最佳参数:", search.best_params_)
+print("最佳得分:", search.best_score_)
+```
+
+***
+
+## 二、模型持久化
+
+### 2.1 模型保存与加载
+
+**持久化目的**：训练一次、部署多次，避免每次启动都重新训练。
+
+```python
+import joblib
+
+# 保存完整流水线（含预处理 + 模型）
+joblib.dump(search.best_estimator_, "model/titanic_model.joblib")
+
+# 加载使用
+model = joblib.load("model/titanic_model.joblib")
+sample = [[30, 100, 3, "male"]]            # 新样本
+pred = model.predict(sample)[0]
+print("预测存活:", "存活" if pred == 1 else "未存活")
+```
+
+| 方式 | 优点 | 缺点 | 适用 |
+|------|------|------|------|
+| `joblib`（推荐） | 高效压缩 numpy 对象 | 依赖 scikit-learn 版本 | 传统 ML 模型 |
+| `pickle` | 内置无需安装 | 不安全、体积大 | 简单对象 |
+| ONNX | 跨框架/语言通用 | 转换有兼容成本 | 需跨平台部署 |
+| `torch.save` | PyTorch 原生 | 仅限 PyTorch | 深度学习模型 |
+
+> ⚠️ **安全提示**：不要用 pickle/joblib 加载来源不明的文件，恶意 pickle 可执行任意代码。
+
+***
+
+## 三、封装为推理服务
+
+### 3.1 FastAPI 推理接口
+
+**推理服务**：把模型封装成 HTTP 接口，前端/其他服务通过 JSON 调用。
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
+import joblib
+
+app = FastAPI(title="Titanic 预测服务")
+model = joblib.load("model/titanic_model.joblib")   # 启动时加载一次
+
+# 请求体模型：字段校验 + 默认值
+class PredictRequest(BaseModel):
+    age: float = Field(ge=0, le=120, description="年龄")
+    fare: float = Field(ge=0, description="票价")
+    pclass: int = Field(ge=1, le=3, description="舱位等级")
+    sex: str = Field(pattern="^(male|female)$", description="性别")
+
+# 健康检查接口：便于容器编排探活
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+@app.post("/predict")
+def predict(req: PredictRequest):
+    sample = [[req.age, req.fare, req.pclass, req.sex]]
+    prob = model.predict_proba(sample)[0][1]        # 存活概率
+    return {"survived": bool(model.predict(sample)[0]), "probability": round(prob, 4)}
+```
+
+**接口设计要点**：输入用 Pydantic 严格校验（类型/范围/枚举）；输出统一 JSON 结构；暴露 `/health` 供探活；批量预测比逐个调用快得多。
+
+### 3.2 批处理与异步推理
+
+**批量推理**：一次请求带多条样本，利用向量化大幅提速。
+
+```python
+class BatchPredictRequest(BaseModel):
+    items: list[PredictRequest] = Field(min_length=1, max_length=100)
+
+@app.post("/predict/batch")
+def predict_batch(req: BatchPredictRequest):
+    rows = [[i.age, i.fare, i.pclass, i.sex] for i in req.items]
+    probs = model.predict_proba(rows)[:, 1]
+    return {"results": [
+        {"survived": bool(p >= 0.5), "probability": round(float(p), 4)}
+        for p in probs
+    ]}
+```
+
+**异步优化**：模型本身是 CPU 计算，会阻塞事件循环。处理慢模型时用线程池隔离。
+
+```python
+from fastapi.concurrency import run_in_threadpool
+
+@app.post("/predict/async")
+async def predict_async(req: PredictRequest):
+    # 把同步的模型调用放进线程池，避免阻塞事件循环
+    result = await run_in_threadpool(do_predict, req)
+    return result
+```
+
+> 💡 **经验**：模型小且快（毫秒级）直接用；模型慢或需 GPU 时，用独立推理进程/服务，主服务异步转发（MQ 或 gRPC）。
+
+***
+
+## 四、生产部署
+
+### 4.1 模型版本管理
+
+**版本管理**：模型会迭代，必须能回滚与对比，避免"上线了新模型但效果变差无法回退"。
+
+| 方案 | 说明 |
+|------|------|
+| 语义化文件名 | `model_v20260815_auc0.85.joblib`，保留历史 |
+| 注册中心（MLflow） | 统一管理实验、指标、产物，适合团队 |
+| 对象存储 + 清单 | S3/OSS 存放模型，元数据清单记录版本与指标 |
+
+```bash
+# 推荐：模型文件名带版本与关键指标
+model/
+├── v1/  model_auc0.812.joblib
+├── v2/  model_auc0.856.joblib
+└── current -> v2/   # 符号链接指向当前生效版本，发布时切换
+```
+
+**A/B 测试简介**：新老模型按比例分流线上流量，用业务指标（转化率、准确率）对比后再全量切换，降低回归风险。
+
+### 4.2 Docker 容器化部署
+
+**容器化**：把推理服务与依赖打包成镜像，环境一致、易于扩展。
+
+```dockerfile
+# Dockerfile：多阶段构建，减小镜像体积
+# 阶段一：安装依赖
+FROM python:3.11-slim AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 阶段二：运行镜像（更小）
+FROM python:3.11-slim
+WORKDIR /app
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY model/ ./model/
+COPY app/ ./app/
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+```yaml
+# docker-compose.yml：一键启动推理服务
+services:
+  predict:
+    build: .
+    ports:
+      - "8000:8000"
+    restart: always
+    healthcheck:                       # 健康检查，供编排系统探活
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+```
+
+```bash
+# 构建与启动
+docker build -t titanic-predict .
+docker compose up -d
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"age":30,"fare":100,"pclass":1,"sex":"male"}'
+```
+
+**部署要点**：镜像选 `python:3.11-slim` 而非全量版；GPU 模型用 `nvidia/cuda` 镜像并加 `--gpus all`；多副本 + 负载均衡应对高并发；监控 QPS 与延迟。
+
+***
+
+## 实践项目
+
+### 目标
+
+完成一个完整的 **「房价预测」机器学习项目**：数据清洗与特征工程 → 模型训练与调参 → 持久化 → 封装 FastAPI 推理服务 → Docker 容器化部署。
+
+### 步骤
+
+1. 获取波士顿/加州房价数据集，划分训练测试集（stratify 处理连续目标用回归指标）
+2. 构建 ColumnTransformer 预处理流水线（缺失填充 + 标准化 + 独热编码）
+3. 对比 LinearRegression 与 RandomForestRegressor，用 GridSearchCV 调参
+4. 用 RMSE/MAE 评估，保存最佳模型为 `model_v1.joblib`
+5. 用 FastAPI 封装 `/predict`、`/predict/batch`、`/health` 三个接口
+6. 编写 Dockerfile 与 docker-compose.yml，构建镜像并 `docker compose up` 验证
+7. （可选）用 pytest 为接口写单元测试，用 locust 简单压测
+
+### 目录结构参考
+
+```text
+house-price/
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt        # scikit-learn, pandas, fastapi, uvicorn, joblib
+├── data/
+│   └── house.csv
+├── notebooks/
+│   └── train.ipynb         # 探索与训练
+├── src/
+│   ├── train.py            # 训练 + 调参 + 保存模型
+│   ├── app.py              # FastAPI 推理服务
+│   └── model/
+│       └── model_v1.joblib # 持久化模型
+└── tests/
+    └── test_api.py         # 接口测试
+```

@@ -1,0 +1,1191 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/3-nacos-config-dong-tai-pei-zhi/index.md
+---
+# Nacos Config 动态配置
+
+## 1. 配置中心概念
+
+### 1.1 传统配置的痛点
+
+在微服务架构普及之前，应用配置通常写在 `application.properties` 或 `application.yml` 文件中，打包在 JAR/WAR 中一同部署。这种方式存在以下严重问题：
+
+| 痛点 | 说明 |
+|------|------|
+| **配置与代码耦合** | 修改配置需要重新打包、构建、部署，流程繁琐 |
+| **环境差异难管理** | dev / test / prod 配置散落在不同分支或文件中，容易遗漏 |
+| **缺乏实时性** | 修改配置必须重启应用，无法动态生效 |
+| **配置分散** | 几十个微服务各自管理配置，运维人员需要登录每台机器修改 |
+| **缺乏版本控制** | 配错了无法快速回滚，事故影响时间长 |
+| **缺乏权限管控** | 谁改了配置、改了什么、什么时候改的，无从追溯 |
+
+### 1.2 为什么需要配置中心
+
+配置中心将配置从应用中剥离，作为一个独立的基础设施服务，提供 **集中存储、动态下发、版本管理、权限控制** 的能力。其核心价值在于：
+
+* **配置与代码解耦**：配置变更无需重新部署
+* **动态刷新**：配置修改后实时推送到应用，无需重启
+* **统一管理**：所有微服务的配置在同一个平台管理
+* **环境隔离**：通过 namespace / group 天然隔离不同环境
+* **审计追溯**：完整的配置变更历史与回滚能力
+
+***
+
+## 2. Nacos Config 核心功能
+
+### 2.1 配置管理三要素
+
+Nacos 通过 **dataId + group + namespace** 三个维度唯一确定一条配置：
+
+```
+Namespace ── 环境隔离（如 dev / test / prod）
+    │
+    └── Group ── 业务线分组（如 DEFAULT_GROUP、PAY_GROUP）
+            │
+            └── DataId ── 具体配置文件（如 application.yml）
+```
+
+```
+配置唯一标识 = Namespace + Group + DataId
+```
+
+* **Namespace（命名空间）**：最外层隔离，常用于隔离环境或租户。不同 Namespace 之间的配置完全不可见。
+* **Group（分组）**：次层分组，常用于同一环境内按业务线划分。
+* **DataId（数据 ID）**：配置文件名称，通常格式为 `${spring.application.name}.${file-extension}`。
+
+### 2.2 支持的配置格式
+
+Nacos Config 原生支持以下配置格式，通过 `spring.cloud.nacos.config.file-extension` 指定：
+
+| 格式 | 扩展名 | 说明 |
+|------|--------|------|
+| Properties | `.properties` | Java 传统格式，键值对 |
+| YAML | `.yaml` / `.yml` | 最常用，层次清晰 |
+| JSON | `.json` | 适合结构化数据 |
+| XML | `.xml` | 遗留系统兼容 |
+| Text | `.txt` | 纯文本配置 |
+
+### 2.3 配置版本管理
+
+Nacos 控制台提供完整的配置版本管理能力：
+
+* **版本历史**：每次配置变更自动生成一个新版本，可查看变更内容对比
+* **版本对比**：支持两个版本的 Diff 对比（基于文本差异算法）
+* **一键回滚**：选择任意历史版本一键回滚，秒级恢复
+
+***
+
+## 3. Spring Boot 集成 Nacos Config
+
+### 3.1 依赖引入
+
+```xml
+<!-- Spring Cloud Alibaba Nacos Config -->
+<dependency>
+    <groupId>com.alibaba.cloud</groupId>
+    <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+    <version>2021.0.5.0</version>
+</dependency>
+
+<!-- Spring Boot Starter Web -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+<!-- Spring Boot Actuator（可选，用于健康检查） -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+### 3.2 bootstrap.yml 配置
+
+Nacos Config 的配置必须写在 `bootstrap.yml`（或 `bootstrap.properties`）中，因为它在 `application.yml` 之前加载，确保应用启动时就能从 Nacos 获取配置。
+
+```yaml
+# bootstrap.yml
+spring:
+  application:
+    name: user-service
+
+  cloud:
+    nacos:
+      config:
+        # Nacos 服务端地址
+        server-addr: 127.0.0.1:8848
+
+        # 配置文件的 dataId 后缀格式
+        # 默认读取 ${spring.application.name}.${file-extension}
+        file-extension: yaml
+
+        # 命名空间（使用 ID，默认 public 命名空间可不填）
+        namespace: dev-namespace-id
+
+        # 分组（默认 DEFAULT_GROUP）
+        group: DEFAULT_GROUP
+
+        # 配置中心是否启用
+        enabled: true
+
+        # 长轮询超时时间（毫秒）
+        config-retry-timeout: 3000
+
+        # 自动刷新（默认 true）
+        refresh-enabled: true
+```
+
+同时，在 Nacos 控制台上对应 namespace 下创建配置文件，dataId 为 `user-service.yaml`：
+
+```yaml
+# dataId: user-service.yaml, group: DEFAULT_GROUP
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/user_db?useUnicode=true&characterEncoding=utf-8
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# 自定义配置（用于演示动态刷新）
+user:
+  name: 张三
+  age: 28
+  welcome-message: 欢迎使用用户服务
+  feature-switch:
+    enable-new-register: true
+    enable-sms-notify: false
+```
+
+### 3.3 @Value + @RefreshScope 自动刷新
+
+```java
+package com.example.userservice.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 动态配置控制器
+ * @RefreshScope 标记的 Bean 在配置变更时会重新创建
+ */
+@RestController
+@RequestMapping("/config")
+@RefreshScope
+public class DynamicConfigController {
+
+    @Value("${user.name:默认用户}")
+    private String userName;
+
+    @Value("${user.age:18}")
+    private Integer userAge;
+
+    @Value("${user.welcome-message:欢迎}")
+    private String welcomeMessage;
+
+    @Value("${user.feature-switch.enable-new-register:false}")
+    private boolean enableNewRegister;
+
+    @Value("${user.feature-switch.enable-sms-notify:false}")
+    private boolean enableSmsNotify;
+
+    /**
+     * 读取当前配置
+     */
+    @GetMapping
+    public Map<String, Object> getConfig() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("userName", userName);
+        config.put("userAge", userAge);
+        config.put("welcomeMessage", welcomeMessage);
+        config.put("enableNewRegister", enableNewRegister);
+        config.put("enableSmsNotify", enableSmsNotify);
+        return config;
+    }
+
+    /**
+     * 根据用户名称返回个性化欢迎语
+     */
+    @GetMapping("/welcome")
+    public Map<String, Object> welcome() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("message", welcomeMessage);
+        result.put("user", userName);
+        result.put("enableNewRegister", enableNewRegister);
+        return result;
+    }
+}
+```
+
+### 3.4 @NacosValue 注解
+
+`@NacosValue` 是 Nacos 原生提供的注解，不需要 Spring Cloud 的 `@RefreshScope` 即可实现自动刷新。如果项目中未使用 Spring Cloud Bus，推荐使用此方式。
+
+```java
+package com.example.userservice.config;
+
+import com.alibaba.nacos.api.config.annotation.NacosValue;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * 使用 @NacosValue 实现动态刷新（无需 @RefreshScope）
+ * 注意：需要引入 nacos-spring-context 依赖
+ */
+@RestController
+@RequestMapping("/nacos-value")
+@Component
+public class NacosValueController {
+
+    @NacosValue(value = "${user.name:默认用户}", autoRefreshed = true)
+    private String userName;
+
+    @NacosValue(value = "${user.age:18}", autoRefreshed = true)
+    private Integer userAge;
+
+    @NacosValue(value = "${user.feature-switch.enable-new-register:false}", autoRefreshed = true)
+    private boolean enableNewRegister;
+
+    /**
+     * 查询 @NacosValue 注入的配置值
+     */
+    @GetMapping
+    public Map<String, Object> getNacosValueConfig() {
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("userName", userName);
+        config.put("userAge", userAge);
+        config.put("enableNewRegister", enableNewRegister);
+        config.put("source", "@NacosValue (autoRefreshed=true)");
+        return config;
+    }
+}
+```
+
+### 3.5 完整示例：配置监听器
+
+```java
+package com.example.userservice.config;
+
+import com.alibaba.cloud.nacos.NacosConfigManager;
+import com.alibaba.cloud.nacos.NacosConfigProperties;
+import com.alibaba.nacos.api.config.listener.Listener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+/**
+ * Nacos 配置监听器示例
+ * 监听配置变更并执行自定义逻辑
+ */
+@Component
+public class NacosConfigListener implements InitializingBean {
+
+    private static final Logger log = LoggerFactory.getLogger(NacosConfigListener.class);
+
+    @Autowired
+    private NacosConfigManager nacosConfigManager;
+
+    @Autowired
+    private NacosConfigProperties nacosConfigProperties;
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        String dataId = "user-service.yaml";
+        String group = "DEFAULT_GROUP";
+
+        // 注册监听器
+        nacosConfigManager.getConfigService().addListener(dataId, group, new Listener() {
+            @Override
+            public Executor getExecutor() {
+                // 使用单线程池处理配置变更事件
+                return Executors.newSingleThreadExecutor(r -> {
+                    Thread thread = new Thread(r, "nacos-config-listener");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+            }
+
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                log.info("===== 配置发生变更 =====");
+                log.info("新的配置内容:\n{}", configInfo);
+                // 在此处执行自定义逻辑：如重新初始化连接池、刷新缓存等
+                handleConfigChange(configInfo);
+            }
+        });
+
+        // 获取当前配置
+        String currentConfig = nacosConfigManager.getConfigService()
+                .getConfig(dataId, group, 5000);
+        log.info("当前配置内容:\n{}", currentConfig);
+    }
+
+    private void handleConfigChange(String configInfo) {
+        // 模拟处理配置变更：更新线程池、重新加载业务规则等
+        log.info("执行配置变更处理逻辑...");
+    }
+}
+```
+
+***
+
+## 4. 动态刷新原理
+
+### 4.1 客户端长轮询机制（Long Polling）
+
+Nacos Config 客户端并非使用传统的定时轮询，而是采用 **长轮询（Long Polling）** 机制，在保证实时性的同时大幅降低服务端压力。
+
+```
+ ┌─────────────┐          ┌──────────────┐
+ │  Nacos 客户端  │          │  Nacos 服务端  │
+ │ (Spring Boot) │          │  (Config API) │
+ └──────┬───────┘          └──────┬─────────┘
+        │                         │
+        │  1. 注册监听器             │
+        │ ──────────────────────►  │
+        │                         │
+        │  2. 长轮询请求             │
+        │  GET /v1/cs/configs     │
+        │  ?dataId=xxx&group=xxx │
+        │  &tenant=xxx           │
+        │  &timeout=30000        │
+        │ ──────────────────────►  │
+        │                         │  ──────┐
+        │                         │  3. 服务端│
+        │                         │  不立即返│
+        │                         │  回，hold│
+        │                         │  住请求  │
+        │                         │  (最长30s)
+        │                         │  ◄──────┘
+        │                         │
+        │  ──── 情况A: 配置无变化 ────►  │
+        │  ◄───────── 等待超时 ─────────│
+        │  (返回 304，客户端继续轮询)     │
+        │                         │
+        │  ──── 情况B: 配置有变化 ────►  │
+        │  ◄────── 立即返回新配置 ────│
+        │                         │
+        │  4. 对比本地 MD5           │
+        │  不一致则重新拉取完整配置     │
+        │                         │
+        │  5. 发布 RefreshScope     │
+        │  事件 → Bean 重新创建     │
+```
+
+### 4.2 服务端 CompareAndSwap 发布
+
+Nacos 服务端配置发布采用 **CAS（Compare And Swap）** 机制，保证并发安全：
+
+1. 客户端发起配置发布请求时，携带当前配置的 MD5 值（`casMd5`）
+2. 服务端比对当前最新配置的 MD5 是否与客户端传入的一致
+3. 一致则更新成功；不一致则返回冲突，客户端需重新获取最新配置再提交
+
+```java
+// Nacos 服务端配置发布核心逻辑（伪代码）
+public boolean publishConfig(String dataId, String group, String content, String casMd5) {
+    // 1. 获取当前配置信息
+    ConfigInfo currentConfig = configMapper.findConfig(dataId, group);
+    
+    // 2. CAS 校验
+    if (casMd5 != null) {
+        String currentMd5 = MD5Utils.md5(currentConfig.getContent());
+        if (!currentMd5.equals(casMd5)) {
+            // CAS 冲突，拒绝更新
+            throw new ConfigConflictException("配置已被他人修改，请刷新后重试");
+        }
+    }
+    
+    // 3. 写入新配置
+    configMapper.updateConfig(dataId, group, content);
+    
+    // 4. 记录版本历史
+    configHistoryMapper.insert(dataId, group, content, currentConfig.getContent());
+    
+    // 5. 通知长轮询客户端
+    notifyListeners(dataId, group);
+    
+    return true;
+}
+```
+
+### 4.3 配置变更的完整推送流程
+
+```
+ ┌──────────┐    ┌──────────────┐    ┌───────────────┐    ┌──────────────┐
+ │ 运维/用户  │    │ Nacos 控制台  │    │ Nacos 服务端    │    │ 微服务客户端   │
+ │ (HTTP API)│    │   (UI)      │    │ (Config API)  │    │ (Spring Boot)│
+ └─────┬─────┘   └──────┬───────┘    └───────┬───────┘    └──────┬───────┘
+       │                │                     │                   │
+       │   修改配置      │                     │                   │
+       │──────────────► │                     │                   │
+       │                │   POST /v1/cs/configs                  │
+       │                │ ──────────────────► │                   │
+       │                │                     │                   │
+       │                │                     │ 1. CAS 校验      │
+       │                │                     │ 2. 写入数据库    │
+       │                │                     │ 3. 记录历史版本  │
+       │                │                     │                   │
+       │                │                     │ 推送配置变更通知   │
+       │                │                     │ ──────────────►  │
+       │                │                     │                   │
+       │                │                     │    客户端长轮询    │
+       │                │                     │  ◄──────────────  │
+       │                │                     │                   │
+       │                │                     │ 返回最新配置      │
+       │                │                     │ ──────────────►  │
+       │                │                     │                   │
+       │                │                     │   5. MD5 比对    │
+       │                │                     │   6. 刷新上下文   │
+       │                │                     │   7. 重建 Bean   │
+       │                │                     │                   │
+       │                │     操作结果返回     │                   │
+       │                │ ◄────────────────── │                   │
+       │   UI提示成功   │                     │                   │
+       │ ◄────────────  │                     │                   │
+```
+
+***
+
+## 5. 多环境配置
+
+### 5.1 用 Namespace 隔离环境
+
+在实际生产环境中，最常用的多环境方案是 **每个环境一个 Namespace**。Namespace 之间配置天然隔离，互不可见。
+
+```yaml
+# bootstrap.yml - dev 环境
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: nacos.dev.example.com:8848
+        namespace: 7d8f0e12-abcd-4ef0-9123-456789abcdef  # dev namespace
+
+---
+# bootstrap.yml - prod 环境
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: nacos.prod.example.com:8848
+        namespace: a1b2c3d4-5678-90ef-gh12-345678ijklmn  # prod namespace
+```
+
+推荐的环境 Namespace 规划：
+
+```
+Nacos 控制台
+├── Namespace: dev       (7d8f...)
+│   ├── user-service.yaml
+│   ├── order-service.yaml
+│   └── gateway-service.yaml
+├── Namespace: test      (a1b2...)
+│   ├── user-service.yaml
+│   ├── order-service.yaml
+│   └── gateway-service.yaml
+├── Namespace: staging   (c3d4...)
+│   ├── user-service.yaml
+│   ├── order-service.yaml
+│   └── gateway-service.yaml
+└── Namespace: prod      (e5f6...)
+    ├── user-service.yaml
+    ├── order-service.yaml
+    └── gateway-service.yaml
+```
+
+### 5.2 用 Group 分组（业务线划分）
+
+在同一环境内部，可以使用 Group 按业务线进行配置分组：
+
+```yaml
+# bootstrap.yml - 支付业务线
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: dev-namespace-id
+        group: PAY_GROUP  # 支付业务线
+
+---
+# bootstrap.yml - 订单业务线
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: dev-namespace-id
+        group: ORDER_GROUP  # 订单业务线
+```
+
+推荐的 Group 划分方式：
+
+| Group | 业务线 | 包含服务 |
+|-------|--------|----------|
+| `DEFAULT_GROUP` | 公共服务 | gateway-service, auth-service |
+| `PAY_GROUP` | 支付业务 | payment-service, settlement-service |
+| `ORDER_GROUP` | 订单业务 | order-service, cart-service |
+| `USER_GROUP` | 用户业务 | user-service, account-service |
+
+### 5.3 多环境配置的 Spring Profile 方式
+
+Nacos Config 支持与 Spring Profile 结合，自动读取 `${spring.application.name}-${profile}.${file-extension}`：
+
+```yaml
+# bootstrap.yml
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: dev  # 通过启动参数或环境变量指定
+
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_HOST:127.0.0.1}:8848
+        file-extension: yaml
+        namespace: ${NACOS_NAMESPACE}
+```
+
+应用启动时会自动按优先级加载：
+
+1. `<app-name>.yaml`（基础配置，所有环境共享）
+2. `<app-name>-dev.yaml`（Profile 配置，只在 dev 生效）
+
+***
+
+## 6. 共享配置
+
+多个微服务之间往往有大量公共配置（如日志格式、Redis 公共参数、数据库连接池默认值），Nacos 提供了两种共享配置机制。
+
+### 6.1 shared-configs 共享配置
+
+```yaml
+# bootstrap.yml
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+        file-extension: yaml
+
+        # 共享配置列表（0.2.x 版本之后支持）
+        shared-configs:
+          - data-id: common-database.yaml  # 数据库通用配置
+            group: DEFAULT_GROUP
+            refresh: true                  # 支持动态刷新
+          - data-id: common-logging.yaml   # 日志通用配置
+            group: DEFAULT_GROUP
+            refresh: false                 # 无需刷新
+          - data-id: common-redis.yaml     # Redis 通用配置
+            group: CACHE_GROUP
+            refresh: true
+```
+
+`common-database.yaml` 文件内容示例（在 Nacos 中创建）：
+
+```yaml
+# dataId: common-database.yaml, group: DEFAULT_GROUP
+spring:
+  datasource:
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+
+# MyBatis 通用配置
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.example.**.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+```
+
+### 6.2 extension-configs 扩展配置
+
+`extension-configs` 比 `shared-configs` 更灵活，可以自定义排序优先级：
+
+```yaml
+# bootstrap.yml
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+
+        # 扩展配置（支持自定义优先级）
+        extension-configs:
+          - data-id: extension-cache-config.yaml
+            group: CACHE_GROUP
+            refresh: true
+          - data-id: extension-mq-config.yaml
+            group: MQ_GROUP
+            refresh: true
+          - data-id: extension-third-party.yaml
+            group: THIRD_PARTY_GROUP
+            refresh: false
+
+        # shared-configs（优先级低于 extension-configs）
+        shared-configs:
+          - data-id: common.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+```
+
+### 6.3 配置加载优先级
+
+```
+优先级从高到低：
+┌─────────────────────────────────────────────┐
+│  1. ${spring.application.name}.yaml         │  ← 最高优先级（应用专属配置）
+│     （应用自身的配置）                        │
+├─────────────────────────────────────────────┤
+│  2. ${spring.application.name}-${profile}.yaml│ ← Profile 特定配置
+├─────────────────────────────────────────────┤
+│  3. extension-configs（按声明顺序倒序）        │
+├─────────────────────────────────────────────┤
+│  4. shared-configs（按声明顺序倒序）           │  ← 最低优先级（共享配置）
+└─────────────────────────────────────────────┘
+```
+
+***
+
+## 7. 配置持久化（MySQL）
+
+Nacos 默认使用内嵌的 Derby 数据库，仅适用于单机开发调试。生产环境必须切换到 MySQL 存储配置数据。
+
+### 7.1 初始化数据库
+
+```sql
+-- 创建 Nacos 专用数据库
+CREATE DATABASE IF NOT EXISTS nacos_config DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE nacos_config;
+
+-- Nacos 官方提供的初始化脚本
+-- 下载地址：https://github.com/alibaba/nacos/blob/master/distribution/conf/mysql-schema.sql
+
+-- 核心配置表
+CREATE TABLE `config_info` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `data_id` varchar(255) NOT NULL COMMENT 'data_id',
+  `group_id` varchar(255) DEFAULT NULL COMMENT 'group_id',
+  `content` longtext NOT NULL COMMENT '配置内容',
+  `md5` varchar(32) DEFAULT NULL COMMENT 'md5 值',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+  `src_user` text COMMENT '创建者',
+  `src_ip` varchar(50) DEFAULT NULL COMMENT '创建者 IP',
+  `app_name` varchar(128) DEFAULT NULL COMMENT '应用名',
+  `tenant_id` varchar(128) DEFAULT '' COMMENT '命名空间 ID',
+  `c_desc` varchar(256) DEFAULT NULL COMMENT '配置描述',
+  `c_use` varchar(64) DEFAULT NULL COMMENT '配置用途',
+  `effect` varchar(64) DEFAULT NULL COMMENT '配置生效方式',
+  `type` varchar(64) DEFAULT NULL COMMENT '配置类型',
+  `c_schema` text COMMENT '配置 schema',
+  `encrypted_data_key` text NOT NULL COMMENT '加密密钥',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='config_info';
+
+-- 配置历史版本表
+CREATE TABLE `config_info_beta` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `data_id` varchar(255) NOT NULL COMMENT 'data_id',
+  `group_id` varchar(128) NOT NULL COMMENT 'group_id',
+  `app_name` varchar(128) DEFAULT NULL COMMENT 'app_name',
+  `content` longtext NOT NULL COMMENT 'content',
+  `beta_ips` varchar(1024) DEFAULT NULL COMMENT 'betaIps',
+  `md5` varchar(32) DEFAULT NULL COMMENT 'md5',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+  `src_user` text COMMENT 'src_user',
+  `src_ip` varchar(50) DEFAULT NULL COMMENT 'src_ip',
+  `tenant_id` varchar(128) DEFAULT '' COMMENT 'tenant_id',
+  `encrypted_data_key` text NOT NULL COMMENT 'encrypted_data_key',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_configinfobeta_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='config_info_beta';
+
+-- 配置版本历史表（用于回滚）
+CREATE TABLE `his_config_info` (
+  `id` bigint(20) unsigned NOT NULL COMMENT 'id',
+  `nid` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'nid',
+  `data_id` varchar(255) NOT NULL COMMENT 'data_id',
+  `group_id` varchar(128) NOT NULL COMMENT 'group_id',
+  `app_name` varchar(128) DEFAULT NULL COMMENT 'app_name',
+  `content` longtext NOT NULL COMMENT 'content',
+  `md5` varchar(32) DEFAULT NULL COMMENT 'md5',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+  `src_user` text COMMENT 'src_user',
+  `src_ip` varchar(50) DEFAULT NULL COMMENT 'src_ip',
+  `op_type` char(2) DEFAULT NULL COMMENT '操作类型: D-删除, U-更新, I-插入',
+  `tenant_id` varchar(128) DEFAULT '' COMMENT 'tenant_id',
+  `encrypted_data_key` text NOT NULL COMMENT 'encrypted_data_key',
+  PRIMARY KEY (`nid`),
+  KEY `idx_gmt_create` (`gmt_create`),
+  KEY `idx_did` (`data_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='multitenant_config_info_history';
+```
+
+### 7.2 配置 Nacos 连接 MySQL
+
+```properties
+# application.properties (Nacos 服务端配置文件，位于 nacos/conf/ 目录下)
+### 指定使用 MySQL 数据源
+spring.datasource.platform=mysql
+
+### 数据库连接数配置
+db.pool.config.connectionTimeout=30000
+db.pool.config.maxActive=20
+db.pool.config.maxWait=10000
+db.pool.config.minIdle=2
+db.pool.config.validationQuery=SELECT 1
+
+### MySQL 连接配置
+db.url.0=jdbc:mysql://192.168.1.10:3306/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
+db.url.1=jdbc:mysql://192.168.1.11:3306/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
+
+db.user=nacos
+db.password=nacos123
+```
+
+***
+
+## 8. Nacos 集群搭建（3 节点 + Nginx）
+
+### 8.1 架构图
+
+```
+                        ┌───────────────────┐
+                        │     Nginx 反向代理    │
+                        │   (http://nacos.example.com) │
+                        └─────────┬─────────┘
+                                  │
+                ┌─────────────────┼─────────────────┐
+                │                 │                 │
+        ┌───────┴───────┐ ┌───────┴───────┐ ┌───────┴───────┐
+        │  Nacos Node 1  │ │  Nacos Node 2  │ │  Nacos Node 3  │
+        │  192.168.1.101 │ │  192.168.1.102 │ │  192.168.1.103 │
+        │   port: 8848   │ │   port: 8848   │ │   port: 8848   │
+        └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
+                │                 │                 │
+                └─────────────────┼─────────────────┘
+                                  │
+                        ┌─────────┴─────────┐
+                        │     MySQL 集群      │
+                        │  Nacos 配置持久化    │
+                        └───────────────────┘
+                                  │
+                        ┌─────────┴─────────┐
+                        │     Redis（可选）   │
+                        │   Session 共享     │
+                        └───────────────────┘
+```
+
+### 8.2 集群配置
+
+```properties
+# nacos/conf/application.properties
+### 指定集群模式
+nacos.mode=cluster
+
+### 集群节点地址
+# 格式: ip1:port1,ip2:port2,ip3:port3
+nacos.cluster.conf=192.168.1.101:8848,192.168.1.102:8848,192.168.1.103:8848
+
+### MySQL 数据源配置
+spring.datasource.platform=mysql
+db.url.0=jdbc:mysql://192.168.1.20:3306/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&serverTimezone=Asia/Shanghai
+db.user=nacos
+db.password=nacos123
+
+### Nacos 认证（生产必须开启）
+nacos.core.auth.enabled=true
+nacos.core.auth.plugin.nacos.token.secret.key=VGhpcyBpcyBhbiBleGFtcGxlIGtleSB0byB0ZXN0LCBwbGVhc2UgcmVwbGFjZSBpdC4=
+
+### 外部 HTTP 端口
+server.port=8848
+```
+
+### 8.3 Nginx 反向代理配置
+
+```nginx
+# /etc/nginx/conf.d/nacos.conf
+upstream nacos_cluster {
+    # 配置 Nacos 集群节点负载均衡
+    server 192.168.1.101:8848 weight=1 max_fails=3 fail_timeout=30s;
+    server 192.168.1.102:8848 weight=1 max_fails=3 fail_timeout=30s;
+    server 192.168.1.103:8848 weight=1 max_fails=3 fail_timeout=30s;
+
+    # 保持长连接
+    keepalive 64;
+}
+
+server {
+    listen 80;
+    server_name nacos.example.com;
+
+    # 重定向到 HTTPS（生产环境强烈建议）
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name nacos.example.com;
+
+    # SSL 配置
+    ssl_certificate     /etc/nginx/ssl/nacos.example.com.pem;
+    ssl_certificate_key /etc/nginx/ssl/nacos.example.com.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # 反向代理到 Nacos 集群
+    location / {
+        proxy_pass http://nacos_cluster;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket 支持（Nacos 控制台需要）
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # 超时配置
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+
+        # 缓冲配置
+        proxy_buffering off;
+    }
+
+    # 健康检查
+    location /health {
+        proxy_pass http://nacos_cluster/nacos/v1/console/health/readiness;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+}
+```
+
+### 8.4 Docker Compose 快速搭建
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # MySQL 服务
+  mysql:
+    image: mysql:8.0
+    container_name: nacos-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: nacos_config
+    volumes:
+      - ./mysql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - nacos-net
+
+  # Nacos 节点 1
+  nacos-1:
+    image: nacos/nacos-server:2.2.3
+    container_name: nacos-1
+    environment:
+      MODE: cluster
+      PREFER_HOST_MODE: hostname
+      NACOS_SERVERS: nacos-1:8848 nacos-2:8848 nacos-3:8848
+      MYSQL_SERVICE_HOST: mysql
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: root123
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_TOKEN: VGhpcyBpcyBhbiBleGFtcGxlIGtleQ==
+    ports:
+      - "8848:8848"
+    volumes:
+      - nacos-1-logs:/home/nacos/logs
+    networks:
+      - nacos-net
+
+  # Nacos 节点 2
+  nacos-2:
+    image: nacos/nacos-server:2.2.3
+    container_name: nacos-2
+    environment:
+      MODE: cluster
+      PREFER_HOST_MODE: hostname
+      NACOS_SERVERS: nacos-1:8848 nacos-2:8848 nacos-3:8848
+      MYSQL_SERVICE_HOST: mysql
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: root123
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_TOKEN: VGhpcyBpcyBhbiBleGFtcGxlIGtleQ==
+    ports:
+      - "8849:8848"
+    volumes:
+      - nacos-2-logs:/home/nacos/logs
+    networks:
+      - nacos-net
+
+  # Nacos 节点 3
+  nacos-3:
+    image: nacos/nacos-server:2.2.3
+    container_name: nacos-3
+    environment:
+      MODE: cluster
+      PREFER_HOST_MODE: hostname
+      NACOS_SERVERS: nacos-1:8848 nacos-2:8848 nacos-3:8848
+      MYSQL_SERVICE_HOST: mysql
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: root123
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_TOKEN: VGhpcyBpcyBhbiBleGFtcGxlIGtleQ==
+    ports:
+      - "8850:8848"
+    volumes:
+      - nacos-3-logs:/home/nacos/logs
+    networks:
+      - nacos-net
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nacos-nginx
+    volumes:
+      - ./nginx/conf.d/nacos.conf:/etc/nginx/conf.d/nacos.conf:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - nacos-1
+      - nacos-2
+      - nacos-3
+    networks:
+      - nacos-net
+
+networks:
+  nacos-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  nacos-1-logs:
+  nacos-2-logs:
+  nacos-3-logs:
+```
+
+***
+
+## 9. 安全：配置加密
+
+生产环境中，数据库密码、API Key、证书私钥等敏感信息不能以明文存储在 Nacos 中。Nacos 提供了自定义配置加密插件机制。
+
+### 9.1 自定义 AES 加密插件
+
+```java
+package com.example.nacos.plugin.config.encrypt;
+
+import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
+import com.alibaba.nacos.plugin.config.encryption.spi.ConfigEncryptionSPI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Base64;
+
+/**
+ * 自定义 AES 配置加密插件
+ * 实现 Nacos ConfigEncryptionSPI 接口
+ * 
+ * SPI 配置：在 META-INF/services/ 下注册
+ */
+public class AesConfigEncryptionPlugin implements ConfigEncryptionSPI {
+
+    private static final Logger log = LoggerFactory.getLogger(AesConfigEncryptionPlugin.class);
+
+    private static final String ALGORITHM = "AES";
+    private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
+
+    /**
+     * 加密算法名称
+     */
+    @Override
+    public String algorithmName() {
+        return "aes";
+    }
+
+    /**
+     * 加密配置值
+     * 使用方式：在配置值前加 `cipher:aes:base64加密串`
+     */
+    @Override
+    public String encrypt(String content, String secretKey) {
+        try {
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            byte[] encrypted = cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(encrypted);
+        } catch (Exception e) {
+            log.error("AES encrypt failed", e);
+            throw new RuntimeException("Config encrypt error", e);
+        }
+    }
+
+    /**
+     * 解密配置值
+     */
+    @Override
+    public String decrypt(String encryptedContent, String secretKey) {
+        try {
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(encryptedContent));
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.error("AES decrypt failed", e);
+            throw new RuntimeException("Config decrypt error", e);
+        }
+    }
+
+    /**
+     * 生成密钥
+     */
+    public static String generateKey() {
+        try {
+            KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
+            keyGen.init(128, new SecureRandom());
+            SecretKey secretKey = keyGen.generateKey();
+            return Base64.getEncoder().encodeToString(secretKey.getEncoded());
+        } catch (Exception e) {
+            throw new RuntimeException("Key generation failed", e);
+        }
+    }
+}
+```
+
+### 9.2 SPI 注册文件
+
+创建 `META-INF/services/com.alibaba.nacos.plugin.config.encryption.spi.ConfigEncryptionSPI`：
+
+```
+com.example.nacos.plugin.config.encrypt.AesConfigEncryptionPlugin
+```
+
+### 9.3 在 Nacos 配置中使用加密值
+
+配置加密插件部署后，在 Nacos 控制台或 API 中写入加密配置：
+
+```yaml
+# Nacos 配置文件: user-service-datasource.yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/user_db
+    username: root
+    # 使用 cipher:aes: 前缀标记加密值
+    password: cipher:aes:7H8k2jL9mN4pQ3rS1tU5vW6xY0zA1bC2
+    driver-class-name: com.mysql.cj.cjdbc.Driver
+
+# redis 密码同样加密
+redis:
+  password: cipher:aes:xY8jL2mN5pQ3rS7tU1vW4xY0zA9bC3d
+```
+
+### 9.4 客户端解密配置
+
+```yaml
+# bootstrap.yml - 客户端需要配置相同的密钥
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        # 加密密钥（生产环境应通过环境变量或密钥管理服务传入）
+        # 通过启动参数传入：--nacos.config.encrypt.key=${NACOS_ENCRYPT_KEY}
+        encrypt:
+          key: ${NACOS_ENCRYPT_KEY:default-aes-key-128}
+
+nacos:
+  config:
+    encrypt:
+      enabled: true
+      # 加密前缀标识
+      prefix: cipher:aes:
+```
+
+### 9.5 生产环境安全最佳实践
+
+```
+1. 网络层面
+   ├── Nacos 集群部署在私有网络，不对外暴露端口
+   ├── 通过 Nginx 反向代理提供统一入口，配置 HTTPS
+   └── 配置 IP 白名单，限制控制台访问来源
+
+2. 认证与授权
+   ├── 开启 Nacos 认证（nacos.core.auth.enabled=true）
+   ├── 使用强 Token（不小于 32 位 Base64 编码）
+   ├── 配置角色权限（RAM 模型）：只读/读写/管理员
+   └── 定期轮换 Token 和密码
+
+3. 配置安全
+   ├── 所有敏感配置使用加密插件加密存储
+   ├── 加密密钥通过外部密钥管理服务（KMS）获取
+   └── 不在日志中打印配置原文（过滤敏感字段）
+
+4. 审计与监控
+   ├── 开启操作审计日志
+   ├── 关键配置变更设置审批流程
+   └── 监控 Nacos 服务端和客户端运行状态
+```

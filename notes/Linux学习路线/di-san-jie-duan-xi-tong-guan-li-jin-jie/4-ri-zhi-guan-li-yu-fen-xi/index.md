@@ -1,0 +1,220 @@
+---
+url: >-
+  /my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/4-ri-zhi-guan-li-yu-fen-xi/index.md
+---
+# 日志管理与分析
+
+## 一、Linux 日志体系
+
+### 1.1 日志来源
+
+```text
+应用程序 ──→ syslog() ──→ rsyslogd ──→ /var/log/syslog
+                                        /var/log/auth.log
+                                        /var/log/kern.log
+                                        ...
+内核     ──→ printk() ──→ journald ──→ 内存环形缓冲区
+                                        (journalctl 查看)
+systemd服务 ──→ stdout/stderr ──→ journald
+```
+
+### 1.2 关键日志文件（/var/log/）
+
+| 日志文件 | 内容 | 排查方向 |
+|:---------|:-----|:---------|
+| `/var/log/syslog` | **系统主日志**（最全面） | 通用排查首查这个 |
+| `/var/log/auth.log` | 认证相关（登录、sudo、SSH） | 安全审计 |
+| `/var/log/kern.log` | 内核日志 | 硬件、驱动问题 |
+| `/var/log/dpkg.log` | 软件包安装日志 | 安装失败排查 |
+| `/var/log/apt/` | APT 日志目录 | 更新历史 |
+| `/var/log/nginx/` | Nginx 访问和错误日志 | Web 服务排查 |
+| `/var/log/mysql/` | MySQL 日志 | 数据库排查 |
+
+```bash
+# 查看最近的系统日志
+tail -100 /var/log/syslog
+
+# 实时监控认证日志
+sudo tail -f /var/log/auth.log
+
+# 搜索特定关键词
+grep -i "error" /var/log/syslog
+grep "Failed password" /var/log/auth.log | wc -l  # 统计暴力破解尝试
+```
+
+***
+
+## 二、rsyslog 配置
+
+### 2.1 基本配置
+
+```bash
+# 主配置文件
+/etc/rsyslog.conf
+# 模块和自定义规则
+/etc/rsyslog.d/50-default.conf
+```
+
+### 2.2 日志级别（由低到高）
+
+| 级别 | 关键字 | 说明 |
+|:-----|:-------|:-----|
+| 7 | debug | 调试信息 |
+| 6 | info | 一般信息 |
+| 5 | notice | 需要注意的信息 |
+| 4 | warning | 警告 |
+| 3 | err | 错误 |
+| 2 | crit | 严重错误 |
+| 1 | alert | 必须立即处理 |
+| 0 | emerg | 系统不可用 |
+
+### 2.3 自定义日志规则
+
+```bash
+# 将特定应用的日志写入独立文件
+sudo tee /etc/rsyslog.d/30-myapp.conf << 'EOF'
+# 将 local0 设施的所有日志写入 /var/log/myapp.log
+local0.*    /var/log/myapp.log
+
+# 将 nginx 错误日志单独记录
+if $programname == 'nginx' and $syslogseverity <= 3 then /var/log/nginx/error.log
+EOF
+
+sudo systemctl restart rsyslog
+```
+
+***
+
+## 三、logrotate 日志轮转
+
+没有 logrotate，日志文件会无限增长直到占满磁盘。logrotate 自动切割、压缩、清理旧日志。
+
+### 3.1 默认行为
+
+```bash
+# 主配置
+cat /etc/logrotate.conf
+
+# 各服务的轮转配置
+ls /etc/logrotate.d/
+cat /etc/logrotate.d/nginx
+```
+
+### 3.2 自定义轮转规则
+
+```bash
+sudo tee /etc/logrotate.d/myapp << 'EOF'
+/var/log/myapp/*.log {
+    daily                   # 每天轮转
+    rotate 30               # 保留 30 个归档
+    maxsize 100M            # 超过 100M 强制轮转（与 daily 同时生效）
+    missingok               # 日志文件不存在也不报错
+    notifempty              # 空文件不轮转
+    compress                # 压缩旧日志
+    delaycompress           # 延迟一次压缩（保留最近一个不压缩）
+    dateext                 # 使用日期命名（如 myapp.log-20240622.gz）
+    dateformat -%Y%m%d
+    create 640 appuser appuser  # 创建新日志文件的权限和所有者
+    postrotate
+        # 轮转后执行的命令（如给进程发送信号）
+        /bin/kill -HUP $(cat /var/run/myapp.pid 2>/dev/null) 2>/dev/null || true
+    endscript
+}
+EOF
+
+# 测试配置
+sudo logrotate -d /etc/logrotate.d/myapp    # 调试模式（不实际操作）
+sudo logrotate -f /etc/logrotate.d/myapp    # 强制执行
+```
+
+### 3.3 常用参数速查
+
+| 参数 | 含义 |
+|:-----|:-----|
+| `daily/weekly/monthly` | 轮转周期 |
+| `rotate N` | 保留 N 个旧文件 |
+| `compress` | 压缩旧文件（gzip） |
+| `maxsize` | 超过此大小时强制执行 |
+| `missingok` | 日志文件不存在时不报错 |
+| `copytruncate` | 复制后截断（适合不支持信号重载的服务） |
+| `postrotate/endscript` | 轮转后执行的脚本 |
+
+***
+
+## 四、集中式日志方案简介
+
+当服务器数量增多后，逐个查看日志不再现实。常见方案：
+
+```text
+轻量方案: rsyslog → 远程 syslog 服务器 → 统一查看
+
+标准方案: Filebeat → Elasticsearch → Kibana（ELK Stack）
+          Filebeat → Logstash → Elasticsearch → Kibana
+
+云原生方案: Promtail → Loki → Grafana（Loki Stack）
+
+云服务: 阿里云 SLS / AWS CloudWatch / 腾讯云 CLS
+```
+
+| 方案 | 复杂度 | 适用规模 | 特点 |
+|:-----|:-------|:---------|:-----|
+| rsyslog 远程 | 低 | 小 | 最轻量，纯文本 |
+| ELK | 高 | 中~大 | 功能最强，资源消耗大 |
+| Loki | 中 | 中 | 轻量，与 Grafana 集成好 |
+| 云服务 | 低 | 不限 | 免运维，按量付费 |
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+配置日志轮转，避免磁盘被写满。
+
+### 步骤
+
+1. **查看当前日志占用**
+   ```bash
+   du -sh /var/log/
+   ls -lh /var/log/syslog*
+   ```
+
+2. **查看现有的 logrotate 配置**
+   ```bash
+   cat /etc/logrotate.conf
+   ls /etc/logrotate.d/
+   ```
+
+3. **创建测试轮转配置**
+   ```bash
+   # 创建测试日志目录
+   sudo mkdir -p /var/log/testapp
+
+   # 生成测试日志
+   for i in {1..5}; do
+       echo "[$(date)] Log entry $i - normal operation" | sudo tee -a /var/log/testapp/app.log
+   done
+
+   # 创建轮转配置
+   sudo tee /etc/logrotate.d/testapp << 'EOF'
+   /var/log/testapp/*.log {
+       size 1k
+       rotate 3
+       missingok
+       compress
+       dateext
+   }
+   EOF
+
+   # 调试运行
+   sudo logrotate -d /etc/logrotate.d/testapp
+   ```
+
+4. **检查系统日志中的异常**
+   ```bash
+   # 查看最近的错误
+   grep -i "error\|fail\|critical" /var/log/syslog | tail -20
+
+   # 查看 SSH 登录失败记录
+   sudo grep "Failed password" /var/log/auth.log | tail -10
+   ```

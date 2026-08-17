@@ -1,0 +1,425 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/shen-du-xue-xi/04-dev-ops/1-zi-dong-hua-jiao-ben-yu-cli-gong-ju/index.md
+---
+# 自动化脚本与 CLI 工具
+
+> 面向 Python 运维开发的自动化实战模块，掌握用 typer / click 构建专业命令行工具，用 psutil 采集系统指标，并写出健壮、可维护的运维脚本。
+
+***
+
+## 一、CLI 框架选型
+
+命令行工具（CLI）是运维自动化的基石。Python 提供从标准库到现代框架的多级选择。
+
+**argparse（标准库）**
+
+无需额外安装，适合简单脚本：
+
+```python
+import argparse
+
+parser = argparse.ArgumentParser(description='系统健康检查')
+parser.add_argument('host', help='目标主机')
+parser.add_argument('-p', '--port', type=int, default=80, help='端口，默认 80')
+parser.add_argument('-v', '--verbose', action='store_true', help='输出详细信息')
+
+args = parser.parse_args()
+print(f"检查 {args.host}:{args.port}，详细模式: {args.verbose}")
+```
+
+**click（装饰器风格）**
+
+通过装饰器把函数变成命令，自动生成帮助信息，支持参数分组与提示交互：
+
+```python
+import click
+
+@click.command()
+@click.argument('host')
+@click.option('-p', '--port', default=80, type=int, help='目标端口')
+@click.option('--timeout', default=3.0, help='超时秒数')
+@click.option('--verbose', is_flag=True, help='详细模式')
+def check(host: str, port: int, timeout: float, verbose: bool):
+    """对目标主机执行 TCP 连通性检查"""
+    if verbose:
+        click.echo(f"host={host} port={port} timeout={timeout}")
+    click.echo(f"正在检查 {host}:{port} ...")
+
+if __name__ == '__main__':
+    check()
+```
+
+**typer（现代声明式）**
+
+基于类型注解自动推断参数类型与帮助文档，与 FastAPI 同为现代 Python 生态代表：
+
+```python
+import typer
+from typing import Optional
+
+app = typer.Typer(help="运维工具箱")
+
+@app.command()
+def ping(
+    host: str,
+    port: int = 80,
+    count: int = typer.Option(4, "--count", "-c", help="发送次数"),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+):
+    """对目标主机执行 ping 检查"""
+    if verbose:
+        typer.secho(f"[DEBUG] {host}:{port} count={count}", fg=typer.colors.YELLOW)
+    for i in range(count):
+        typer.echo(f"第 {i+1} 次检查 {host}:{port}")
+
+if __name__ == "__main__":
+    app()
+```
+
+**CLI 框架对比**
+
+| 对比维度 | argparse | click | typer |
+|---------|----------|-------|-------|
+| 依赖 | 标准库 | 第三方 | 第三方（基于 click） |
+| 风格 | 命令式 | 装饰器 | 类型注解声明式 |
+| 类型校验 | 手动 | 手动转 | 自动推断 |
+| 帮助文档 | 自动 | 自动 | 自动（带类型） |
+| 子命令 | 需手动分派 | 支持（Group） | 支持（多 app 组合） |
+| 交互提示 | 无 | 支持（prompt/confirm） | 支持（复用 click） |
+| 适用场景 | 简单脚本 | 中型 CLI | 现代工程化项目 |
+
+**选择建议**
+
+| 场景 | 推荐 |
+|------|------|
+| 不想引入依赖的简单脚本 | argparse |
+| 运维工具、中型 CLI | click |
+| 现代工程化项目、与 FastAPI 同风格 | typer |
+| 需要进度条、富文本终端 | typer + rich |
+
+***
+
+## 二、CLI 实战进阶
+
+### 2.1 子命令与命令分组
+
+运维工具通常需要 `start`、`stop`、`status` 等多个子命令，用 `Group` 组织：
+
+```python
+import typer
+
+app = typer.Typer(help="服务管理工具")
+
+@app.command()
+def start(service: str):
+    """启动服务"""
+    typer.echo(f"启动服务: {service}")
+
+@app.command()
+def stop(service: str, force: bool = typer.Option(False, "--force", "-f")):
+    """停止服务"""
+    typer.echo(f"{'强制' if force else '优雅'}停止服务: {service}")
+
+@app.command()
+def status(service: str):
+    """查看服务状态"""
+    typer.echo(f"查询服务状态: {service}")
+
+if __name__ == "__main__":
+    app()
+```
+
+### 2.2 rich 终端美化
+
+rich 让终端输出带颜色、表格、语法高亮，日志与结果一目了然：
+
+```python
+from rich.console import Console
+from rich.table import Table
+from rich import box
+
+console = Console()
+
+# 彩色输出
+console.print("[bold green]✓[/bold green] 检查通过")
+console.print("[bold red]✗[/bold red] 检查失败", style="red")
+
+# 表格输出
+table = Table(title="服务状态", box=box.SIMPLE_HEAVY)
+table.add_column("服务名", style="cyan")
+table.add_column("状态", style="green")
+table.add_column("PID")
+table.add_row("nginx", "running", "12345")
+table.add_row("mysql", "stopped", "-")
+console.print(table)
+```
+
+### 2.3 进度条与交互确认
+
+长任务用 `rich.progress` 展示进度，危险操作用 `typer.confirm` 二次确认：
+
+```python
+import time
+import typer
+from rich.progress import track
+
+def backup_data():
+    """模拟数据备份"""
+    for step in track(range(100), description="备份中...", total=100):
+        time.sleep(0.02)
+
+if __name__ == "__main__":
+    # 危险操作二次确认
+    if typer.confirm("将清空临时目录，是否继续？", default=False):
+        backup_data()
+        typer.secho("备份完成", fg=typer.colors.GREEN)
+    else:
+        typer.echo("已取消")
+```
+
+***
+
+## 三、系统监控与自动化脚本
+
+### 3.1 psutil 系统指标采集
+
+psutil 提供跨平台的 CPU / 内存 / 磁盘 / 网络 / 进程信息采集：
+
+```python
+import psutil
+
+def collect_sys_info():
+    """采集系统核心指标"""
+    cpu = psutil.cpu_percent(interval=1)           # CPU 使用率 %
+    mem = psutil.virtual_memory()                   # 内存信息
+    disk = psutil.disk_usage('/')                   # 磁盘信息（Linux 根目录）
+    net = psutil.net_io_counters()                  # 网络累计流量
+
+    info = {
+        'cpu_percent': cpu,
+        'mem_percent': mem.percent,
+        'mem_used_gb': round(mem.used / 1024**3, 2),
+        'disk_percent': disk.percent,
+        'net_sent_mb': round(net.bytes_sent / 1024**2, 2),
+    }
+    return info
+
+if __name__ == "__main__":
+    print(collect_sys_info())
+```
+
+### 3.2 日志清理与定时备份脚本
+
+生产环境常见需求：清理过期日志、压缩备份目录。配合 schedule 或 crontab 定时执行：
+
+```python
+import os
+import shutil
+import logging
+from datetime import datetime, timedelta
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger(__name__)
+
+LOG_DIR = "/var/log/myapp"
+BACKUP_DIR = "/backup"
+KEEP_DAYS = 7
+
+def clean_expired_logs():
+    """删除超过保留天数的日志文件"""
+    deadline = datetime.now() - timedelta(days=KEEP_DAYS)
+    removed = 0
+    for fname in os.listdir(LOG_DIR):
+        fpath = os.path.join(LOG_DIR, fname)
+        mtime = datetime.fromtimestamp(os.path.getmtime(fpath))
+        if mtime < deadline:
+            os.remove(fpath)
+            removed += 1
+    logger.info("清理完成，共删除 %s 个过期文件", removed)
+
+def backup_to_tar():
+    """将应用目录打包备份"""
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    archive = os.path.join(BACKUP_DIR, f"myapp_{ts}.tar.gz")
+    shutil.make_archive(archive.replace('.tar.gz', ''), 'gztar', LOG_DIR)
+    logger.info("备份完成: %s", archive)
+
+if __name__ == "__main__":
+    clean_expired_logs()
+    backup_to_tar()
+```
+
+### 3.3 健康检查脚本
+
+对 HTTP 服务做健康检查，异常时发送告警并返回非零退出码，供 CI / 监控系统调用：
+
+```python
+import sys
+import requests
+
+def health_check(url: str, timeout: int = 5) -> bool:
+    """HTTP 健康检查"""
+    try:
+        resp = requests.get(url, timeout=timeout)
+        # ✅ 2xx/3xx 视为健康
+        if resp.status_code < 400:
+            print(f"✓ {url} 正常 (HTTP {resp.status_code})")
+            return True
+        print(f"✗ {url} 异常 (HTTP {resp.status_code})")
+        return False
+    except requests.RequestException as e:
+        print(f"✗ {url} 连接失败: {e}")
+        return False
+
+if __name__ == "__main__":
+    target = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000/health"
+    # ❌ 不要吞掉失败：退出码用于被上层系统感知
+    # ✅ 失败返回 1，可被 CI / cron / 监控平台捕获
+    sys.exit(0 if health_check(target) else 1)
+```
+
+***
+
+## 四、脚本健壮性最佳实践
+
+### 4.1 日志、异常与退出码
+
+运维脚本要可观测、可追踪，必须具备三要素：**日志**、**异常兜底**、**规范退出码**：
+
+```python
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
+
+def main():
+    try:
+        result = risky_operation()
+        # ✅ 成功时退出码 0
+        sys.exit(0)
+    except ValueError as e:
+        logger.error("参数错误: %s", e)
+        sys.exit(1)          # 参数错误 → 退出码 1
+    except PermissionError:
+        logger.error("权限不足")
+        sys.exit(2)          # 权限错误 → 退出码 2
+    except Exception as e:
+        logger.exception("未知异常")   # 记录完整堆栈
+        sys.exit(3)          # 未知错误 → 退出码 3
+```
+
+**退出码约定**
+
+| 退出码 | 含义 | 适用场景 |
+|:------|:-----|:--------|
+| `0` | 成功 | 所有正常路径 |
+| `1` | 参数错误 / 通用错误 | 入参不合法 |
+| `2` | 权限不足 | 缺少 sudo / 文件不可写 |
+| `3` | 依赖服务不可用 | 数据库 / 网络不通 |
+| `4` | 部分失败 | 批量任务有失败项 |
+
+### 4.2 参数校验与防御式编程
+
+```python
+import os
+import re
+import typer
+
+def validate_path(path: str) -> str:
+    """校验路径是否存在且是目录"""
+    # ❌ if not path: ...  空值判断过于简单
+    if not os.path.isdir(path):
+        raise typer.BadParameter(f"目录不存在: {path}")
+    return path
+
+def validate_ip(ip: str) -> str:
+    """校验 IP 格式"""
+    pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    # ❌ if re.match(...) is not None: pass
+    if not re.match(pattern, ip):
+        raise typer.BadParameter(f"IP 格式错误: {ip}")
+    return ip
+
+@app.command()
+def run(target: str = typer.Argument(..., callback=validate_ip)):
+    """执行检查"""
+    typer.echo(f"目标: {target}")
+```
+
+### 4.3 错误 / 正确对照速查
+
+| 反模式 ❌ | 正确做法 ✅ |
+|:---------|:-----------|
+| `except: pass` 吞掉异常 | 记录日志并给出明确退出码 |
+| 用 `print` 输出错误信息 | 用 `logging` 分级记录，便于收集 |
+| 硬编码绝对路径 | 通过环境变量 / 参数注入 |
+| 不检查命令返回码 | `subprocess.check_call` 或显式检查 |
+| 危险操作无确认 | `typer.confirm` 二次确认 |
+| 单行超长逻辑无函数拆分 | 一个函数只做一件事 |
+
+***
+
+## 五、实践项目
+
+### 项目 1：构建系统监控 CLI 工具
+
+**目标**：用 typer + psutil + rich 构建一个 `sysmon` 命令行监控工具，支持查看 CPU/内存/磁盘/网络指标，并能持续监控。
+
+**步骤**：
+
+1. 用 typer 创建 `sysmon` 应用，含 `overview`（总览）、`watch`（持续监控）两个子命令
+2. 用 psutil 采集 CPU、内存、磁盘、网络指标，封装为独立函数
+3. 用 rich Table 输出指标总览，用 `track` 展示持续监控过程
+4. 添加 `--json` 选项输出 JSON 格式，便于被其他脚本消费
+5. 编写入口 `if __name__ == "__main__": app()`，测试各子命令
+
+**目录结构参考**：
+
+```
+sysmon/
+├── pyproject.toml
+├── sysmon/
+│   ├── __init__.py
+│   ├── cli.py            # typer 入口与子命令
+│   ├── collectors.py     # psutil 指标采集
+│   └── render.py         # rich 输出 / JSON 序列化
+└── tests/
+    └── test_collectors.py
+```
+
+### 项目 2：数据库定时自动备份脚本
+
+**目标**：编写一个备份脚本，每日将指定数据库导出为压缩文件，保留最近 7 天，超过期限自动清理，并输出结构化日志。
+
+**步骤**：
+
+1. 使用 `subprocess` 调用 `mysqldump` / `pg_dump` 导出数据库
+2. 用 `gzip` 压缩备份文件，文件名带时间戳
+3. 实现过期清理：删除 `KEEP_DAYS` 之前的备份
+4. 用 `logging` 记录成功/失败日志，失败时退出码非 0
+5. 配置到 crontab：`0 2 * * * /opt/scripts/backup_db.py`
+
+**目录结构参考**：
+
+```
+backup_db.py
+```
+
+**关键代码骨架**：
+
+```python
+import subprocess, gzip, shutil, os
+from datetime import datetime, timedelta
+
+def dump_db(host, user, password, dbname, out_path):
+    """导出并压缩数据库"""
+    cmd = f"mysqldump -h{host} -u{user} -p{password} {dbname}"
+    # 注意：生产环境用 .my.cnf 或环境变量，避免密码出现在命令行
+    with open(f"{out_path}.sql", "wb") as f:
+        subprocess.run(cmd, shell=True, stdout=f, check=True)
+    with open(f"{out_path}.sql", "rb") as f_in:
+        with gzip.open(f"{out_path}.sql.gz", "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    os.remove(f"{out_path}.sql")
+```

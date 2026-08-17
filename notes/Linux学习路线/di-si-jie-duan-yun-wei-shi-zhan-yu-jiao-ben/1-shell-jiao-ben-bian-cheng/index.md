@@ -1,0 +1,434 @@
+---
+url: >-
+  /my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/1-shell-jiao-ben-bian-cheng/index.md
+---
+# Shell 脚本编程
+
+Shell 脚本是运维自动化的基石。掌握脚本编程，能将重复操作自动化，显著提升效率。
+
+## 一、脚本基础
+
+### 1.1 第一个脚本
+
+```bash
+#!/bin/bash
+# 文件名: hello.sh
+# 作用: 演示 Shell 脚本基本结构
+
+set -euo pipefail       # ⭐ 严格模式（强烈推荐）
+
+echo "Hello, $(whoami)!"
+echo "当前时间: $(date)"
+echo "工作目录: $PWD"
+```
+
+```bash
+# 执行方式
+bash hello.sh           # 用 bash 解释器执行
+chmod +x hello.sh && ./hello.sh   # 添加执行权限后直接运行
+```
+
+### 1.2 Shebang 行
+
+```bash
+#!/bin/bash             # ⭐ Bash 脚本（最常用）
+#!/bin/sh               # POSIX sh（兼容性优先）
+#!/usr/bin/env bash     # 从 PATH 中查找 bash（更可移植）
+#!/bin/bash -x          # 开启调试模式
+```
+
+### 1.3 严格模式（推荐所有脚本使用）
+
+```bash
+set -euo pipefail
+
+# set -e：任何命令返回非零退出码时立即退出
+# set -u：使用未定义变量时报错
+# set -o pipefail：管道中任一命令失败则整个管道失败
+
+# 或者简写：
+set -euo pipefail
+IFS=$'\n\t'            # 字段分隔符设为换行和制表符（更安全）
+```
+
+```bash
+# ❌ 没有严格模式——错误被忽略
+grep "pattern" file.txt    # file.txt 不存在也不报错
+result=$(cat /no/such/file)  # 静默失败
+
+# ✅ 有严格模式——立即报错
+set -euo pipefail
+grep "pattern" file.txt    # 直接退出并报错
+```
+
+***
+
+## 二、变量与参数
+
+### 2.1 变量定义与使用
+
+```bash
+# 定义变量（等号两边不能有空格！）
+name="Alice"
+count=42
+readonly PI=3.14159         # 只读变量
+
+# 使用变量
+echo "$name"                # ⭐ 加引号（防止分词和通配展开）
+echo "${name}_suffix"       # 用大括号界定变量边界
+echo "Hello, ${name:-Guest}"  # name 为空或未定义时使用默认值
+
+# 特殊变量
+$0      # 脚本名
+$1-$9   # 第 1 到第 9 个参数
+${10}   # 第 10 个参数（需要用大括号）
+$#      # 参数个数
+$@      # 所有参数（每个参数独立引号）
+$*      # 所有参数（合并为一个字符串）
+$?      # 上一条命令的退出码
+$$      # 当前 Shell 的 PID
+$!      # 最后一条后台命令的 PID
+$_      # 上一条命令的最后一个参数
+```
+
+### 2.2 引号区别
+
+| 引号 | 变量展开 | 命令替换 | 转义 | 示例 |
+|:-----|:---------|:---------|:-----|:-----|
+| 双引号 `"` | ✅ | ✅ | 部分 | `"Hello $name"` → Hello Alice |
+| 单引号 `'` | ❌ | ❌ | ❌ | `'Hello $name'` → Hello $name |
+| 反引号 `` ` `` | ✅ | ✅ | 部分 | `\`date\`\` → Mon Jun 22 ... |
+
+```bash
+# ⭐ 黄金法则：总是用双引号包裹变量
+name="Alice Smith"
+echo "$name"          # ✅ Alice Smith
+echo $name            # ❌ 会被分词为两个参数
+
+file="my file.txt"
+cat "$file"           # ✅ 正确
+cat $file             # ❌ 等同于 cat my file.txt
+
+# 命令替换：$(...) 优于 `...`（可嵌套）
+now=$(date)
+files=$(ls /var/log)
+```
+
+### 2.3 数组
+
+```bash
+# 定义数组
+fruits=("apple" "banana" "cherry")
+fruits+=("date")                # 追加元素
+
+# 访问元素
+echo "${fruits[0]}"             # 第一个（索引从 0 开始）
+echo "${fruits[@]}"             # 所有元素
+echo "${#fruits[@]}"            # 数组长度
+echo "${!fruits[@]}"            # 所有索引
+
+# 遍历
+for fruit in "${fruits[@]}"; do
+    echo "Fruit: $fruit"
+done
+```
+
+***
+
+## 三、条件判断
+
+### 3.1 if 语句
+
+```bash
+# 基本语法
+if [ "$name" = "Alice" ]; then
+    echo "Hello, Alice!"
+elif [ "$name" = "Bob" ]; then
+    echo "Hello, Bob!"
+else
+    echo "Hello, stranger!"
+fi
+
+# 现代写法：[[ ]] 优于 [ ]（Bash 专有，功能更强）
+if [[ "$name" == "Alice" ]]; then
+    echo "Hello, Alice!"
+fi
+```
+
+### 3.2 条件测试
+
+```bash
+# 字符串比较
+[[ -z "$str" ]]          # 字符串为空
+[[ -n "$str" ]]          # 字符串非空
+[[ "$a" == "$b" ]]       # 相等
+[[ "$a" != "$b" ]]       # 不等
+[[ "$a" =~ ^[0-9]+$ ]]   # 正则匹配
+
+# 数值比较
+[[ $a -eq $b ]]          # 等于 (equal)
+[[ $a -ne $b ]]          # 不等于 (not equal)
+[[ $a -gt $b ]]          # 大于 (greater than)
+[[ $a -lt $b ]]          # 小于 (less than)
+[[ $a -ge $b ]]          # 大于等于
+[[ $a -le $b ]]          # 小于等于
+
+# 文件测试 ⭐ 最常用
+[[ -f "$file" ]]         # 是普通文件
+[[ -d "$dir" ]]          # 是目录
+[[ -e "$path" ]]         # 路径存在（文件和目录都行）
+[[ -r "$file" ]]         # 可读
+[[ -w "$file" ]]         # 可写
+[[ -x "$file" ]]         # 可执行
+[[ -s "$file" ]]         # 文件存在且非空
+[[ -L "$file" ]]         # 是符号链接
+
+# 逻辑组合
+[[ $a -gt 0 && $b -lt 10 ]]   # 逻辑与（AND）
+[[ $a -eq 1 || $b -eq 2 ]]    # 逻辑或（OR）
+[[ ! -f "$file" ]]            # 逻辑非（NOT）
+```
+
+### 3.3 case 语句
+
+```bash
+case "$action" in
+    start)
+        echo "Starting service..."
+        ;;
+    stop)
+        echo "Stopping service..."
+        ;;
+    restart|reload)              # 匹配多个值
+        echo "Restarting service..."
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+```
+
+***
+
+## 四、循环
+
+### 4.1 for 循环
+
+```bash
+# 遍历列表
+for lang in java python node; do
+    echo "Language: $lang"
+done
+
+# 遍历文件
+for file in /var/log/*.log; do
+    echo "Processing: $file"
+    wc -l "$file"
+done
+
+# C 风格
+for ((i = 1; i <= 10; i++)); do
+    echo "Count: $i"
+done
+
+# 遍历命令输出
+while IFS= read -r line; do
+    echo "Line: $line"
+done < file.txt
+```
+
+### 4.2 while / until
+
+```bash
+# while：条件为真时循环
+count=0
+while [[ $count -lt 5 ]]; do
+    echo "Count: $count"
+    ((count++))
+done
+
+# 读文件每一行 ⭐
+while IFS= read -r line; do
+    echo "$line"
+done < /etc/passwd
+
+# until：条件为真时停止（最少执行一次）
+until ping -c 1 google.com &>/dev/null; do
+    echo "Waiting for network..."
+    sleep 5
+done
+echo "Network is up!"
+```
+
+***
+
+## 五、函数
+
+```bash
+# 定义函数
+say_hello() {
+    local name="$1"        # local 限制变量作用域 ⭐
+    local greeting="${2:-Hello}"  # 第二个参数，默认值
+    echo "$greeting, $name!"
+}
+
+# 调用函数
+say_hello "Alice" "Hi"     # 输出: Hi, Alice!
+say_hello "Bob"            # 输出: Hello, Bob!
+
+# 函数返回值（只能返回 0-255 的整数）
+is_running() {
+    pgrep -f "$1" > /dev/null
+    return $?               # 0 = 运行中，1 = 未运行
+}
+
+if is_running "nginx"; then
+    echo "nginx is running"
+else
+    echo "nginx is stopped"
+fi
+
+# 返回字符串（通过 echo/stdout）
+get_timestamp() {
+    echo "$(date +%Y%m%d_%H%M%S)"
+}
+
+backup_file="/backup/app_$(get_timestamp).tar.gz"
+```
+
+***
+
+## 六、错误处理
+
+```bash
+# trap — 捕获信号和退出
+trap 'echo "清理临时文件..."; rm -rf "$TEMP_DIR"' EXIT
+trap 'echo "收到中断信号，正在退出..."; exit 1' INT TERM
+
+# 完整的脚本模板
+#!/bin/bash
+set -euo pipefail
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TEMP_DIR=$(mktemp -d)
+
+cleanup() {
+    local exit_code=$?
+    echo "清理中..."
+    rm -rf "$TEMP_DIR"
+    exit $exit_code
+}
+trap cleanup EXIT INT TERM
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
+main() {
+    log "脚本开始执行"
+
+    # 你的业务逻辑...
+
+    log "脚本执行完成"
+}
+
+main "$@"
+```
+
+***
+
+## 七、实战脚本示例
+
+### 7.1 服务健康检查脚本
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+readonly SERVICE_URL="${1:-http://localhost:8080/health}"
+readonly TIMEOUT=5
+readonly MAX_RETRIES=3
+
+check_health() {
+    local retries=0
+
+    while [[ $retries -lt $MAX_RETRIES ]]; do
+        if curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" "$SERVICE_URL" | grep -q "^2"; then
+            echo "✅ 服务健康: $SERVICE_URL"
+            return 0
+        fi
+        ((retries++))
+        echo "⚠️  第 $retries 次检查失败，等待重试..."
+        sleep 2
+    done
+
+    echo "❌ 服务不可达: $SERVICE_URL"
+    return 1
+}
+
+check_health
+```
+
+### 7.2 日志清理脚本
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+readonly LOG_DIR="${1:-/var/log}"
+readonly RETENTION_DAYS="${2:-30}"
+readonly FILE_PATTERNS=("*.log" "*.log.*.gz")
+
+echo "=== 日志清理开始 ==="
+echo "目录: $LOG_DIR, 保留 ${RETENTION_DAYS} 天"
+
+for pattern in "${FILE_PATTERNS[@]}"; do
+    find "$LOG_DIR" -name "$pattern" -type f -mtime "+$RETENTION_DAYS" -print -delete
+done
+
+echo "=== 日志清理完成 ==="
+```
+
+***
+
+## 八、调试技巧
+
+```bash
+# 方法 1：命令行开启调试
+bash -x script.sh           # 显示每条执行的命令
+
+# 方法 2：脚本内部分开启
+set -x                      # 开启调试
+# ... 需要调试的代码 ...
+set +x                      # 关闭调试
+
+# 方法 3：打印变量（最朴素的调试方法）
+echo "DEBUG: variable=$variable"
+echo "DEBUG: 当前行号=$LINENO"
+```
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+编写一个完整的应用部署脚本。
+
+### 要求
+
+脚本应包含：
+
+1. 参数校验（环境参数必传）
+2. 备份当前版本
+3. 停止旧服务 → 部署新版本 → 启动服务
+4. 健康检查
+5. 失败时自动回滚
+
+自行根据前面学到的知识编写这个脚本，然后用 `shellcheck` 工具检查质量：
+
+```bash
+sudo apt install shellcheck -y
+shellcheck deploy.sh
+```

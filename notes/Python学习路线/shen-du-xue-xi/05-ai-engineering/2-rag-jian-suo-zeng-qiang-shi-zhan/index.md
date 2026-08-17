@@ -1,0 +1,296 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/shen-du-xue-xi/05-ai-engineering/2-rag-jian-suo-zeng-qiang-shi-zhan/index.md
+---
+# RAG 检索增强实战
+
+> RAG（Retrieval-Augmented Generation，检索增强生成）是当前 LLM 应用落地最主流的方案：先检索知识库中的相关内容，再交给大模型生成回答，有效解决「幻觉」与「私有知识缺失」两大痛点。
+
+***
+
+## 一、RAG 概念与整体流程
+
+### 1.1 为什么需要 RAG
+
+**纯 LLM 的局限**：模型只掌握训练截止前的公开知识，无法回答私有文档、实时数据问题，且可能"一本正经地胡说八道"（幻觉）。
+
+| 方案 | 原理 | 优点 | 缺点 |
+|------|------|------|------|
+| 纯提示词（Prompt） | 把资料直接塞进上下文 | 实现简单 | 受上下文长度限制，成本高 |
+| 微调（Fine-tuning） | 用领域数据训练模型 | 改变模型行为 | 成本高、周期长、不解决实时性 |
+| **RAG（推荐）** | 检索 + 生成 | 实时更新、可控、成本低 | 依赖检索质量 |
+
+> RAG 的核心思想：**不训练模型，只提供资料**。把资料先向量化存入数据库，提问时检索最相关的片段拼进提示词。
+
+### 1.2 整体流程
+
+**RAG 流水线**：索引阶段（离线）→ 检索阶段（在线）。
+
+```text
+离线索引：
+文档加载 → 文本切分(chunking) → 向量化(Embedding) → 存入向量数据库
+                                             ↓
+在线问答：
+用户提问 → 向量化 → 向量检索 Top-K → 拼装提示词 → LLM 生成回答
+```
+
+```bash
+# 常用依赖安装
+pip install chromadb openai langchain langchain-openai
+```
+
+***
+
+## 二、文档处理与向量化
+
+### 2.1 文档加载
+
+**文档加载**：将 PDF、Word、网页、Markdown 等转为纯文本，为后续切分做准备。
+
+```python
+from langchain_community.document_loaders import TextLoader, PyPDFLoader
+
+# 加载文本文件
+loader = TextLoader("knowledge/manual.txt", encoding="utf-8")
+docs = loader.load()
+
+# 加载 PDF
+pdf_loader = PyPDFLoader("knowledge/用户手册.pdf")
+pdf_docs = pdf_loader.load()
+```
+
+### 2.2 切分策略（Chunking）
+
+**切分意义**：检索粒度越小越精准，但太碎会丢失上下文；切分粒度直接影响召回效果。
+
+| 策略 | 方式 | 适用 |
+|------|------|------|
+| 固定大小 | 按字符数硬切（如 500 字符 + 50 重叠） | 通用兜底 |
+| 递归字符切分 | 按段落→句子逐级切（`RecursiveCharacterTextSplitter`） | 推荐默认 |
+| 语义切分 | 按标题/代码块/段落结构切（MarkdownHeaderTextSplitter） | 结构化文档 |
+
+```python
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# 推荐：按语义边界递归切分，chunk 之间留重叠避免切断语义
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,        # 每块字符数
+    chunk_overlap=50,      # 相邻块重叠，防止关键句被切断
+    separators=["\n\n", "\n", "。", "！", "？", " ", ""],  # 优先按段落/句号切
+)
+chunks = splitter.split_documents(docs)
+print(len(chunks))  # 切分后的块数
+```
+
+> 💡 **经验**：中文文档 `chunk_size` 500~800、overlap 50~100 效果较好；长文档先按标题切分，再对每节切分，召回质量更高。
+
+### 2.3 Embedding 向量化
+
+**Embedding**：把文本映射为高维向量（如 1536 维），语义相近的文本向量距离更近，是检索的基础。
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+resp = client.embeddings.create(
+    model="text-embedding-3-small",   # 经济型；大模型知识库可用 -large
+    input="如何申请退货退款？",
+)
+vector = resp.data[0].embedding
+print(len(vector))  # 输出向量维度
+
+# 相似度衡量：余弦相似度（值越大越相似）
+def cosine_similarity(a, b):
+    dot = sum(x * y for x, y in zip(a, b))
+    return dot / ((sum(x*x for x in a) ** 0.5) * (sum(y*y for y in b) ** 0.5))
+```
+
+***
+
+## 三、向量数据库
+
+### 3.1 ChromaDB 实战
+
+**ChromaDB**：轻量级嵌入式向量数据库，本地零配置，适合中小型知识库与原型。
+
+```python
+import chromadb
+from chromadb.utils import embedding_functions
+
+# 使用 OpenAI embedding 函数（或用本地模型）
+ef = embedding_functions.OpenAIEmbeddingFunction(
+    api_key="sk-xxx", model_name="text-embedding-3-small",
+)
+
+client = chromadb.PersistentClient(path="./chroma_db")   # 持久化存储
+collection = client.get_or_create_collection("kb", embedding_function=ef)
+
+# 批量写入：id + document（原始文本）+ metadata（元信息）
+collection.add(
+    ids=[f"chunk-{i}" for i in range(len(chunks))],
+    documents=[c.page_content for c in chunks],
+    metadatas=[{"source": c.metadata.get("source", "")} for c in chunks],
+)
+
+# 查询：返回最相似的 3 条
+results = collection.query(query_texts=["退货流程是什么"], n_results=3)
+for doc, dist in zip(results["documents"][0], results["distances"][0]):
+    print(f"[距离 {dist:.3f}] {doc[:60]}...")
+```
+
+### 3.2 FAISS 实战
+
+**FAISS**：Meta 开源的向量检索库，性能极高，适合大规模向量（百万级）检索。
+
+```python
+import faiss
+import numpy as np
+
+# 把文本向量化后存入 FAISS（FAISS 只存向量，原始文本需自行维护映射）
+vectors = np.array([client.embeddings.create(model="text-embedding-3-small", input=c.page_content)
+                    .data[0].embedding for c in chunks]).astype("float32")
+
+index = faiss.IndexFlatL2(vectors.shape[1])   # L2 距离索引
+index.add(vectors)                            # 建索引
+faiss.write_index(index, "kb.index")          # 持久化
+
+# 查询
+q = np.array([client.embeddings.create(model="text-embedding-3-small",
+             input="退货流程").data[0].embedding]).astype("float32")
+distances, indices = index.search(q, k=3)     # 返回最近 3 条
+for i, d in zip(indices[0], distances[0]):
+    print(f"[距离 {d:.3f}] {chunks[i].page_content[:60]}...")
+```
+
+### 3.3 ChromaDB vs FAISS 对比
+
+| 对比维度 | ChromaDB | FAISS |
+|---------|----------|-------|
+| 定位 | 向量数据库（含原始文本、元数据、过滤） | 向量检索库（只存向量） |
+| 使用难度 | 低，上手快 | 中，需自管文本映射 |
+| 性能规模 | 中小型（万级） | 大规模（百万级） |
+| 过滤能力 | 内置 metadata 过滤 | 需自行实现 |
+| 部署 | 本地/服务化 | 内存/服务化 |
+| 适合场景 | 中小知识库、快速原型 | 海量向量、推荐/搜索 |
+
+***
+
+## 四、检索优化与 RAG 链路集成
+
+### 4.1 检索优化：Top-K、阈值与重排序
+
+**Top-K**：控制召回条数，太少漏信息、太多噪声干扰模型。
+
+**相似度阈值**：过滤掉距离过远的"垃圾结果"，避免把不相关内容喂给模型。
+
+**重排序（Rerank）**：先快速召回更多候选（如 20 条），再用交叉编码器精排取前 3，是提升准确率的利器。
+
+```python
+# 1. Top-K 与阈值结合：先召回 20 条，过滤低分，保留前 3
+results = collection.query(query_texts=[question], n_results=20)
+docs, dists = results["documents"][0], results["distances"][0]
+
+# 归一化距离为分数（约 0~1），过滤低于 0.3 的
+filtered = [(d, s) for d, s in zip(docs, dists) if 1 - s >= 0.3]
+filtered.sort(key=lambda x: x[1])           # 按距离升序
+top3 = [d for d, _ in filtered[:3]]
+
+# 2. 简单重排序：用 LLM 对候选打分（小样本量时可行）
+#    更推荐：使用 Cohere Rerank 等专用 rerank 模型
+```
+
+### 4.2 用 LangChain 组装 RAG 链路
+
+**标准链路**：loader → splitter → vectorstore → retriever → prompt → LLM。
+
+```python
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_chroma import Chroma
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
+
+# 1. 建立向量库
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+vectorstore = Chroma.from_documents(chunks, embeddings, persist_directory="./chroma_db")
+
+# 2. 构造检索器
+retriever = vectorstore.as_retriever(
+    search_type="similarity",
+    search_kwargs={"k": 4},    # 召回 4 条
+)
+
+# 3. 检索增强提示词：明确要求"只依据资料回答"
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "你是知识库助手。只依据提供的资料回答，资料不足时如实说明'资料中未找到相关信息'，不要编造。"),
+    ("human", "资料：\n{context}\n\n问题：{input}"),
+])
+
+# 4. 组装检索链
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+qa_chain = create_retrieval_chain(
+    retriever,
+    create_stuff_documents_chain(llm, prompt),
+)
+
+# 5. 问答
+result = qa_chain.invoke({"input": "退货流程是什么？"})
+print(result["answer"])
+```
+
+### 4.3 评测与常见问题
+
+**RAG 评测指标**：
+
+| 指标 | 衡量 | 说明 |
+|------|------|------|
+| 召回率（Recall@K） | 检索质量 | 正确答案是否在前 K 条中 |
+| 忠实度（Faithfulness） | 是否忠实于资料 | 是否产生幻觉 |
+| 回答相关性（Relevance） | 是否答非所问 | 生成质量 |
+
+**常见问题与对策**：
+
+| 问题 | 现象 | 对策 |
+|------|------|------|
+| 召回不足 | 答非所问 | 减小 chunk、增大 K、加 rerank |
+| 语义偏差 | 检索到无关内容 | 换更好的 Embedding 模型、优化切分 |
+| 幻觉 | 编造资料外内容 | 提示词约束 + 阈值过滤 + 忠实度评测 |
+| 知识库大、慢 | 检索延迟高 | FAISS + 分片 + 缓存热门问题 |
+| 相似问题污染 | 多个相近答案混淆 | 加元数据过滤（如按文档分类筛选） |
+
+> ❌ **常见错误**：把整个文档塞进提示词当 RAG，既超 Token 又慢。
+> ✅ **正确做法**：先检索 Top-K 相关片段，再拼装，严格控制上下文大小。
+
+***
+
+## 实践项目
+
+### 目标
+
+为一个 **产品使用手册知识库** 搭建完整的 RAG 问答系统：加载 PDF → 语义切分 → 存入 ChromaDB → FastAPI 接口问答，并做检索质量评测。
+
+### 步骤
+
+1. 准备 2~3 份 PDF/文本手册，用 `PyPDFLoader`/`TextLoader` 加载
+2. 用 `RecursiveCharacterTextSplitter` 切分（chunk\_size=500, overlap=50）
+3. 用 `text-embedding-3-small` 向量化并写入 ChromaDB（持久化）
+4. 实现检索函数：Top-K=5 + 相似度阈值过滤
+5. 用 LangChain 组装检索链，提示词约束"只依据资料回答"
+6. 封装 FastAPI `/ask` 接口，返回回答与引用片段
+7. 准备 10 个测试问题，人工标注正确答案，统计召回率与忠实度
+
+### 目录结构参考
+
+```text
+rag-system/
+├── main.py                 # FastAPI 入口，/ask 接口
+├── index.py                # 离线索引：加载→切分→入库
+├── retriever.py            # 检索逻辑（Top-K + 阈值）
+├── kb/                     # 原始文档存放目录
+├── chroma_db/              # 向量库持久化目录
+├── tests/
+│   └── eval_questions.json # 评测问题与标准答案
+└── requirements.txt        # chromadb, langchain, openai, fastapi
+```
+
+> 🔗 **拓展指引**：如需构建自主 Agent（记忆、反思、多步检索），请参考仓库 `LangChain学习路线/` 的 Agent 编排章节。

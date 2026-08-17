@@ -1,0 +1,692 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/01-java-bing-fa-bian-cheng-yu-jvm/1-xian-cheng-chi-yuan-li-yu-tiao-you/index.md
+---
+# 线程池原理与调优
+
+## 一、为什么要用线程池
+
+### 1.1 线程开销
+
+创建线程不是免费的，每次 `new Thread()` 都需要：
+
+```text
++---------------------------+
+| 线程创建开销              |
+| 1. 分配线程栈空间 (~1MB)  |
+| 2. 系统调用 (用户态→内核态) |
+| 3. 注册到 JVM 线程系统    |
++---------------------------+
+
+对比：线程池复用线程 → 避免频繁创建销毁
+```
+
+```java
+// ❌ 糟糕：每次请求都创建新线程
+public void handleRequest(Request request) {
+    new Thread(() -> {
+        process(request);  // 处理完线程就销毁
+    }).start();
+}
+
+// ✅ 优秀：使用线程池复用线程
+@Bean
+public ThreadPoolExecutor taskExecutor() {
+    return new ThreadPoolExecutor(
+        10,              // corePoolSize
+        20,              // maximumPoolSize
+        60L,             // keepAliveTime
+        TimeUnit.SECONDS,
+        new LinkedBlockingQueue<>(1000),
+        new ThreadPoolExecutor.CallerRunsPolicy()
+    );
+}
+
+public void handleRequest(Request request) {
+    taskExecutor.execute(() -> process(request));
+}
+```
+
+### 1.2 线程池的核心参数
+
+```java
+public ThreadPoolExecutor(
+    int corePoolSize,          // 核心线程数（常驻线程）
+    int maximumPoolSize,       // 最大线程数
+    long keepAliveTime,        // 空闲线程存活时间
+    TimeUnit unit,             // 存活时间单位
+    BlockingQueue<Runnable> workQueue,  // 任务队列
+    ThreadFactory threadFactory,        // 线程工厂（可选）
+    RejectedExecutionHandler handler    // 拒绝策略（可选）
+);
+```
+
+**参数工作流程**
+
+```text
+提交新任务
+    ↓
+1. 当前线程数 < corePoolSize？
+   是 → 创建新核心线程执行
+   否 → ↓
+2. 任务队列未满？
+   是 → 放入队列等待
+   否 → ↓
+3. 当前线程数 < maximumPoolSize？
+   是 → 创建新临时线程执行
+   否 → ↓
+4. 执行拒绝策略
+```
+
+**代码验证**
+
+```java
+public class ThreadPoolDemo {
+
+    public static void main(String[] args) {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            2,              // core 2
+            4,              // max 4
+            10,             // keepAlive 10s
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(3),  // 队列容量 3
+            new CustomThreadFactory(),
+            new ThreadPoolExecutor.AbortPolicy()
+        );
+
+        // 模拟提交 8 个任务
+        for (int i = 1; i <= 8; i++) {
+            int taskId = i;
+            executor.execute(() -> {
+                System.out.println(Thread.currentThread().getName() + " 执行任务 " + taskId);
+                sleep(2000);  // 模拟任务执行
+            });
+            printPoolStatus(executor, "提交任务" + taskId);
+        }
+
+        executor.shutdown();
+    }
+
+    static void printPoolStatus(ThreadPoolExecutor executor, String phase) {
+        System.out.printf("[%s] 池大小=%d, 活跃=%d, 队列=%d, 完成=%d%n",
+                phase,
+                executor.getPoolSize(),
+                executor.getActiveCount(),
+                executor.getQueue().size(),
+                executor.getCompletedTaskCount());
+    }
+    // 输出：
+    // [提交任务1] 池大小=1, 活跃=1, 队列=0, 完成=0  ← 创建核心线程1
+    // [提交任务2] 池大小=2, 活跃=2, 队列=0, 完成=0  ← 创建核心线程2
+    // [提交任务3] 池大小=2, 活跃=2, 队列=1, 完成=0  ← 入队
+    // [提交任务4] 池大小=2, 活跃=2, 队列=2, 完成=0  ← 入队
+    // [提交任务5] 池大小=2, 活跃=2, 队列=3, 完成=0  ← 队列满
+    // [提交任务6] 池大小=3, 活跃=3, 队列=3, 完成=0  ← 创建临时线程
+    // [提交任务7] 池大小=4, 活跃=4, 队列=3, 完成=0  ← 创建临时线程
+    // [提交任务8] 池大小=4, 活跃=4, 队列=3, 完成=0  ← 触发拒绝策略！抛出异常
+}
+```
+
+***
+
+## 二、任务队列详解
+
+### 2.1 队列类型对比
+
+```java
+// 1. ArrayBlockingQueue（有界队列）
+// 内部用数组实现，必须指定容量
+BlockingQueue<Runnable> queue1 = new ArrayBlockingQueue<>(1000);
+
+// 2. LinkedBlockingQueue（有界/无界队列）
+// 内部用链表实现，默认容量 Integer.MAX_VALUE（无界！）
+BlockingQueue<Runnable> queue2 = new LinkedBlockingQueue<>();      // 无界（慎用）
+BlockingQueue<Runnable> queue3 = new LinkedBlockingQueue<>(1000);  // 有界
+
+// 3. SynchronousQueue（同步移交队列）
+// 容量为 0，不存储任务，直接交给线程执行
+// 每个插入操作必须等待一个移除操作
+BlockingQueue<Runnable> queue4 = new SynchronousQueue<>();
+
+// 4. PriorityBlockingQueue（优先级队列）
+// 按优先级执行任务
+BlockingQueue<Runnable> queue5 = new PriorityBlockingQueue<>();
+
+// 5. DelayedWorkQueue（延迟队列）
+// ScheduledThreadPoolExecutor 专用
+BlockingQueue<Runnable> queue6 = new ScheduledThreadPoolExecutor.DelayedWorkQueue();
+```
+
+### 2.2 队列选型分析
+
+| 队列 | 是否有界 | 特性 | 适用场景 |
+|------|---------|------|---------|
+| ArrayBlockingQueue | ✅ 有界 | 先进先出，性能稳定 | 大多数场景 |
+| LinkedBlockingQueue | ⚠️ 默认无界 | 先进先出，吞吐量略高 | 记得设容量 |
+| SynchronousQueue | ✅ 容量0 | 不存任务，直接移交 | 高吞吐量，任务执行快 |
+| PriorityBlockingQueue | ❌ 无界 | 优先级排序 | 任务有优先级需求 |
+| DelayedWorkQueue | ❌ 无界 | 延迟执行 | 定时任务 |
+
+***
+
+## 三、拒绝策略
+
+### 3.1 JDK 内置四种策略
+
+```java
+// 1. AbortPolicy（默认）—— 抛出异常
+RejectedExecutionHandler abort = new ThreadPoolExecutor.AbortPolicy();
+// executor.execute(task) → 抛出 RejectedExecutionException
+
+// 2. CallerRunsPolicy —— 调用者线程执行
+RejectedExecutionHandler callerRuns = new ThreadPoolExecutor.CallerRunsPolicy();
+// 提交任务的线程自己执行（比如 main 线程），天然限流
+
+// 3. DiscardPolicy —— 默默丢弃
+RejectedExecutionHandler discard = new ThreadPoolExecutor.DiscardPolicy();
+// 任务直接丢弃，不通知
+
+// 4. DiscardOldestPolicy —— 丢弃最旧任务
+RejectedExecutionHandler discardOldest = new ThreadPoolExecutor.DiscardOldestPolicy();
+// 丢弃队列头部的任务（最旧的），然后重新提交
+```
+
+### 3.2 自定义拒绝策略
+
+```java
+public class CustomRejectedHandler implements RejectedExecutionHandler {
+
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
+    @Override
+    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+        if (r instanceof FutureTask) {
+            log.warn("任务被拒绝: 队列满 {} 线程池活跃 {}/{}",
+                    executor.getQueue().size(),
+                    executor.getActiveCount(),
+                    executor.getPoolSize());
+
+            // 方案 A：降级处理（打印日志、发告警、存数据库重试）
+            if (r instanceof MyTask) {
+                MyTask task = (MyTask) r;
+                saveToRetryQueue(task);  // 存入重试表
+            }
+
+            // 方案 B：阻塞等待（不推荐，可能死锁）
+            try {
+                executor.getQueue().put(r);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // 方案 C：由其他线程池执行
+            backupExecutor.execute(r);
+        }
+    }
+}
+```
+
+### 3.3 拒绝策略选型
+
+| 策略 | 优点 | 缺点 | 适用场景 |
+|------|------|------|---------|
+| AbortPolicy | 快速失败，问题明显 | 丢失任务 | 非核心业务 |
+| CallerRunsPolicy | 天然限流，不丢任务 | 调用者阻塞 | 大多数场景（推荐） |
+| DiscardPolicy | 不抛异常 | 静默丢失 | 日志、监控等可丢任务 |
+| DiscardOldestPolicy | 保留新任务 | 旧任务丢失 | 实时性要求高的场景 |
+| 自定义 | 灵活处理 | 需要开发 | 关键业务（推荐） |
+
+***
+
+## 四、线程工厂
+
+### 4.1 为什么要自定义线程工厂
+
+```java
+// ❌ 默认工厂的线程名：pool-1-thread-1（无法区分是哪个线程池）
+ExecutorService executor = Executors.newFixedThreadPool(10);
+// 当出问题时："pool-1-thread-1"——根本不知道是哪个服务！
+
+// ✅ 自定义线程工厂：给线程有意义的名字
+public class NamedThreadFactory implements ThreadFactory {
+
+    private final String prefix;
+    private final AtomicInteger threadNumber = new AtomicInteger(1);
+    private final boolean daemon;
+
+    public NamedThreadFactory(String prefix) {
+        this(prefix, false);
+    }
+
+    public NamedThreadFactory(String prefix, boolean daemon) {
+        this.prefix = prefix;
+        this.daemon = daemon;
+    }
+
+    @Override
+    public Thread newThread(Runnable r) {
+        Thread thread = new Thread(r, prefix + "-thread-" + threadNumber.getAndIncrement());
+        thread.setDaemon(daemon);         // 守护线程标记
+        thread.setPriority(Thread.NORM_PRIORITY);
+        thread.setUncaughtExceptionHandler((t, e) ->
+            System.err.println("线程 " + t.getName() + " 异常: " + e.getMessage())
+        );
+        return thread;
+    }
+}
+
+// 使用
+ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    10, 20, 60L, TimeUnit.SECONDS,
+    new LinkedBlockingQueue<>(1000),
+    new NamedThreadFactory("order-worker"),     // 线程名示例：order-worker-thread-1
+    new ThreadPoolExecutor.CallerRunsPolicy()
+);
+
+// 线程转储时清晰看到：
+// "order-worker-thread-1" #10 prio=5 os_prio=0 tid=0x...
+// "payment-worker-thread-3" #15 prio=5 os_prio=0 tid=0x...
+```
+
+***
+
+## 五、Executors 工厂方法缺陷分析
+
+### 5.1 为什么不推荐 Executors
+
+```java
+// ❌ newFixedThreadPool：LinkedBlockingQueue 无界
+ExecutorService fixed = Executors.newFixedThreadPool(10);
+// 阻塞队列默认容量 Integer.MAX_VALUE（约 21 亿），
+// 任务积压时可能导致 OOM
+
+// ❌ newCachedThreadPool：SynchronousQueue + max 无界
+ExecutorService cached = Executors.newCachedThreadPool();
+// maximumPoolSize = Integer.MAX_VALUE
+// 瞬间高并发时创建无限线程，导致 OOM 或线程爆炸
+
+// ❌ newScheduledThreadPool：DelayedWorkQueue 无界
+ExecutorService scheduled = Executors.newScheduledThreadPool(10);
+// 同样有 OOM 风险
+
+// ❌ newSingleThreadExecutor：LinkedBlockingQueue 无界 + 无法重新配置
+ExecutorService single = Executors.newSingleThreadExecutor();
+// 被包装成 FinalizableDelegatedExecutorService，无法修改参数
+```
+
+### 5.2 正确做法：手动构建
+
+```java
+// ✅ 推荐：明确指定所有参数
+int corePoolSize = Runtime.getRuntime().availableProcessors() * 2;
+int maxPoolSize = corePoolSize * 2;
+int queueCapacity = 2000;
+
+ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    corePoolSize,
+    maxPoolSize,
+    60L, TimeUnit.SECONDS,
+    new LinkedBlockingQueue<>(queueCapacity),   // 有界队列！
+    new NamedThreadFactory("biz-worker"),
+    new ThreadPoolExecutor.CallerRunsPolicy()   // 友好降级
+);
+
+// 启动核心线程的预热（可选）
+executor.prestartAllCoreThreads();
+```
+
+***
+
+## 六、线程池监控与调优
+
+### 6.1 核心监控指标
+
+```java
+@Component
+public class ThreadPoolMonitor {
+
+    private final Map<String, ThreadPoolExecutor> executorMap = new ConcurrentHashMap<>();
+
+    // 注册被监控的线程池
+    public void register(String name, ThreadPoolExecutor executor) {
+        executorMap.put(name, executor);
+        startMonitor(name, executor);
+    }
+
+    private void startMonitor(String name, ThreadPoolExecutor executor) {
+        Executors.newSingleThreadScheduledExecutor()
+            .scheduleAtFixedRate(() -> {
+                // 核心监控指标
+                int poolSize = executor.getPoolSize();
+                int activeCount = executor.getActiveCount();
+                int corePoolSize = executor.getCorePoolSize();
+                int maximumPoolSize = executor.getMaximumPoolSize();
+                long taskCount = executor.getTaskCount();
+                long completedCount = executor.getCompletedTaskCount();
+                int queueSize = executor.getQueue().size();
+                int remainingCapacity = executor.getQueue().remainingCapacity();
+
+                // 计算指标
+                double activeRatio = (double) activeCount / poolSize;     // 线程活跃率
+                double queueLoad = (double) queueSize / (queueSize + remainingCapacity);  // 队列负载
+                double completedRatio = (double) completedCount / taskCount;  // 任务完成率
+
+                log.info("线程池[{}] p={}/{} a={} q={}/{} t={} c={} 活跃率={}% 队列负载={}%",
+                        name,
+                        poolSize, maximumPoolSize,
+                        activeCount,
+                        queueSize, queueSize + remainingCapacity,
+                        taskCount, completedCount,
+                        String.format("%.1f", activeRatio * 100),
+                        String.format("%.1f", queueLoad * 100));
+
+                // 告警判断
+                if (activeRatio > 0.9) {
+                    log.warn("线程池[{}] 活跃率超过 90%，考虑扩容", name);
+                }
+                if (queueLoad > 0.8) {
+                    log.warn("线程池[{}] 队列负载超过 80%，任务积压风险", name);
+                }
+            }, 0, 5, TimeUnit.SECONDS);
+    }
+}
+```
+
+### 6.2 动态调参
+
+```java
+@Component
+public class DynamicThreadPool {
+
+    private final ThreadPoolExecutor executor;
+
+    public DynamicThreadPool() {
+        this.executor = new ThreadPoolExecutor(
+            10, 20, 60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(2000),
+            new NamedThreadFactory("dynamic-worker"),
+            new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+    }
+
+    /**
+     * 动态调整核心线程数（可暴露为 MBean 或 API）
+     */
+    public void adjustCorePoolSize(int newSize) {
+        if (newSize < 1 || newSize > executor.getMaximumPoolSize()) {
+            throw new IllegalArgumentException("非法参数: " + newSize);
+        }
+        int oldSize = executor.getCorePoolSize();
+        executor.setCorePoolSize(newSize);
+        log.info("核心线程数: {} → {}", oldSize, newSize);
+    }
+
+    /**
+     * 动态调整最大线程数
+     */
+    public void adjustMaximumPoolSize(int newSize) {
+        if (newSize < executor.getCorePoolSize()) {
+            throw new IllegalArgumentException("最大线程数不能小于核心线程数");
+        }
+        int oldSize = executor.getMaximumPoolSize();
+        executor.setMaximumPoolSize(newSize);
+        log.info("最大线程数: {} → {}", oldSize, newSize);
+    }
+
+    /**
+     * 动态调整队列容量（需要重新创建队列）
+     */
+    public void adjustQueueCapacity(int newCapacity) {
+        // 注意：不能直接修改已有队列的容量
+        // 通常的做法是重建线程池
+        log.warn("队列容量调整需要重启线程池，当前队列剩余: {}",
+                executor.getQueue().remainingCapacity());
+    }
+
+    /**
+     * 动态调整拒绝策略
+     */
+    public void adjustRejectedPolicy(String policy) {
+        switch (policy.toUpperCase()) {
+            case "ABORT" -> executor.setRejectedExecutionHandler(
+                    new ThreadPoolExecutor.AbortPolicy());
+            case "CALLER_RUNS" -> executor.setRejectedExecutionHandler(
+                    new ThreadPoolExecutor.CallerRunsPolicy());
+            case "DISCARD" -> executor.setRejectedExecutionHandler(
+                    new ThreadPoolExecutor.DiscardPolicy());
+        }
+    }
+
+    /**
+     * Spring Boot Actuator 端点
+     */
+    @Endpoint(id = "threadpool")
+    public static class ThreadPoolEndpoint {
+        @ReadOperation
+        public Map<String, Object> status() {
+            return Map.of(
+                "poolSize", executor.getPoolSize(),
+                "activeCount", executor.getActiveCount(),
+                "queueSize", executor.getQueue().size(),
+                "taskCount", executor.getTaskCount()
+            );
+        }
+
+        @WriteOperation
+        public void adjustCoreSize(int coreSize) {
+            executor.setCorePoolSize(coreSize);
+        }
+    }
+}
+```
+
+***
+
+## 七、线程池大小估算
+
+### 7.1 计算公式
+
+```text
+CPU 密集型（计算为主）：
+    最佳线程数 = CPU 核心数 + 1（保持 CPU 满载）
+    N_threads = N_cpu + 1
+
+IO 密集型（等待为主）：
+    最佳线程数 = CPU 核心数 × (1 + 等待时间 / 计算时间)
+    N_threads = N_cpu × (1 + T_wait / T_compute)
+```
+
+**实际估算方法**
+
+```java
+public class ThreadPoolSizing {
+
+    /**
+     * 通过压测估算线程数
+     *
+     * 方法：逐步增加线程数，观察 QPS 变化
+     *
+     * 示例结果：
+     * 线程数=10  QPS=1000  响应时间=10ms
+     * 线程数=20  QPS=1800  响应时间=11ms
+     * 线程数=30  QPS=2000  响应时间=15ms  ← 拐点
+     * 线程数=40  QPS=1900  响应时间=21ms  ← 开始下降（上下文切换）
+     *
+     * 最佳点：QPS 拐点前的一个值（推荐 20-25）
+     */
+
+    // 经验值参考
+    public static class Recommendation {
+        // 纯计算（加密、图像处理）
+        int cpuIntensive = Runtime.getRuntime().availableProcessors() + 1;
+
+        // 普通 Web 服务（短连接 + 少量 DB 查询）
+        int webService = Runtime.getRuntime().availableProcessors() * 2;
+
+        // IO 密集型（大量 DB/Redis/HTTP 调用）
+        int ioIntensive = Runtime.getRuntime().availableProcessors() * 4;
+
+        // 极端 IO 场景（大量远程调用，等待时间长）
+        int extremeIO = Runtime.getRuntime().availableProcessors() * 8;
+    }
+}
+```
+
+***
+
+## 八、最佳实践总结
+
+### 8.1 线程池配置示例
+
+```java
+@Configuration
+public class ThreadPoolConfig {
+
+    // ===== 业务通用线程池 =====
+    @Bean("bizExecutor")
+    public ThreadPoolExecutor bizExecutor() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        return new ThreadPoolExecutor(
+            cores * 2,                    // core
+            cores * 4,                    // max
+            60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(2000),
+            new NamedThreadFactory("biz"),
+            new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+    }
+
+    // ===== IO 密集型线程池（HTTP 调用、文件操作） =====
+    @Bean("ioExecutor")
+    public ThreadPoolExecutor ioExecutor() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        return new ThreadPoolExecutor(
+            cores * 4,
+            cores * 8,
+            60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(5000),
+            new NamedThreadFactory("io"),
+            new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+    }
+
+    // ===== 定时任务线程池 =====
+    @Bean("scheduledExecutor")
+    public ScheduledThreadPoolExecutor scheduledExecutor() {
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
+            5,
+            new NamedThreadFactory("scheduler"),
+            new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+        executor.setRemoveOnCancelPolicy(true);  // 取消时从队列移除
+        return executor;
+    }
+
+    // ===== 重要：异步任务异常处理 =====
+    @Bean("asyncExecutor")
+    public ThreadPoolExecutor asyncExecutor() {
+        return new ThreadPoolExecutor(
+            5, 10, 60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(500),
+            new NamedThreadFactory("async"),
+            (r, executor) -> {
+                // 记录失败任务到数据库，兜底补偿
+                log.error("异步任务被拒绝: {}", r);
+                if (r instanceof AsyncTask task) {
+                    taskCompensateService.saveFailedTask(task);
+                }
+            }
+        ) {
+            @Override
+            protected void afterExecute(Runnable r, Throwable t) {
+                super.afterExecute(r, t);
+                // 捕获 submit() 提交的 FutureTask 中的异常
+                if (t == null && r instanceof FutureTask<?>) {
+                    try {
+                        ((FutureTask<?>) r).get();
+                    } catch (ExecutionException e) {
+                        t = e.getCause();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                if (t != null) {
+                    log.error("任务执行异常", t);
+                }
+            }
+        };
+    }
+}
+```
+
+### 8.2 避坑指南
+
+```java
+// ❌ 错误 1：线程池中的异常被吞没
+executor.execute(() -> {
+    throw new RuntimeException("异常！");  // 啥也不输出，静默消失
+});
+
+// ✅ 方案：设置 UncaughtExceptionHandler
+// 或在任务内自己 catch
+
+// ❌ 错误 2：submit 提交不检查 Future
+Future<?> future = executor.submit(task);  // 返回值被丢弃
+
+// ✅ 方案：要么 catch ExecutionException，要么用 execute 并处理异常
+
+// ❌ 错误 3：线程池中嵌套提交任务到同一个池
+executor.execute(() -> {
+    executor.execute(() -> { /* 可能会死锁 */ });
+});
+
+// ✅ 方案：区分父子线程池，或使用不同的池
+
+// ❌ 错误 4：shutdown 后继续提交
+executor.shutdown();
+executor.execute(task);  // 抛出 RejectedExecutionException
+
+// ✅ 方案：
+if (!executor.isShutdown()) {
+    executor.execute(task);
+}
+
+// ❌ 错误 5：忘记关闭线程池
+// 线程池中的线程不是守护线程，JVM 不会退出
+
+// ✅ 方案：Spring Bean 的 @PreDestroy 中优雅关闭
+@PreDestroy
+public void shutdown() {
+    executor.shutdown();  // 不再接受新任务
+    try {
+        if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+            executor.shutdownNow();  // 强制关闭
+        }
+    } catch (InterruptedException e) {
+        executor.shutdownNow();
+    }
+}
+```
+
+***
+
+## ✨ 总结速查
+
+```text
+线程池参数设置速查：
+┌──────────────┬──────────────────┬──────────────────────┐
+│    场景      │    核心/最大      │       队列容量       │
+├──────────────┼──────────────────┼──────────────────────┤
+│ CPU 密集型   │ Ncpu + 1         │ 小队列 (100-500)     │
+│ 普通 Web     │ Ncpu × 2         │ 中队列 (500-2000)    │
+│ IO 密集型    │ Ncpu × 4~8       │ 中/大队列 (2000+)    │
+│ 异步任务     │ 固定少量          │ 小队列 (100-500)     │
+│ 定时任务     │ 固定少量          │ -                    │
+└──────────────┴──────────────────┴──────────────────────┘
+
+推荐默认配置：
+- 拒绝策略：CallerRunsPolicy（不丢任务，天然限流）
+- 线程工厂：自定义命名（order-worker-thread-N）
+- 队列：有界 LinkedBlockingQueue
+- 监控：注册到指标系统（Prometheus/Actuator）
+```

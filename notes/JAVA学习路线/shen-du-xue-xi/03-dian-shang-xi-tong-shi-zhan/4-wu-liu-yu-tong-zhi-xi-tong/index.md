@@ -1,0 +1,1096 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/03-dian-shang-xi-tong-shi-zhan/4-wu-liu-yu-tong-zhi-xi-tong/index.md
+---
+# 3.4 物流与通知系统
+
+> 本文档详细设计电商平台的物流管理、通知通知系统、MQ消息驱动以及对账系统的架构与实现。
+
+***
+
+## 一、物流系统设计
+
+### 1.1 数据模型
+
+物流表是整个物流模块的核心，记录了每一笔订单从发货到签收的全链路状态变更。
+
+```sql
+CREATE TABLE `logistics` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT  COMMENT '主键',
+    `order_id`        BIGINT       NOT NULL                  COMMENT '订单ID',
+    `tracking_no`     VARCHAR(64)  NOT NULL                  COMMENT '物流单号',
+    `company_code`    VARCHAR(32)  NOT NULL                  COMMENT '物流公司编码（如 SF、YTO、ZTO）',
+    `company_name`    VARCHAR(64)  NOT NULL                  COMMENT '物流公司名称',
+    `status`          TINYINT      NOT NULL DEFAULT 0        COMMENT '物流状态：0-待发货 1-已发货 2-运输中 3-已签收 4-异常',
+    `shipped_at`      DATETIME     DEFAULT NULL              COMMENT '发货时间',
+    `signed_at`       DATETIME     DEFAULT NULL              COMMENT '签收时间',
+    `receiver_name`   VARCHAR(64)  NOT NULL                  COMMENT '收件人姓名',
+    `receiver_phone`  VARCHAR(20)  NOT NULL                  COMMENT '收件人电话',
+    `receiver_addr`   VARCHAR(256) NOT NULL                  COMMENT '收货地址',
+    `extra_info`      JSON         DEFAULT NULL              COMMENT '扩展信息',
+    `created_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_order_id` (`order_id`),
+    UNIQUE KEY `uk_tracking_no` (`tracking_no`),
+    KEY `idx_status` (`status`),
+    KEY `idx_company` (`company_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物流表';
+```
+
+物流轨迹明细表，用于记录每条物流的状态变更历史：
+
+```sql
+CREATE TABLE `logistics_track` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `logistics_id`    BIGINT       NOT NULL               COMMENT '物流主表ID',
+    `tracking_no`     VARCHAR(64)  NOT NULL               COMMENT '物流单号',
+    `status`          TINYINT      NOT NULL               COMMENT '当前状态',
+    `status_desc`     VARCHAR(128) NOT NULL               COMMENT '状态描述，如"已到达XX分拨中心"',
+    `operator`        VARCHAR(64)  DEFAULT NULL           COMMENT '操作人',
+    `operated_at`     DATETIME     NOT NULL               COMMENT '操作时间',
+    `remark`          VARCHAR(256) DEFAULT NULL           COMMENT '备注',
+    `created_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_logistics_id` (`logistics_id`),
+    KEY `idx_tracking_no` (`tracking_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物流轨迹明细表';
+```
+
+### 1.2 发货流程
+
+发货流程由支付成功事件触发，经过多个系统协作完成：
+
+```java
+// 支付回调 -> 发货流程入口
+@Component
+public class PaymentCallbackHandler {
+
+    @Autowired
+    private OrderService orderService;
+    @Autowired
+    private WarehouseRpcClient warehouseRpcClient;
+    @Autowired
+    private LogisticsService logisticsService;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
+    /**
+     * 支付成功回调处理
+     */
+    @Transactional
+    public void handlePaymentSuccess(PaymentSuccessEvent event) {
+        // 1. 更新订单状态为"已支付"
+        orderService.updateOrderStatus(event.getOrderId(), OrderStatus.PAID);
+
+        // 2. 发送发货指令给仓储系统（通过MQ异步通知）
+        warehouseRpcClient.deliverOrder(event.getOrderId());
+    }
+
+    /**
+     * 仓储系统发货完成后回调
+     */
+    public void onWarehouseDelivered(WarehouseDeliverEvent event) {
+        Long orderId = event.getOrderId();
+        String trackingNo = event.getTrackingNo();
+        String companyCode = event.getCompanyCode();
+
+        // 3. 写入物流记录
+        logisticsService.createLogistics(orderId, trackingNo, companyCode, event.getReceiverInfo());
+
+        // 4. 更新订单为"已发货"
+        orderService.updateOrderStatus(orderId, OrderStatus.SHIPPED);
+
+        // 5. 发送发货通知给用户
+        notificationService.notifyUser(orderId, NotificationType.SHIPPED);
+    }
+}
+```
+
+发货流程时序图（文字描述）：
+
+```
+用户下单 -> 支付成功
+   |
+   v
+支付回调 Handler
+   |
+   v
+更新订单状态为 PAID
+   |
+   v
+发送 MQ 消息给仓储系统 -----> 仓储系统 WMS 接单
+   |                                 |
+   |                           打印面单 / 拣货 / 打包
+   |                                 |
+   |                           出库扫描 -> 生成物流单号
+   |                                 |
+   v                                 v
+仓储回传发货结果 (MQ) <--------- 调用快递公司 API 下单
+   |
+   v
+写入 logistics 表 + 更新订单状态为 SHIPPED
+   |
+   v
+发送站内信 / Push 通知用户
+```
+
+### 1.3 物流状态回调（Webhook）
+
+三方物流平台通过 Webhook 将物流状态变更推送回电商系统：
+
+```java
+@RestController
+@RequestMapping("/api/webhook/logistics")
+public class LogisticsWebhookController {
+
+    @Autowired
+    private LogisticsService logisticsService;
+
+    /**
+     * 接收第三方物流平台的状态回调
+     * 请求来源需校验签名，防止伪造回调
+     */
+    @PostMapping("/status/callback")
+    public Result<Void> receiveStatusCallback(@RequestBody LogisticsCallbackRequest request,
+                                              @RequestHeader("X-Signature") String signature) {
+        // 1. 验签
+        if (!verifySignature(request, signature)) {
+            throw new SecurityException("Invalid signature");
+        }
+
+        // 2. 处理轨迹更新
+        logisticsService.updateTracking(request.getTrackingNo(),
+                                        request.getStatus(),
+                                        request.getStatusDesc(),
+                                        request.getOperator(),
+                                        request.getOperatedAt());
+
+        // 3. 如果签收，更新订单状态
+        if (LogisticsStatus.SIGNED.getCode().equals(request.getStatus())) {
+            logisticsService.handleSigned(request.getTrackingNo());
+        }
+
+        return Result.success();
+    }
+
+    private boolean verifySignature(LogisticsCallbackRequest request, String signature) {
+        // 签名算法：MD5(apiSecret + trackingNo + status + timestamp)
+        String raw = apiSecret + request.getTrackingNo() + request.getStatus() + request.getTimestamp();
+        String expected = DigestUtils.md5DigestAsHex(raw.getBytes(StandardCharsets.UTF_8));
+        return expected.equals(signature);
+    }
+}
+```
+
+回调请求体示例：
+
+```json
+{
+  "trackingNo": "SF1234567890",
+  "status": "3",
+  "statusDesc": "快件已签收",
+  "operator": "张三",
+  "operatedAt": "2026-06-22 14:30:00",
+  "timestamp": 1758522600000,
+  "signature": "e10adc3949ba59abbe56e057f20f883e"
+}
+```
+
+### 1.4 物流轨迹查询
+
+集成快递鸟/菜鸟裹裹等第三方平台查询实时轨迹：
+
+```java
+@Service
+public class LogisticsTrackService {
+
+    @Value("${kuaidi100.api-key}")
+    private String apiKey;
+
+    @Value("${kuaidi100.api-secret}")
+    private String apiSecret;
+
+    /**
+     * 查询物流轨迹
+     * 优先查本地缓存，缓存未命中则调三方 API
+     */
+    public List<TrackItem> queryTracking(String trackingNo, String companyCode) {
+        // 1. 查本地缓存（Redis）
+        String cacheKey = "logistics:track:" + trackingNo;
+        List<TrackItem> cached = redisTemplate.opsForList().range(cacheKey, 0, -1);
+        if (!CollectionUtils.isEmpty(cached)) {
+            return cached;
+        }
+
+        // 2. 调用三方 API 查询
+        List<TrackItem> tracks = doQueryFromThirdParty(trackingNo, companyCode);
+
+        // 3. 写入本地缓存（过期时间 30 分钟）
+        if (!CollectionUtils.isEmpty(tracks)) {
+            redisTemplate.opsForList().rightPushAll(cacheKey, tracks);
+            redisTemplate.expire(cacheKey, 30, TimeUnit.MINUTES);
+        }
+
+        return tracks;
+    }
+
+    private List<TrackItem> doQueryFromThirdParty(String trackingNo, String companyCode) {
+        // 构建请求参数
+        Map<String, String> params = new HashMap<>();
+        params.put("com", companyCode);
+        params.put("num", trackingNo);
+
+        // 调用快递鸟 / 菜鸟裹裹 API
+        String response = HttpUtil.post("https://api.kuaidi100.com/query",
+                                        buildSignedParams(params));
+
+        // 解析响应
+        return JSON.parseArray(JSON.parseObject(response).getString("data"), TrackItem.class);
+    }
+
+    private Map<String, String> buildSignedParams(Map<String, String> params) {
+        // 计算签名
+        String sign = DigestUtils.md5DigestAsHex(
+            (params.get("com") + params.get("num") + apiKey + apiSecret).getBytes());
+        params.put("sign", sign);
+        return params;
+    }
+}
+```
+
+***
+
+## 二、通知系统
+
+### 2.1 通知类型与优先级
+
+电商系统需要触达用户的渠道主要有四种，各自有不同的适用场景：
+
+| 渠道 | 适用场景 | 实时性 | 成本 | 依赖 |
+|------|---------|--------|------|------|
+| 短信 | 验证码、支付结果、发货通知 | 高 | 高 | 阿里云/腾讯云 SMS |
+| 邮件 | 账单、营销活动、周报 | 低 | 低 | SMTP / SendGrid |
+| App Push | 订单状态变更、优惠券到账 | 高 | 中 | 个推/极光/FCM |
+| 站内信 | 系统公告、消息中心 | 低 | 无 | 自研 |
+
+```java
+public enum NotificationChannel {
+    SMS(1, "短信", 90),      // 权重 90
+    EMAIL(2, "邮件", 40),    // 权重 40
+    APP_PUSH(3, "App推送", 80),  // 权重 80
+    SITE_MSG(4, "站内信", 50);   // 权重 50
+
+    private final int code;
+    private final String desc;
+    private final int weight;  // 渠道优先级权重，越高越优先
+
+    NotificationChannel(int code, String desc, int weight) {
+        this.code = code;
+        this.desc = desc;
+        this.weight = weight;
+    }
+}
+```
+
+### 2.2 通知模板设计
+
+模板通过 ID 标识，内容中采用占位符 `{0}`、`{1}` 实现参数化，避免硬编码拼接。
+
+```sql
+CREATE TABLE `notification_template` (
+    `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `template_id` VARCHAR(64)  NOT NULL               COMMENT '模板标识，如 ORDER_SHIPPED',
+    `channel`     TINYINT      NOT NULL               COMMENT '渠道：1-SMS 2-EMAIL 3-PUSH 4-SITE',
+    `title`       VARCHAR(256) DEFAULT NULL           COMMENT '标题模板，邮件/Push/站内信用',
+    `content`     TEXT         NOT NULL               COMMENT '内容模板，如"您的订单{0}已发货，物流单号{1}"',
+    `variables`   VARCHAR(256) NOT NULL               COMMENT '变量列表，逗号分隔：orderId,trackingNo',
+    `status`      TINYINT      NOT NULL DEFAULT 1     COMMENT '0-禁用 1-启用',
+    `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_template_channel` (`template_id`, `channel`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知模板表';
+```
+
+模板渲染引擎：
+
+```java
+@Component
+public class NotificationTemplateEngine {
+
+    @Autowired
+    private NotificationTemplateMapper templateMapper;
+
+    /**
+     * 渲染模板内容
+     *
+     * @param templateId 模板ID，如 ORDER_SHIPPED
+     * @param channel    通知渠道
+     * @param params     参数映射，如 {"orderId": "20260622001", "trackingNo": "SF123456"}
+     * @return 渲染后的标题和内容
+     */
+    public RenderedNotification render(String templateId, NotificationChannel channel,
+                                       Map<String, String> params) {
+        NotificationTemplate template = templateMapper.findByTemplateIdAndChannel(templateId, channel.getCode());
+        if (template == null) {
+            throw new IllegalArgumentException("Template not found: " + templateId + "/" + channel);
+        }
+
+        String title = template.getTitle();
+        String content = template.getContent();
+
+        // 按模板定义的变量顺序替换
+        String[] variables = template.getVariables().split(",");
+        for (int i = 0; i < variables.length; i++) {
+            String value = params.getOrDefault(variables[i].trim(), "");
+            title = title.replace("{" + i + "}", value);
+            content = content.replace("{" + i + "}", value);
+        }
+
+        return new RenderedNotification(title, content);
+    }
+}
+```
+
+模板配置示例（数据库种子数据）：
+
+```sql
+-- 发货通知 - 短信
+INSERT INTO `notification_template` (`template_id`, `channel`, `content`, `variables`) VALUES
+('ORDER_SHIPPED', 1, '您的订单{0}已由{1}发出，物流单号{2}，请留意查收。', 'orderId,company,trackingNo');
+
+-- 发货通知 - 站内信
+INSERT INTO `notification_template` (`template_id`, `channel`, `title`, `content`, `variables`) VALUES
+('ORDER_SHIPPED', 4, '订单发货通知', '您的订单{0}已发货，物流公司：{1}，单号：{2}，点击查看详情。', 'orderId,company,trackingNo');
+```
+
+### 2.3 通知渠道管理
+
+渠道管理需要支持权重排序、故障降级和灰度切换：
+
+```java
+@Service
+public class NotificationRouter {
+
+    @Autowired
+    private List<NotificationSender> senders; // 所有渠道的发送器
+
+    @Autowired
+    private ChannelHealthManager healthManager;
+
+    /**
+     * 选择最优的可用渠道发送通知
+     * 按权重从高到低选择，若渠道故障则降级
+     */
+    public void send(Notification notification) {
+        // 按权重降序排列发送渠道
+        List<NotificationChannel> channels = Arrays.stream(NotificationChannel.values())
+            .sorted(Comparator.comparingInt(NotificationChannel::getWeight).reversed())
+            .collect(Collectors.toList());
+
+        boolean sent = false;
+        for (NotificationChannel channel : channels) {
+            // 检查渠道是否健康
+            if (!healthManager.isHealthy(channel)) {
+                log.warn("Channel {} is unhealthy, downgrading", channel);
+                continue;
+            }
+
+            try {
+                NotificationSender sender = findSender(channel);
+                sender.send(notification);
+                sent = true;
+                break; // 发送成功则终止
+            } catch (Exception e) {
+                log.error("Send via {} failed, will try next channel", channel, e);
+                healthManager.recordFailure(channel); // 记录失败，用于熔断
+            }
+        }
+
+        if (!sent) {
+            // 所有渠道均失败，进入人工处理队列
+            manualInterventionService.enqueue(notification);
+        }
+    }
+
+    private NotificationSender findSender(NotificationChannel channel) {
+        return senders.stream()
+            .filter(s -> s.supports(channel))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("No sender for " + channel));
+    }
+}
+```
+
+渠道健康管理器（熔断降级）：
+
+```java
+@Component
+public class ChannelHealthManager {
+
+    private final Map<NotificationChannel, AtomicInteger> failureCount = new ConcurrentHashMap<>();
+    private final Map<NotificationChannel, Long> circuitOpenUntil = new ConcurrentHashMap<>();
+
+    private static final int FAILURE_THRESHOLD = 5;      // 连续失败 5 次开启熔断
+    private static final long CIRCUIT_OPEN_DURATION_MS = 30_000; // 熔断持续 30 秒
+
+    public boolean isHealthy(NotificationChannel channel) {
+        Long until = circuitOpenUntil.get(channel);
+        if (until != null) {
+            if (System.currentTimeMillis() < until) {
+                return false; // 熔断中
+            }
+            // 熔断时间到，尝试半开
+            circuitOpenUntil.remove(channel);
+            failureCount.remove(channel);
+        }
+        return true;
+    }
+
+    public void recordFailure(NotificationChannel channel) {
+        AtomicInteger counter = failureCount.computeIfAbsent(channel, k -> new AtomicInteger(0));
+        if (counter.incrementAndGet() >= FAILURE_THRESHOLD) {
+            circuitOpenUntil.put(channel, System.currentTimeMillis() + CIRCUIT_OPEN_DURATION_MS);
+            log.warn("Circuit opened for channel {} due to failures", channel);
+        }
+    }
+
+    public void recordSuccess(NotificationChannel channel) {
+        failureCount.remove(channel);
+    }
+}
+```
+
+### 2.4 消息去重（通知幂等性）
+
+同一通知不能重复发送，通过唯一键 + 去重表实现：
+
+```sql
+CREATE TABLE `notification_idempotent` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `idempotent_key`  VARCHAR(128) NOT NULL               COMMENT '幂等键，如 NOTIFY:ORDER_SHIPPED:10086',
+    `notification_id` BIGINT       DEFAULT NULL           COMMENT '通知记录ID',
+    `status`          TINYINT      NOT NULL DEFAULT 0     COMMENT '0-处理中 1-已完成',
+    `created_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_idempotent_key` (`idempotent_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知幂等去重表';
+```
+
+```java
+@Service
+public class IdempotentNotificationService {
+
+    @Autowired
+    private NotificationIdempotentMapper idempotentMapper;
+    @Autowired
+    private NotificationService notificationService;
+
+    /**
+     * 幂等发送通知
+     */
+    public void sendIdempotent(String templateId, Long userId, Map<String, String> params) {
+        String idempotentKey = String.format("NOTIFY:%s:%d:%d", templateId, userId, params.hashCode());
+
+        // INSERT IGNORE / 唯一索引防重
+        NotificationIdempotent record = new NotificationIdempotent();
+        record.setIdempotentKey(idempotentKey);
+        record.setStatus(0);
+
+        try {
+            idempotentMapper.insert(record);
+        } catch (DuplicateKeyException e) {
+            log.info("Duplicate notification, skip: {}", idempotentKey);
+            return; // 已存在，说明已发送
+        }
+
+        // 执行发送
+        try {
+            notificationService.send(templateId, userId, params);
+            idempotentMapper.updateStatus(idempotentKey, 1);
+        } catch (Exception e) {
+            idempotentMapper.deleteByIdempotentKey(idempotentKey); // 失败则删除，允许重试
+            throw e;
+        }
+    }
+}
+```
+
+### 2.5 失败重试机制
+
+通知发送失败后，最多重试 3 次，最终仍失败则转人工处理。
+
+```sql
+CREATE TABLE `notification_retry` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `notification_id` BIGINT       NOT NULL               COMMENT '通知记录ID',
+    `channel`         TINYINT      NOT NULL               COMMENT '发送渠道',
+    `retry_count`     TINYINT      NOT NULL DEFAULT 0     COMMENT '已重试次数',
+    `max_retries`     TINYINT      NOT NULL DEFAULT 3     COMMENT '最大重试次数',
+    `last_error`      VARCHAR(512) DEFAULT NULL           COMMENT '上次错误信息',
+    `next_retry_at`   DATETIME     DEFAULT NULL           COMMENT '下次重试时间',
+    `status`          TINYINT      NOT NULL DEFAULT 0     COMMENT '0-待重试 1-成功 2-最终失败',
+    `created_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_next_retry` (`next_retry_at`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知重试表';
+```
+
+```java
+@Component
+public class NotificationRetryHandler {
+
+    @Autowired
+    private NotificationRetryMapper retryMapper;
+    @Autowired
+    private NotificationService notificationService;
+    @Autowired
+    private ManualInterventionService manualInterventionService;
+
+    /**
+     * 定时任务：扫描待重试通知（每 30 秒执行一次）
+     */
+    @Scheduled(fixedRate = 30_000)
+    public void processRetryQueue() {
+        List<NotificationRetry> pendingRetries = retryMapper.findPendingRetries();
+
+        for (NotificationRetry retry : pendingRetries) {
+            processRetry(retry);
+        }
+    }
+
+    private void processRetry(NotificationRetry retry) {
+        try {
+            // 计算退避时间：指数退避 2^n * 10秒
+            long delay = (long) Math.pow(2, retry.getRetryCount()) * 10_000;
+            Thread.sleep(delay);
+
+            notificationService.resend(retry.getNotificationId(), retry.getChannel());
+            retryMapper.markSuccess(retry.getId());
+        } catch (Exception e) {
+            int newRetryCount = retry.getRetryCount() + 1;
+            if (newRetryCount >= retry.getMaxRetries()) {
+                // 超过最大重试次数，转人工
+                retryMapper.markFinalFailure(retry.getId(), e.getMessage());
+                manualInterventionService.createTicket(
+                    String.format("通知发送失败，通知ID: %d, 渠道: %s, 错误: %s",
+                                  retry.getNotificationId(), retry.getChannel(), e.getMessage())
+                );
+            } else {
+                // 更新下次重试时间
+                retryMapper.updateRetry(retry.getId(), newRetryCount, e.getMessage());
+            }
+        }
+    }
+}
+```
+
+***
+
+## 三、MQ 消息驱动
+
+### 3.1 事件表 + 消息表设计（可靠消息最终一致性）
+
+在分布式系统中，消息发送与业务操作的原子性是一个核心问题。采用"本地事件表 + 消息表"方案实现最终一致性。
+
+```sql
+-- 本地事件表：记录业务领域事件
+CREATE TABLE `domain_event` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `event_id`        VARCHAR(64)  NOT NULL               COMMENT '全局唯一事件ID（UUID）',
+    `event_type`      VARCHAR(64)  NOT NULL               COMMENT '事件类型，如 ORDER_PAID',
+    `event_body`      JSON         NOT NULL               COMMENT '事件体（JSON）',
+    `publisher`       VARCHAR(64)  NOT NULL               COMMENT '发布者服务名',
+    `status`          TINYINT      NOT NULL DEFAULT 0     COMMENT '0-待发布 1-已发布 2-已消费',
+    `max_retries`     TINYINT      NOT NULL DEFAULT 5     COMMENT '最大重试次数',
+    `retry_count`     TINYINT      NOT NULL DEFAULT 0     COMMENT '已重试次数',
+    `created_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `published_at`    DATETIME     DEFAULT NULL           COMMENT '发布时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_event_id` (`event_id`),
+    KEY `idx_status_created` (`status`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='领域事件表';
+
+-- 消息表：记录发送到 MQ 的消息轨迹
+CREATE TABLE `message_record` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `msg_id`          VARCHAR(64)  NOT NULL               COMMENT '消息全局唯一ID',
+    `event_id`        VARCHAR(64)  NOT NULL               COMMENT '关联事件ID',
+    `topic`           VARCHAR(128) NOT NULL               COMMENT 'MQ Topic',
+    `tags`            VARCHAR(64)  DEFAULT NULL           COMMENT '消息 Tag',
+    `message_body`    TEXT         NOT NULL               COMMENT '消息体',
+    `status`          TINYINT      NOT NULL DEFAULT 0     COMMENT '0-待发送 1-已发送 2-消费成功 3-消费失败 4-死信',
+    `retry_count`     TINYINT      NOT NULL DEFAULT 0     COMMENT '已重试次数',
+    `max_retries`     TINYINT      NOT NULL DEFAULT 3     COMMENT '最大重试次数',
+    `created_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_msg_id` (`msg_id`),
+    KEY `idx_event_id` (`event_id`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息记录表';
+```
+
+### 3.2 本地消息表 + 定时任务补偿
+
+```java
+@Service
+public class ReliableMessageProducer {
+
+    @Autowired
+    private DomainEventMapper eventMapper;
+    @Autowired
+    private MessageRecordMapper messageRecordMapper;
+    @Autowired
+    private RocketMQTemplate rocketMQTemplate;
+
+    /**
+     * 发布事件：事务性地写入事件表并发送消息
+     */
+    @Transactional
+    public void publishEvent(String eventType, Object eventBody) {
+        // 1. 生成事件 ID
+        String eventId = UUID.randomUUID().toString();
+
+        // 2. 写入本地事件表
+        DomainEvent event = new DomainEvent();
+        event.setEventId(eventId);
+        event.setEventType(eventType);
+        event.setEventBody(JSON.toJSONString(eventBody));
+        event.setPublisher(ApplicationContextHolder.getApplicationName());
+        event.setStatus(0);
+        eventMapper.insert(event);
+
+        // 3. 写入消息记录
+        MessageRecord msg = new MessageRecord();
+        msg.setMsgId(UUID.randomUUID().toString());
+        msg.setEventId(eventId);
+        msg.setTopic(resolveTopic(eventType));
+        msg.setTags(resolveTags(eventType));
+        msg.setMessageBody(JSON.toJSONString(eventBody));
+        msg.setStatus(0);
+        messageRecordMapper.insert(msg);
+
+        // 4. 发送消息
+        try {
+            rocketMQTemplate.syncSend(msg.getTopic(),
+                MessageBuilder.withPayload(msg.getMessageBody())
+                    .setHeader("eventId", eventId)
+                    .setHeader("msgId", msg.getMsgId())
+                    .build());
+
+            // 发送成功，更新状态
+            eventMapper.updateStatus(eventId, 1);
+            messageRecordMapper.updateStatus(msg.getMsgId(), 1);
+        } catch (Exception e) {
+            log.error("Send message failed, will be compensated by scheduled task", e);
+            // 不抛异常，由定时任务补偿
+        }
+    }
+}
+```
+
+定时任务补偿扫描：
+
+```java
+@Component
+public class MessageCompensator {
+
+    @Autowired
+    private MessageRecordMapper messageRecordMapper;
+    @Autowired
+    private RocketMQTemplate rocketMQTemplate;
+
+    /**
+     * 每 10 秒扫描一次未成功发送的消息
+     */
+    @Scheduled(fixedDelay = 10_000)
+    public void compensate() {
+        // 查询待发送且未超过最大重试次数的消息
+        List<MessageRecord> pendingMessages = messageRecordMapper.findPendingMessages(3);
+
+        for (MessageRecord msg : pendingMessages) {
+            try {
+                rocketMQTemplate.syncSend(msg.getTopic(), msg.getMessageBody());
+                messageRecordMapper.updateStatus(msg.getMsgId(), 1);
+                log.info("Compensated message: {}", msg.getMsgId());
+            } catch (Exception e) {
+                int newRetry = msg.getRetryCount() + 1;
+                if (newRetry >= msg.getMaxRetries()) {
+                    messageRecordMapper.markDeadLetter(msg.getMsgId(), e.getMessage());
+                    log.error("Message {} becomes dead letter", msg.getMsgId());
+                } else {
+                    messageRecordMapper.incrementRetry(msg.getMsgId(), newRetry);
+                }
+            }
+        }
+    }
+}
+```
+
+### 3.3 RocketMQ 事务消息示例
+
+RocketMQ 的事务消息将"本地事务执行"和"消息发送"合并为一个原子操作，是比本地消息表更优雅的方案。
+
+```java
+@Service
+public class OrderTransactionProducer {
+
+    @Autowired
+    private RocketMQTemplate rocketMQTemplate;
+    @Autowired
+    private OrderMapper orderMapper;
+
+    /**
+     * 发送半消息并执行本地事务
+     */
+    public void createOrderWithTransaction(OrderCreateRequest request) {
+        // 构造消息
+        Message<OrderCreateRequest> message = MessageBuilder.withPayload(request).build();
+
+        // 发送事务消息：RocketMQ 会先持久化半消息，然后回调 executeLocalTransaction
+        TransactionSendResult result = rocketMQTemplate.sendMessageInTransaction(
+            "order-tx-group",
+            "ORDER-CREATE",
+            message,
+            request  // 作为 arg 传给执行器
+        );
+
+        if (result.getLocalTransactionState() != LocalTransactionState.COMMIT_MESSAGE) {
+            throw new RuntimeException("Transaction failed: " + result.getLocalTransactionState());
+        }
+    }
+}
+```
+
+```java
+/**
+ * RocketMQ 事务消息监听器
+ * RocketMQ 在发送半消息后会回调此执行器中的本地事务逻辑
+ */
+@RocketMQTransactionListener(txProducerGroup = "order-tx-group")
+public class OrderTransactionListener implements RocketMQLocalTransactionListener {
+
+    @Autowired
+    private OrderService orderService;
+
+    /**
+     * 执行本地事务（在半消息发送成功后回调）
+     */
+    @Override
+    @Transactional
+    public RocketMQLocalTransactionState executeLocalTransaction(Message msg, Object arg) {
+        try {
+            OrderCreateRequest request = (OrderCreateRequest) arg;
+
+            // 执行本地事务：创建订单
+            orderService.createOrder(request);
+
+            // 本地事务成功，提交消息，消费者可见
+            return RocketMQLocalTransactionState.COMMIT;
+        } catch (Exception e) {
+            log.error("Local transaction failed, will rollback message", e);
+            // 回滚消息，消费者不可见
+            return RocketMQLocalTransactionState.ROLLBACK;
+        }
+    }
+
+    /**
+     * 回查本地事务状态
+     * RocketMQ 长时间未收到提交/回滚状态时，会回调此方法进行状态回查
+     */
+    @Override
+    public RocketMQLocalTransactionState checkLocalTransaction(Message msg) {
+        String orderId = (String) msg.getHeaders().get("orderId");
+
+        // 查订单是否存在来判断事务是否成功
+        Order order = orderService.findByOrderId(orderId);
+        if (order != null) {
+            return RocketMQLocalTransactionState.COMMIT;
+        }
+        return RocketMQLocalTransactionState.UNKNOWN;
+    }
+}
+```
+
+### 3.4 消息处理幂等性
+
+消息消费者需要保证幂等，即同一条消息重复消费不会产生副作用。
+
+```java
+@Component
+@RocketMQMessageListener(topic = "ORDER-PAID", consumerGroup = "order-paid-consumer")
+public class OrderPaidConsumer implements RocketMQListener<String> {
+
+    @Autowired
+    private IdempotentService idempotentService;
+    @Autowired
+    private OrderService orderService;
+
+    @Override
+    public void onMessage(String message) {
+        OrderPaidEvent event = JSON.parseObject(message, OrderPaidEvent.class);
+
+        // 幂等键：消息ID + 事件类型
+        String idempotentKey = "PAID:" + event.getOrderId() + ":" + event.getPaidAmount();
+
+        // 去重表实现幂等
+        if (!idempotentService.tryProcess(idempotentKey)) {
+            log.info("Duplicate message, skip: {}", idempotentKey);
+            return;
+        }
+
+        try {
+            // 核心业务逻辑：处理支付成功
+            orderService.processPaymentSuccess(event.getOrderId(), event.getPaidAmount());
+
+            idempotentService.markCompleted(idempotentKey);
+        } catch (Exception e) {
+            idempotentService.markFailed(idempotentKey);
+            throw e; // 抛异常触发 MQ 重试
+        }
+    }
+}
+```
+
+```java
+/**
+ * 幂等方法：使用数据库唯一索引或 Redis SETNX
+ */
+@Component
+public class IdempotentService {
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    private static final long LOCK_TTL_SECONDS = 3600; // 去重记录保留 1 小时
+
+    /**
+     * 尝试获取处理权限
+     * @return true 表示首次处理，false 表示已处理过
+     */
+    public boolean tryProcess(String key) {
+        // Redis SETNX：key 不存在则设置成功并返回 true
+        Boolean success = redisTemplate.opsForValue()
+            .setIfAbsent("idempotent:" + key, "1", Duration.ofSeconds(LOCK_TTL_SECONDS));
+        return Boolean.TRUE.equals(success);
+    }
+
+    public void markCompleted(String key) {
+        redisTemplate.opsForValue()
+            .set("idempotent:" + key, "2", Duration.ofSeconds(LOCK_TTL_SECONDS));
+    }
+
+    public void markFailed(String key) {
+        redisTemplate.delete("idempotent:" + key);
+    }
+}
+```
+
+***
+
+## 四、对账系统
+
+### 4.1 订单对账（订单金额 vs 支付金额）
+
+每日凌晨执行 T+1 对账，核验订单金额与支付渠道返回金额的一致性。
+
+```java
+@Component
+public class OrderReconciliationJob {
+
+    @Autowired
+    private OrderMapper orderMapper;
+    @Autowired
+    private PaymentRecordMapper paymentRecordMapper;
+    @Autowired
+    private ReconciliationResultMapper resultMapper;
+
+    /**
+     * 每日凌晨 2:00 执行订单对账
+     */
+    @Scheduled(cron = "0 0 2 * * ?")
+    public void reconcileOrders() {
+        // 获取昨日所有已支付订单
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        List<Order> orders = orderMapper.findPaidOrdersBetween(yesterday.atStartOfDay(),
+                                                                yesterday.plusDays(1).atStartOfDay());
+
+        for (Order order : orders) {
+            // 查询支付记录
+            PaymentRecord payment = paymentRecordMapper.findByOrderId(order.getId());
+
+            if (payment == null) {
+                saveMismatch(order.getId(), "NO_PAYMENT", "订单无支付记录");
+                continue;
+            }
+
+            // 比对金额：注意单位统一（分）
+            if (!order.getPayAmount().equals(payment.getAmount())) {
+                saveMismatch(order.getId(), "AMOUNT_MISMATCH",
+                    String.format("订单金额=%d, 支付金额=%d", order.getPayAmount(), payment.getAmount()));
+                continue;
+            }
+
+            // 比对状态
+            if (!"SUCCESS".equals(payment.getStatus())) {
+                saveMismatch(order.getId(), "PAYMENT_NOT_SUCCESS",
+                    "支付状态为: " + payment.getStatus());
+            }
+        }
+    }
+
+    private void saveMismatch(Long orderId, String type, String detail) {
+        ReconciliationResult result = new ReconciliationResult();
+        result.setBizType("ORDER");
+        result.setBizId(orderId);
+        result.setMismatchType(type);
+        result.setDetail(detail);
+        result.setStatus(0); // 待处理
+        resultMapper.insert(result);
+    }
+}
+```
+
+### 4.2 库存对账（系统库存 vs 实际库存）
+
+```java
+@Component
+public class InventoryReconciliationJob {
+
+    @Autowired
+    private InventoryMapper inventoryMapper;
+    @Autowired
+    private ReconciliationResultMapper resultMapper;
+    @Autowired
+    private WarehouseRpcClient warehouseRpcClient;
+
+    /**
+     * 每日凌晨 3:00 执行库存对账
+     */
+    @Scheduled(cron = "0 0 3 * * ?")
+    public void reconcileInventory() {
+        // 获取所有 SKU
+        List<Sku> allSkus = inventoryMapper.findAllSkus();
+
+        for (Sku sku : allSkus) {
+            // 系统库存
+            Integer systemStock = inventoryMapper.getStockBySkuId(sku.getId());
+            // 调用 WMS 获取实际库存
+            Integer actualStock = warehouseRpcClient.getActualStock(sku.getSkuCode());
+
+            if (!systemStock.equals(actualStock)) {
+                int diff = Math.abs(systemStock - actualStock);
+                if (diff > sku.getToleranceThreshold()) {
+                    saveMismatch(sku.getId(), "INVENTORY_MISMATCH",
+                        String.format("SKU=%s, 系统=%d, 实际=%d, 差异=%d",
+                                      sku.getSkuCode(), systemStock, actualStock, diff));
+                }
+            }
+        }
+    }
+}
+```
+
+### 4.3 渠道对账（支付宝/微信账单核对）
+
+```java
+@Component
+public class ChannelReconciliationJob {
+
+    @Autowired
+    private PaymentRecordMapper paymentRecordMapper;
+    @Autowired
+    private ReconciliationResultMapper resultMapper;
+    @Autowired
+    private AlipayClient alipayClient;
+    @Autowired
+    private WechatPayClient wechatPayClient;
+
+    /**
+     * 每日凌晨 4:00 执行渠道对账
+     */
+    @Scheduled(cron = "0 0 4 * * ?")
+    public void reconcileChannels() {
+        // 1. 下载支付宝对账单
+        reconcileAlipay();
+        // 2. 下载微信对账单
+        reconcileWechatPay();
+    }
+
+    private void reconcileAlipay() {
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        // 调用支付宝对账单下载接口
+        AlipayBill bill = alipayClient.downloadBill(yesterday);
+
+        for (AlipayBillRecord record : bill.getRecords()) {
+            // 查找本地支付记录
+            PaymentRecord local = paymentRecordMapper.findByOutTradeNo(record.getOutTradeNo());
+
+            if (local == null) {
+                // 渠道有但系统没有 => 长款
+                saveMismatch("ALIPAY", "LONG_BILL", record.getOutTradeNo(),
+                    "渠道存在但系统无此交易, 金额=" + record.getAmount());
+                continue;
+            }
+
+            if (!local.getAmount().equals(record.getAmount())) {
+                // 金额不一致
+                saveMismatch("ALIPAY", "AMOUNT_MISMATCH", record.getOutTradeNo(),
+                    String.format("系统=%d, 渠道=%d", local.getAmount(), record.getAmount()));
+            }
+        }
+
+        // 检查系统有但渠道没有的记录（短款）
+        List<PaymentRecord> localRecords = paymentRecordMapper.findByChannelAndDate("ALIPAY", yesterday);
+        Set<String> channelTradeNos = bill.getRecords().stream()
+            .map(AlipayBillRecord::getOutTradeNo).collect(Collectors.toSet());
+
+        for (PaymentRecord local : localRecords) {
+            if (!channelTradeNos.contains(local.getOutTradeNo())) {
+                saveMismatch("ALIPAY", "SHORT_BILL", local.getOutTradeNo(),
+                    "系统存在但渠道无此交易, 金额=" + local.getAmount());
+            }
+        }
+    }
+
+    private void reconcileWechatPay() {
+        // 逻辑与支付宝对账类似，略
+    }
+
+    private void saveMismatch(String channel, String type, String tradeNo, String detail) {
+        ReconciliationResult result = new ReconciliationResult();
+        result.setBizType("CHANNEL_" + channel);
+        result.setBizId(tradeNo);
+        result.setMismatchType(type);
+        result.setDetail(detail);
+        result.setStatus(0);
+        resultMapper.insert(result);
+    }
+}
+```
+
+对账结果汇总表：
+
+```sql
+CREATE TABLE `reconciliation_result` (
+    `id`             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `biz_type`       VARCHAR(32)  NOT NULL               COMMENT '业务类型：ORDER/INVENTORY/CHANNEL_ALIPAY/CHANNEL_WX',
+    `biz_id`         VARCHAR(64)  NOT NULL               COMMENT '业务ID：订单ID/SKU ID/交易号',
+    `mismatch_type`  VARCHAR(32)  NOT NULL               COMMENT '差异类型',
+    `detail`         TEXT                                  COMMENT '差异详情',
+    `status`         TINYINT      NOT NULL DEFAULT 0     COMMENT '0-待处理 1-已确认 2-已修复',
+    `handler`        VARCHAR(64)  DEFAULT NULL           COMMENT '处理人',
+    `handled_at`     DATETIME     DEFAULT NULL           COMMENT '处理时间',
+    `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_biz_type_status` (`biz_type`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='对账差异结果表';
+```
+
+***
+
+> **总结**：物流与通知系统是电商平台中面向用户的最后环节，直接影响用户体验。物流系统需要关注表结构设计、流程编排以及第三方对接的健壮性；通知系统则要围绕多渠道路由、模板化、幂等性和可靠性来设计；MQ 消息驱动是打通各系统的枢纽，需要保证消息不丢失、不重复、最终一致；对账系统则是资金安全的最后一道防线，必须确保每笔交易都能正确核验。

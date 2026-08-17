@@ -1,0 +1,142 @@
+---
+url: >-
+  /my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/4-ren-lei-shen-pi-yu-an-quan-shi-jian/index.md
+---
+# 人类审批与安全实践
+
+> Agent 越"全能"，越需要"刹车"。Deep Agents 官方内置了 **Human-in-the-loop（人在环内 / 人类审批）**能力：Agent 遇到危险操作时**停下来等你点头**。这一节讲怎么开、有什么坑、以及生产环境的整体安全姿势。
+
+## 一、为什么需要"人在环内"
+
+### 1.1 Agent 自主执行的风险
+
+一个能读文件、写文件、派子代理的 Agent，能力越强，失控代价越大：
+
+* 覆盖一个重要文件（把代码库改坏了）；
+* 发出一条不该发的消息；
+* 执行一笔不该执行的操作。
+
+> 🧠 **类比**：授权员工自主花钱可以，但**大额 / 不可逆**的支出必须"财务复核"。审批机制 = 给 Agent 设一道"财务复核"关卡。
+
+### 1.2 官方术语
+
+> **Human-in-the-loop（HITL）**：在自动流程中插入"人工确认"节点，流程运行到关键步骤时**中断（interrupt）**，等待人批准/拒绝，再决定继续或取消。
+
+***
+
+## 二、`interrupt_on`：一行开启审批
+
+Deep Agents 的做法非常"配置化"——你只要告诉它"**哪些操作需要先问人**"：
+
+```python
+from deepagents import create_deep_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+agent = create_deep_agent(
+    model="claude-sonnet-4-5-20250929",
+    interrupt_on={"write_file": True},   # ← 写文件前，先停下来等人确认
+    checkpointer=MemorySaver(),          # ← 审批必须配 checkpointer！
+)
+```
+
+> ⚠️ **关键规则（官方明确）**：**`interrupt_on` 必须配合 `checkpointer` 使用。** 原因：中断时要"存下当前位置和状态"，续跑时才能从断点继续。**只配 `interrupt_on` 不配 `checkpointer`，官方直接视为错误。**
+
+```python
+# ❌ 错误：只开了审批，没配 checkpointer
+agent = create_deep_agent(interrupt_on={"write_file": True})
+
+# ✅ 正确：审批 + checkpointer 成对出现
+agent = create_deep_agent(
+    interrupt_on={"write_file": True},
+    checkpointer=MemorySaver(),
+)
+```
+
+> 💡 **含义解释**：`interrupt_on` 是一个"操作 → 是否审批"的开关字典。`{"write_file": True}` 意思是"当 Agent 要写文件时，先中断等我确认"。同理可配 `edit_file`、`grep` 等内置操作，或自定义工具的审批策略。
+
+***
+
+## 三、审批的执行流程
+
+```text
+用户下达任务
+   │
+   ▼
+Agent 执行……到达"写文件"步骤
+   │
+   ├─ interrupt_on 命中 → 【中断】等待人工确认
+   │        │
+   │        ├─ 人工批准 → Agent 继续执行 write_file
+   │        └─ 人工拒绝 → Agent 跳过/取消该操作
+   │
+   ▼
+完成，返回结果
+```
+
+**在代码里体验中断**：
+
+```python
+config = {"configurable": {"thread_id": "session-1"}}
+
+# 第一次 invoke：Agent 执行到 write_file 时被 interrupt，返回等待状态
+result = agent.invoke(
+    {"messages": [{"role": "user", "content": "把总结写进 summary.md"}]},
+    config=config,
+)
+
+# 人工决定批准，用新的输入继续执行
+result = agent.invoke(
+    {"messages": [{"role": "user", "content": "批准"}]},
+    config=config,
+)
+```
+
+> 🔑 因为中断会存档，所以**续跑时 `config` 里的 `thread_id` 必须与中断时一致**——Agent 要回到"中断的那个断点"继续。
+
+***
+
+## 四、常见坑清单（汇总）
+
+| 坑 | 后果 | 正确做法 |
+|:---|:-----|:---------|
+| `interrupt_on` 不配 `checkpointer` | 报错，审批功能不可用 | 两者成对配置 |
+| `StoreBackend` 不传 `store` | 报错，记忆/技能无法工作 | `backend=StoreBackend(...)` + `store=...` |
+| 每次 invoke 不带 `thread_id` | Agent 失忆、审批断点丢失 | 统一用固定 `thread_id` |
+| 子代理想用主代理的 Skills | 子代理"不知道"技能 | 给每个子代理显式配 `skills` |
+| Skills 没配 `backend` | 技能加载不出来 | `FilesystemBackend` + `skills=[目录]` |
+| SKILL.md 缺 frontmatter / 描述含糊 | 技能存在但 Agent 不会用 | 写具体 `name` + `description` |
+| 给 Agent 过宽的 `root_dir` | 它能碰不该碰的文件 | 收敛到任务专用目录 |
+
+***
+
+## 五、安全最佳实践（生产环境清单）
+
+| 层级 | 建议 |
+|:-----|:-----|
+| **范围** | `root_dir` 只指向任务专用目录，`virtual_mode=False` |
+| **审批** | 对 `write_file` / `edit_file` 等会落盘/修改的操作开启 `interrupt_on` |
+| **记忆** | 长期记忆生产环境用持久化 Store（如 Postgres 版 Checkpointer/Store），别用 `MemorySaver` |
+| **密钥** | 模型密钥、`LANGSMITH_API_KEY` 只放环境变量，不写进代码/技能/提示词 |
+| **可观测** | 全程开启 LangSmith，任何异常都能回溯完整调用链 |
+| **最小权限** | 自定义工具只暴露"必需"的能力，越少越好 |
+
+> 💡 **官方边界回顾**：核心中间件（规划 / 文件 / 子代理）不可移除，但**审批开关、文件范围、后端存储**这些"危险旋钮"你都可以自由配置——**安全就是"把危险操作的旋钮拧紧"。**
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+为 Deep Agent 开启"写文件审批"，并验证"批准/拒绝"两条路径。
+
+### 步骤
+
+1. **建一个最小 Agent**：配 `interrupt_on={"write_file": True}` + `checkpointer=MemorySaver()`。
+2. **下达写文件任务**："把'你好'写入 hello.txt"。
+3. **观察第一次 invoke 被中断**：查看返回值，确认 Agent 停在"写文件"之前，没有真正写入。
+4. **批准继续**：用同一 `thread_id` 传入"批准"，确认 `hello.txt` 真的被创建。
+5. **再试拒绝路径**：换个 `thread_id` 再来一次，这次传"拒绝"，确认文件**没有**被创建。
+6. **故意犯错**：去掉 `checkpointer` 再开 `interrupt_on`，记录官方抛出的错误信息——把这个错误钉在脑子里。
+
+> 🧠 **思考题**：你现在已经集齐了 Deep Agents 的六种能力（规划、文件、子代理、记忆、Skills、审批）。下一阶段把它们连成实战项目，并用 LangSmith 全程监控——准备好了吗？

@@ -1,0 +1,216 @@
+---
+url: /my_notes/notes/前端开发/js/shang-chuan-tu-pian-ji-yu-lan/index.md
+---
+# 上传图片及预览
+
+## 说明
+
+使用技术：原生 js 上传图片的方法
+
+原生 js 构造函数：
+
+1. FormData
+2. XMLHttpRequest
+3. fileReader
+
+## 上传图片
+
+```html
+<input type="file" id="fileInput" />
+<button onclick="uploadFile()">上传</button>
+
+<script>
+	function uploadFile() {
+		//获取图片
+		var file = document.querySelector('#fileInput').files[0]
+		//创建formData对象，并将图片添加到formData中
+		var formData = new FormData()
+		formData.append('file', file)
+		// 利用xhr方式上传
+		var xhr = new XMLHttpRequest()
+		xhr.open('POST', '/upload')
+		xhr.onreadystatechange = function() {
+			if (xhr.status === 200 && xhr.readyState == 4) {
+				//文件上传成功
+			}
+		}
+		xhr.send(formData)
+	}
+</script>
+```
+
+## 图片预览
+
+```html
+<input type="file" id="fileInput" />
+<img id="echoImage" />
+<button>上传</button>
+
+<script>
+	//获取文件上传控件和预览图片的控件
+	var echoImage = document.querySelector('#echoImage')
+	var fileInput = document.querySelector('#fileInput')
+
+	//为文件上传控件添加onchanges事件
+	fileInput.onchange = function() {
+		//创建读取文件的对象
+		var fileReader = new FileReader()
+		//读取文件为base64格式
+		fileReader.readAsDataURL(this.files[0])
+		//文件读取成功
+		fileReader.onload = function(event) {
+			//读取到的文件放入img控件
+			echoImage.src = event.target.result
+		}
+	}
+</script>
+```
+
+## 大文件切片上传
+
+前端上传文件时如果文件很大，上传时会出现各种问题，比如连接超时了，网断了，都会导致上传失败。
+
+为了避免上传大文件时上传超时，就需要用到切片上传，工作原理是：我们将大文件切割为小文件，然后将切割的若干小文件上传到服务器端，服务器端接收到被切割的小文件，然后按照一定的顺序将小文件拼接合并成一个大文件。
+
+相较于单独上传一个文件而言，大文件上传在前端层面，多了一步切割的步骤，后端多了一步合并的步骤，只有前后端配合才能完成大文件切片上传。
+
+\*\*技术包括：\*\*H5（前端使用）和nodejs（后端使用）
+
+### 前端代码
+
+```js
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>upload</title>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="./uuid.js"></script>
+</head>
+<body>
+    <input type="file" name="file" id="file">
+    <button id="upload">上传</button>
+    <script type="text/javascript">
+        var bytesPerPiece = 1024 * 1024; // 每个文件切片大小定为1MB .
+        var totalPieces;   //切片总数
+        //发送请求
+        $("#upload").click(upload)
+        function upload() {
+            var blob = document.getElementById("file").files[0];
+            // 文件唯一标识符号，防止多个用户一起上传文件时切片混乱
+            var uuidfolder = uuidv1();
+            // 开始切割的位置
+            var start = 0;
+            // 切割的结束位置
+            var end;
+            // 切片的索引
+            var index = 0;
+            // 回调计数器
+            var count = 0;
+            // 文件的大小
+            var filesize = blob.size;
+            // 文件的名称
+            var filename = blob.name;
+            //计算文件切片总数
+            totalPieces = Math.ceil(filesize / bytesPerPiece);
+            // 启动while循环对文件切片
+            while(start < filesize) {
+                // 设置切片的结束位置
+                end = start + bytesPerPiece;
+                // 对最后一片数据进行处理（可以省略）
+                if(end > filesize) {
+                    end = filesize;
+                }
+                // 切割文件
+                var chunk = blob.slice(start,end);//切割文件
+                // 给每一片切片设置名字，名字的值为原始名称加索引，这样做是为了让后端可以按照索引顺序合并图片。
+                var sliceIndex= blob.name + index;
+                // 利用formData来传递数据
+                var formData = new FormData();
+                formData.append("file", chunk, sliceIndex);
+                formData.append("uuidfolder", uuidfolder);
+                formData.append("imgorder", index);
+                $.ajax({
+                    url: '/upload3',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,  // 不处理数据
+                    contentType: false,  // 不设置内容类型
+                }).done(function(res){ 
+                    count++;
+                    if(count==totalPieces){
+                        console.log("上传结束,请求拼接接口，将切片信息拼接完整，返回图片url");
+                        $.post('/merge',{id:uuidfolder},function(data){
+                            console.log(data);
+                        })
+                    }
+
+                }).fail(function(res) {
+                    console.log("上传失败")
+                });
+                start = end;
+                index++;
+            }
+        }
+    </script>
+</body>
+</html>
+```
+
+上面的代码启动了一个while循环，在这个循环中，每次截取固定大小的切片，然后用ajax上传到后端服务器，并且会附加一些比较重要的信息，这些信息主要包括：图片的唯一标识符（这里用到了uuid.js来生成唯一的id），切片的索引（为了后端按照切片顺序将切片合并），ajax每次上传完成后都要检查所有切片是否上传完成，全部上传完成后，请求合并接口，这个接口返回合并后的图片的url。
+
+前端将切片信息传递到后端，后端用过nodejs接受切片，然后按照索引将切片拼接成完整的文件，这里用到了两个工具包multer和concat-files，前一个是负责接收切片信息，后一个负责合并切片。
+
+这里一般的做法是设置两个接口，一个接口负责接收图片的切片信息，将其保存，另外一个接口负责拼接切片信息。这样做的原因是，如果用一个接口来操作的话，每张切片接收完成后都要去检查所有切片是否都接收完成，而只有当所有切片完成才能将切片合并，这样比较耗费服务端的性能。
+
+### 后端代码
+
+接口处理代码如下：
+
+```js
+// 接收切片信息接口
+router.post('/upload3', upload.single('file'), function (req, res, next) {
+  console.log(req.body)
+  // 接受图片唯一标识符号
+    let imgname = req.body.uuidfolder;
+    // 接受切片索引
+    let imgorder = req.body.imgorder;
+    // 建立图片存储目录
+    let imgpath = path.join(__dirname,'..','public/mult',imgname);
+    // 判断目录是否存在，存在的话直接使用并存储切片，不存在的话就新建。
+    if (fs.existsSync(imgpath)) {
+      fs.readFile(req.file.path, function (err, data) {
+        fs.writeFile(path.join(imgpath, imgorder), data, (err) => {
+          if (!err) {
+            res.send("写入后面的文件")
+          }
+        })
+      })
+    } else {
+      fs.mkdirSync(imgpath);
+      fs.readFile(req.file.path, function (err, data) {
+        fs.writeFile(path.join(imgpath, imgorder), data, (err) => {
+          if (!err) {
+            res.send("第一次写入并新建文件夹")
+          }
+        })
+      })
+    }
+})
+
+
+// 合并图片接口：
+router.post('/merge',function(req,res){
+  let id = req.body.id;
+  let folderpath = path.join(__dirname,"..",'public/mult',id);
+  let destinpath = path.join(__dirname,"..",'public/img',id+'.jpg');
+  let dist = '/img/'+id+'.jpg'
+  fs.readdir(folderpath,function(err,arr){
+    let arr2 = arr.map(e=>path.join(folderpath,e));
+    concat(arr2, destinpath, function(err) {
+      if (err) throw err
+      res.send(dist);
+    });
+  })
+})
+```

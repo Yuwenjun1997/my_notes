@@ -1,0 +1,612 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/di-san-jie-duan-jin-jie-neng-li/1-bing-fa-yu-yi-bu-shen-ru/index.md
+---
+# 并发与异步深入
+
+## 一、GIL 与多线程
+
+### 3.1.1 GIL 详解
+
+**GIL（Global Interpreter Lock，全局解释器锁）**：CPython 解释器中的一个互斥锁，保证同一时刻只有一个线程执行 Python 字节码。
+
+GIL 的产生原因：
+
+* CPython 的内存管理（引用计数）不是线程安全的，GIL 用最简单的方式保证了安全性
+* 保护解释器内部共享状态（如对象的引用计数、垃圾回收）
+
+**GIL 的影响**
+
+| 场景 | 是否受 GIL 影响 | 说明 |
+|------|:---:|------|
+| IO 密集型任务 | ❌ 不影响 | 线程在 IO 等待时释放 GIL，其他线程可执行 |
+| CPU 密集型任务 | ✅ 严重影响 | 多线程无法并行利用多核，性能反而不如单线程 |
+| 单线程程序 | ❌ 不影响 | 无竞争，GIL 无开销 |
+| 调用 C 扩展库 | 视情况 | 如 NumPy/Pandas 底层 C 代码运行时可释放 GIL |
+
+**GIL 何时无关紧要**：
+
+* 程序主要是网络请求、文件读写等 IO 操作（Web 服务、爬虫）
+* 使用 `asyncio` 协程（单线程内协作式调度，不依赖 GIL 释放）
+* 使用多进程（每个进程有独立的解释器和 GIL）
+
+**多线程提升 IO 效率示例**
+
+```python
+import threading
+import time
+
+def fetch_data(url):
+    # 模拟网络请求，期间会释放 GIL
+    time.sleep(1)
+    return f"数据来自 {url}"
+
+urls = [f"http://api.example.com/page/{i}" for i in range(5)]
+
+# ❌ 串行执行：耗时约 5 秒
+start = time.time()
+for url in urls:
+    fetch_data(url)
+print(f"串行耗时：{time.time() - start:.2f}s")
+
+# ✅ 多线程执行：耗时约 1 秒（IO 等待时并发）
+start = time.time()
+threads = [threading.Thread(target=fetch_data, args=(url,)) for url in urls]
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+print(f"多线程耗时：{time.time() - start:.2f}s")
+```
+
+**验证 GIL 对 CPU 密集任务无益**：
+
+```python
+import threading
+import time
+
+def cpu_task(n):
+    count = 0
+    for i in range(n):
+        count += i
+    return count
+
+N = 30_000_000
+
+# 单线程
+start = time.time()
+cpu_task(N)
+cpu_task(N)
+print(f"单线程耗时：{time.time() - start:.2f}s")
+
+# 双线程（受 GIL 限制，并不会更快）
+def worker():
+    cpu_task(N)
+
+start = time.time()
+t1 = threading.Thread(target=worker)
+t2 = threading.Thread(target=worker)
+t1.start(); t2.start()
+t1.join(); t2.join()
+print(f"双线程耗时：{time.time() - start:.2f}s")
+```
+
+### 3.1.2 threading 线程安全与锁
+
+**锁（Lock）**：保证同一时刻只有一个线程访问共享资源。
+
+```python
+import threading
+
+# 不加锁的共享计数：结果不可靠
+counter = 0
+
+def increment():
+    global counter
+    for _ in range(1_000_000):
+        counter += 1
+
+threads = [threading.Thread(target=increment) for _ in range(10)]
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+print(f"不加锁结果：{counter}")  # ❌ 往往小于 10000000
+
+# 加锁的共享计数：结果正确
+counter = 0
+lock = threading.Lock()
+
+def safe_increment():
+    global counter
+    for _ in range(1_000_000):
+        with lock:  # ✅ 使用 with 自动获取/释放锁
+            counter += 1
+
+threads = [threading.Thread(target=safe_increment) for _ in range(10)]
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+print(f"加锁结果：{counter}")  # ✅ 10000000
+```
+
+**Lock vs RLock（可重入锁）**
+
+| 锁类型 | 特点 | 适用场景 |
+|--------|------|---------|
+| `Lock` | 同一线程不能重复 acquire，否则死锁 | 简单互斥 |
+| `RLock` | 同一线程可多次 acquire，需对应次 release | 递归调用、嵌套加锁 |
+
+```python
+lock = threading.RLock()
+
+def recursive_func(n):
+    with lock:  # RLock 允许同一线程重复进入
+        if n <= 0:
+            return
+        recursive_func(n - 1)
+```
+
+**Queue 线程间通信**：使用 `queue.Queue` 而非共享变量，天然线程安全。
+
+```python
+import queue
+import threading
+import time
+
+task_queue = queue.Queue(maxsize=5)
+
+def producer():
+    for i in range(10):
+        task_queue.put(f"任务-{i}")
+        time.sleep(0.1)
+    task_queue.put(None)  # 哨兵值表示结束
+
+def consumer():
+    while True:
+        task = task_queue.get()
+        if task is None:
+            break
+        print(f"处理：{task}")
+        task_queue.task_done()
+
+t1 = threading.Thread(target=producer)
+t2 = threading.Thread(target=consumer)
+t1.start(); t2.start()
+t1.join(); t2.join()
+```
+
+***
+
+## 二、多进程 multiprocessing
+
+### 3.2.1 多进程基础
+
+**多进程（multiprocessing）**：每个进程有独立的 Python 解释器、独立内存和独立 GIL，可真正利用多核 CPU，适合 CPU 密集型任务。
+
+**创建子进程**：
+
+```python
+import multiprocessing
+import time
+
+def cpu_task(n):
+    count = 0
+    for i in range(n):
+        count += i
+    return count
+
+if __name__ == "__main__":
+    start = time.time()
+    p1 = multiprocessing.Process(target=cpu_task, args=(30_000_000,))
+    p2 = multiprocessing.Process(target=cpu_task, args=(30_000_000,))
+    p1.start(); p2.start()
+    p1.join(); p2.join()
+    print(f"双进程耗时：{time.time() - start:.2f}s")  # ✅ 约为单进程的一半
+```
+
+> ⚠️ Windows 下必须写在 `if __name__ == "__main__":` 中，否则子进程会递归创建。
+
+**进程间通信（IPC）**
+
+| 方式 | 特点 | 适用场景 |
+|------|------|---------|
+| `Queue` | 基于管道，可传递任意可 pickle 对象 | 生产者消费者 |
+| `Pipe` | 双端通信，比 Queue 轻量 | 一对一通信 |
+| `Manager` | 共享复杂数据结构（list/dict） | 跨进程共享状态 |
+| `Value/Array` | 共享原始类型，性能最高 | 简单数值共享 |
+| `shared_memory` | Python 3.8+，共享内存块 | 大数据共享 |
+
+```python
+import multiprocessing
+
+def worker(q):
+    q.put("子进程写入的数据")
+
+if __name__ == "__main__":
+    q = multiprocessing.Queue()
+    p = multiprocessing.Process(target=worker, args=(q,))
+    p.start()
+    p.join()
+    print(q.get())  # ✅ 父进程读取子进程数据
+```
+
+### 3.2.2 进程池与并行加速
+
+**使用 Pool 简化进程管理**：
+
+```python
+import multiprocessing
+
+def square(x):
+    return x * x
+
+if __name__ == "__main__":
+    with multiprocessing.Pool(processes=4) as pool:
+        # map：阻塞式，按顺序返回结果
+        results = pool.map(square, range(10))
+        print(results)
+
+        # 异步提交，用回调或阻塞获取
+        result = pool.apply_async(square, (5,))
+        print(result.get())  # 25
+
+        # imap：惰性迭代，节省内存
+        for r in pool.imap(square, range(10)):
+            print(r, end=" ")
+```
+
+***
+
+## 三、concurrent.futures 统一接口
+
+### 3.3.1 Executor 体系
+
+**concurrent.futures**：提供统一的高层并发接口，屏蔽线程与进程的差异。
+
+| Executor | 底层实现 | 适用任务 |
+|----------|---------|---------|
+| `ThreadPoolExecutor` | 线程池 | IO 密集型 |
+| `ProcessPoolExecutor` | 进程池 | CPU 密集型 |
+
+**核心 API**：
+
+* `submit(fn, *args)`：提交任务，返回 `Future` 对象
+* `map(fn, iterable)`：批量提交，返回结果迭代器
+* `Future.result()`：阻塞获取结果
+* `Future.add_done_callback()`：任务完成回调
+* `as_completed()` / `wait()`：等待多个任务
+
+```python
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+
+def fetch(url):
+    time.sleep(0.5)
+    return f"{url} -> OK"
+
+urls = [f"http://api.example.com/{i}" for i in range(10)]
+
+# ✅ 线程池并发请求
+with ThreadPoolExecutor(max_workers=5) as executor:
+    # 提交全部任务
+    future_map = {executor.submit(fetch, url): url for url in urls}
+
+    # 谁先完成先处理谁
+    for future in as_completed(future_map):
+        url = future_map[future]
+        try:
+            print(future.result())
+        except Exception as e:
+            print(f"{url} 失败：{e}")
+```
+
+**线程池 vs 进程池对比**
+
+| 对比维度 | ThreadPoolExecutor | ProcessPoolExecutor |
+|---------|:---:|:---:|
+| 内存共享 | 共享（同一进程） | 独立（需 IPC） |
+| GIL 影响 | 有 | 无 |
+| 启动开销 | 小 | 大 |
+| 任务类型 | IO 密集 | CPU 密集 |
+| 参数传递 | 引用 | 需 pickle 序列化 |
+
+**CPU 密集任务用进程池**：
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+
+def heavy_calc(n):
+    return sum(i * i for i in range(n))
+
+if __name__ == "__main__":
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        results = executor.map(heavy_calc, [10_000_000] * 4)
+        print(list(results))
+```
+
+***
+
+## 四、asyncio 深入
+
+### 3.4.1 事件循环原理
+
+**事件循环（Event Loop）**：asyncio 的核心，单线程内通过事件驱动调度协程，实现高并发 IO。
+
+```
+事件循环工作流程：
+1. 维护就绪队列和等待队列
+2. 从就绪队列取出协程执行
+3. 协程遇到 IO 时挂起（await），注册回调
+4. IO 完成，回调唤醒协程，放回就绪队列
+5. 循环往复，直到所有任务完成
+```
+
+**协程调度的关键对象**：
+
+* **Coroutine**：`async def` 定义的协程函数，必须被 `await` 或放入事件循环才执行
+* **Task**：协程的包装，负责调度，`asyncio.create_task()` 创建
+* **Future**：底层延迟结果对象，Task 继承自 Future
+
+```python
+import asyncio
+
+async def main():
+    print("开始")
+
+    # ✅ 用 create_task 并发调度
+    task = asyncio.create_task(say_hello())
+
+    await asyncio.sleep(0.1)  # 让出控制权
+    print("主协程继续")
+    await task  # 等待子任务完成
+
+async def say_hello():
+    await asyncio.sleep(0.2)
+    print("Hello from task!")
+
+asyncio.run(main())
+```
+
+### 3.4.2 任务取消与超时
+
+**超时控制（timeout）**：防止协程无限等待。
+
+```python
+import asyncio
+
+async def slow_op():
+    await asyncio.sleep(10)
+    return "结果"
+
+async def main():
+    try:
+        # ✅ 3 秒超时，超时抛 asyncio.TimeoutError
+        result = await asyncio.wait_for(slow_op(), timeout=3)
+        print(result)
+    except asyncio.TimeoutError:
+        print("操作超时，已取消")
+
+asyncio.run(main())
+```
+
+**任务取消（cancel）**：
+
+```python
+import asyncio
+
+async def main():
+    task = asyncio.create_task(slow_op())
+
+    await asyncio.sleep(1)
+    task.cancel()  # 发起取消请求
+
+    try:
+        await task
+    except asyncio.CancelledError:
+        print("任务已被取消")
+
+    # ✅ 检查任务是否被取消
+    print(f"是否取消：{task.cancelled()}")
+```
+
+**任务取消时的清理**：
+
+```python
+async def worker():
+    try:
+        while True:
+            await asyncio.sleep(1)
+    except asyncio.CancelledError:
+        print("清理资源...")
+        raise  # ✅ 必须重新抛出 CancelledError，否则任务被错误标记为完成
+```
+
+### 3.4.3 并发控制：信号量、锁、事件
+
+**信号量（Semaphore）**：限制并发数量，实现限流。
+
+```python
+import asyncio
+
+async def fetch(sem, i):
+    async with sem:  # 同时最多 3 个并发
+        await asyncio.sleep(0.5)
+        return f"请求 {i} 完成"
+
+async def main():
+    sem = asyncio.Semaphore(3)
+    tasks = [fetch(sem, i) for i in range(10)]
+    results = await asyncio.gather(*tasks)
+    print(results)
+
+asyncio.run(main())
+```
+
+**锁（Lock）**：保护共享资源。
+
+```python
+import asyncio
+
+async def main():
+    lock = asyncio.Lock()
+    counter = 0
+
+    async def increment():
+        nonlocal counter
+        async with lock:  # ✅ 异步锁，防止并发修改
+            counter += 1
+
+    await asyncio.gather(*[increment() for _ in range(100)])
+    print(counter)  # ✅ 100
+```
+
+**事件（Event）**：等待某个条件发生。
+
+```python
+import asyncio
+
+async def waiter(evt):
+    print("等待事件...")
+    await evt.wait()  # 阻塞直到 set
+    print("事件已触发！")
+
+async def main():
+    evt = asyncio.Event()
+    task = asyncio.create_task(waiter(evt))
+    await asyncio.sleep(1)
+    evt.set()
+    await task
+
+asyncio.run(main())
+```
+
+### 3.4.4 桥接同步代码
+
+**run\_in\_executor**：将阻塞的同步函数放到线程池执行，不阻塞事件循环。
+
+```python
+import asyncio
+import time
+import requests
+
+def blocking_request(url):
+    # 同步阻塞函数（内部是真正的线程阻塞）
+    time.sleep(1)
+    return requests.get(url).status_code
+
+async def main():
+    loop = asyncio.get_running_loop()
+
+    # ✅ 把阻塞函数丢到默认线程池，异步等待结果
+    status = await loop.run_in_executor(None, blocking_request, "https://example.com")
+    print(f"状态码：{status}")
+
+    # 自定义线程池
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        status = await loop.run_in_executor(pool, blocking_request, "https://example.com")
+        print(f"状态码：{status}")
+
+asyncio.run(main())
+```
+
+***
+
+## 五、三模型对比与选型
+
+### 3.5.1 协程 vs 线程 vs 进程
+
+| 对比维度 | 协程 asyncio | 线程 threading | 进程 multiprocessing |
+|---------|:---:|:---:|:---:|
+| 并行能力 | 单核内并发（IO 并行） | 单核内并发 | 多核并行 |
+| 内存占用 | 极小（每个协程几 KB） | 中等（每个线程约 8MB 栈） | 大（独立内存空间） |
+| GIL 限制 | 无（单线程内协作） | 有（CPU 密集受限制） | 无（独立解释器） |
+| 上下文切换 | 极快（纯软件切换） | 较快（内核调度） | 慢（进程切换） |
+| 代码复杂度 | 较高（async/await） | 低 | 较低（需处理 IPC） |
+| 适用场景 | 大量并发 IO | 中等并发 IO | CPU 密集型、并行计算 |
+
+**选型决策树**：
+
+```
+任务是 CPU 密集型？
+ ├─ 是 ──→ 多进程 ProcessPoolExecutor / multiprocessing
+ └─ 否（IO 密集型）─→
+     并发数量大（>1000）？
+      ├─ 是 ──→ asyncio 协程
+      └─ 否 ──→ 线程池 ThreadPoolExecutor
+```
+
+### 3.5.2 生产者消费者模式
+
+**协程版生产者消费者**：
+
+```python
+import asyncio
+from random import randint
+
+async def producer(q):
+    for i in range(10):
+        item = f"数据-{i}"
+        await q.put(item)   # ✅ 异步队列，超队列容量时挂起
+        print(f"生产：{item}")
+        await asyncio.sleep(0.1)
+
+async def consumer(q, name):
+    while True:
+        item = await q.get()
+        print(f"{name} 消费：{item}")
+        q.task_done()
+        await asyncio.sleep(randint(1, 3) * 0.1)
+
+async def main():
+    q = asyncio.Queue(maxsize=3)
+
+    # 多个消费者并发处理
+    consumers = [asyncio.create_task(consumer(q, f"worker-{i}")) for i in range(3)]
+
+    await producer(q)
+    await q.join()          # 等待队列清空
+    for c in consumers:
+        c.cancel()          # 清理消费者任务
+
+asyncio.run(main())
+```
+
+**限流与背压**：生产者过快的解决方案。
+
+| 方案 | 原理 | 适用场景 |
+|------|------|---------|
+| 有界队列 | 队列满时 put 挂起，天然背压 | 内存型队列 |
+| Semaphore 限流 | 控制并发许可数 | 调用第三方 API 限速 |
+| rate limiter | 按时间窗口限制速率 | 对接有配额的服务 |
+
+***
+
+## 实践项目
+
+### 目标
+
+使用协程 + 线程池实现一个**多源数据聚合器**：并发请求多个第三方接口，聚合结果并处理超时与异常，最后比较不同并发模型的性能差异。
+
+### 步骤
+
+1. 创建 `aggregator.py`，定义 `fetch_source` 模拟请求不同数据源（延迟不同）
+2. 分别用 `asyncio.gather`、`ThreadPoolExecutor`、串行三种方式实现聚合
+3. 用 `asyncio.wait_for` 为每个请求加 2 秒超时，超时的源返回降级数据
+4. 用 `Semaphore(3)` 限制并发数，模拟限流
+5. 运行脚本对比三种方式的耗时，分析 GIL 与并发模型差异
+
+### 目录结构参考
+
+```text
+aggregator/
+├── aggregator.py          # 聚合器主逻辑
+│   ├── fetch_source()     # 模拟请求数据源
+│   ├── async_fetch_all()  # 协程版聚合
+│   ├── thread_fetch_all() # 线程池版聚合
+│   └── sync_fetch_all()   # 串行版聚合
+├── main.py                # 入口，打印性能对比
+└── requirements.txt       # 依赖清单
+```

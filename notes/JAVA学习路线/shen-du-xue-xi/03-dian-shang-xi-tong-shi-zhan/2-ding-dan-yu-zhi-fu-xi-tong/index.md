@@ -1,0 +1,1132 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/03-dian-shang-xi-tong-shi-zhan/2-ding-dan-yu-zhi-fu-xi-tong/index.md
+---
+# 电商实战：订单与支付系统
+
+> 本文档覆盖订单全生命周期设计，从订单模型、下单流程、支付对接、退款处理到查询优化，配套完整代码示例与最佳实践。
+
+***
+
+## 1. 订单流程设计
+
+### 1.1 订单状态机
+
+订单状态机描述了订单从创建到终态的完整流转路径。核心状态包括：
+
+```
+待支付(WAIT_PAY) → 已支付(PAID) → 已发货(SHIPPED) → 已完成(COMPLETED)
+                                                              ↘ 已取消(CANCELLED)
+                                    已支付(PAID) → 退款中(REFUNDING) → 已退款(REFUNDED)
+                                    待支付(WAIT_PAY) → 已取消(CANCELLED)
+```
+
+**状态迁移规则：**
+
+| 当前状态 | 触发事件 | 目标状态 | 说明 |
+|---------|---------|---------|------|
+| WAIT\_PAY | 用户支付 | PAID | 支付回调成功 |
+| WAIT\_PAY | 超时未付 | CANCELLED | 延时消息触发 |
+| WAIT\_PAY | 用户手动取消 | CANCELLED | 用户主动操作 |
+| PAID | 商家发货 | SHIPPED | 物流单号已录入 |
+| SHIPPED | 用户确认收货 | COMPLETED | 自动/手动确认 |
+| PAID | 用户申请退款 | REFUNDING | 进入退款流程 |
+| REFUNDING | 退款成功 | REFUNDED | 退款到账 |
+| REFUNDING | 退款失败 | PAID | 恢复已支付状态 |
+
+### 1.2 订单表设计
+
+#### 订单主表 (`orders`)
+
+```sql
+CREATE TABLE `orders` (
+    `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+    `order_id`      VARCHAR(32)     NOT NULL COMMENT '业务订单号（雪花算法生成）',
+    `user_id`       BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+    `total_amount`  DECIMAL(12,2)   NOT NULL DEFAULT 0.00 COMMENT '订单总金额（分精度，单位元）',
+    `discount_amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT '优惠金额',
+    `pay_amount`    DECIMAL(12,2)   NOT NULL DEFAULT 0.00 COMMENT '实付金额',
+    `payment_method` TINYINT        NOT NULL DEFAULT 0 COMMENT '支付方式：1-微信 2-支付宝 3-银行卡',
+    `status`        TINYINT         NOT NULL DEFAULT 0 COMMENT '订单状态：0-待支付 1-已支付 2-已发货 3-已完成 4-已取消 5-退款中 6-已退款',
+    `pay_time`      DATETIME        DEFAULT NULL COMMENT '支付时间',
+    `delivery_time` DATETIME        DEFAULT NULL COMMENT '发货时间',
+    `confirm_time`  DATETIME        DEFAULT NULL COMMENT '确认收货时间',
+    `cancel_time`   DATETIME        DEFAULT NULL COMMENT '取消时间',
+    `cancel_reason` VARCHAR(255)    DEFAULT NULL COMMENT '取消原因',
+    `refund_time`   DATETIME        DEFAULT NULL COMMENT '退款时间',
+    `refund_amount` DECIMAL(12,2)   DEFAULT 0.00 COMMENT '退款金额',
+    `delivery_company` VARCHAR(50)  DEFAULT NULL COMMENT '物流公司',
+    `delivery_no`   VARCHAR(50)     DEFAULT NULL COMMENT '物流单号',
+    `receiver_name` VARCHAR(50)     NOT NULL COMMENT '收货人姓名',
+    `receiver_phone` VARCHAR(20)    NOT NULL COMMENT '收货人电话',
+    `receiver_address` VARCHAR(500) NOT NULL COMMENT '收货地址',
+    `user_remark`   VARCHAR(500)    DEFAULT NULL COMMENT '用户备注',
+    `close_type`    TINYINT         DEFAULT 0 COMMENT '关单方式：1-超时关单 2-用户取消 3-系统取消',
+    `version`       INT             NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
+    `deleted`       TINYINT         NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
+    `create_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE KEY `uk_order_id` (`order_id`) USING BTREE,
+    KEY `idx_user_id` (`user_id`) USING BTREE,
+    KEY `idx_status` (`status`) USING BTREE,
+    KEY `idx_create_time` (`create_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单主表';
+```
+
+#### 订单项表 (`order_items`)
+
+```sql
+CREATE TABLE `order_items` (
+    `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+    `order_id`      VARCHAR(32)     NOT NULL COMMENT '业务订单号',
+    `sku_id`        BIGINT UNSIGNED NOT NULL COMMENT '商品SKU ID',
+    `spu_id`        BIGINT UNSIGNED NOT NULL COMMENT '商品SPU ID',
+    `sku_name`      VARCHAR(200)    NOT NULL COMMENT 'SKU名称',
+    `sku_image`     VARCHAR(500)    DEFAULT NULL COMMENT 'SKU图片',
+    `sku_attrs`     VARCHAR(500)    DEFAULT NULL COMMENT 'SKU销售属性（JSON：{"颜色":"黑色","尺寸":"L"}）',
+    `price`         DECIMAL(12,2)   NOT NULL COMMENT '单价（元）',
+    `quantity`      INT             NOT NULL DEFAULT 1 COMMENT '购买数量',
+    `subtotal`      DECIMAL(12,2)   NOT NULL COMMENT '小计金额（price * quantity）',
+    `coupon_amount` DECIMAL(12,2)   DEFAULT 0.00 COMMENT '该商品分摊的优惠金额',
+    `refund_quantity` INT           DEFAULT 0 COMMENT '已退款数量',
+    `refund_amount` DECIMAL(12,2)   DEFAULT 0.00 COMMENT '已退款金额',
+    `create_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `idx_order_id` (`order_id`) USING BTREE,
+    KEY `idx_sku_id` (`sku_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
+```
+
+### 1.3 订单号生成策略（雪花算法）
+
+订单号需要全局唯一、趋势递增、包含时间信息。雪花算法（Snowflake）是业界标准方案：
+
+**ID 结构（64 bit long）：**
+
+```
+ 0 | 0000000000 0000000000 0000000000 0000000000 0 | 00000 | 00000 | 000000000000
+- 第 1 位：符号位，始终为 0
+- 第 2-42 位（41 bit）：时间戳（毫秒级，可支撑 69 年）
+- 第 43-47 位（5 bit）：机房 ID（datacenterId，最大 31）
+- 第 48-52 位（5 bit）：机器 ID（workerId，最大 31）
+- 第 53-64 位（12 bit）：序列号（同一毫秒内并发，最大 4096）
+```
+
+```java
+@Component
+public class SnowflakeIdGenerator {
+
+    /** 起始时间戳：2021-01-01 00:00:00 */
+    private static final long START_EPOCH = 1609430400000L;
+
+    /** 机器 ID 所占位数 */
+    private static final long WORKER_ID_BITS = 5L;
+    /** 数据中心 ID 所占位数 */
+    private static final long DATACENTER_ID_BITS = 5L;
+    /** 序列号所占位数 */
+    private static final long SEQUENCE_BITS = 12L;
+
+    private static final long MAX_WORKER_ID = ~(-1L << WORKER_ID_BITS);
+    private static final long MAX_DATACENTER_ID = ~(-1L << DATACENTER_ID_BITS);
+    private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
+
+    /** 机器 ID 左移位数 */
+    private static final long WORKER_ID_SHIFT = SEQUENCE_BITS;
+    /** 数据中心 ID 左移位数 */
+    private static final long DATACENTER_ID_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS;
+    /** 时间戳左移位数 */
+    private static final long TIMESTAMP_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS + DATACENTER_ID_BITS;
+
+    private final long datacenterId;
+    private final long workerId;
+    private long sequence = 0L;
+    private long lastTimestamp = -1L;
+
+    public SnowflakeIdGenerator(long datacenterId, long workerId) {
+        if (datacenterId > MAX_DATACENTER_ID || datacenterId < 0) {
+            throw new IllegalArgumentException("datacenterId 超出范围");
+        }
+        if (workerId > MAX_WORKER_ID || workerId < 0) {
+            throw new IllegalArgumentException("workerId 超出范围");
+        }
+        this.datacenterId = datacenterId;
+        this.workerId = workerId;
+    }
+
+    public synchronized long nextId() {
+        long timestamp = System.currentTimeMillis();
+
+        // 时钟回拨处理：等待时间追上最后一毫秒
+        if (timestamp < lastTimestamp) {
+            long offset = lastTimestamp - timestamp;
+            if (offset > 5) {
+                throw new RuntimeException("时钟回拨超过 5ms，拒绝生成 ID");
+            }
+            ThreadUtil.safeSleep(offset);
+            timestamp = System.currentTimeMillis();
+        }
+
+        // 同一毫秒内，序列号递增
+        if (timestamp == lastTimestamp) {
+            sequence = (sequence + 1) & SEQUENCE_MASK;
+            if (sequence == 0) {
+                // 序列号用完，等待下一毫秒
+                timestamp = tilNextMillis(lastTimestamp);
+            }
+        } else {
+            sequence = 0L;
+        }
+
+        lastTimestamp = timestamp;
+
+        return ((timestamp - START_EPOCH) << TIMESTAMP_SHIFT)
+                | (datacenterId << DATACENTER_ID_SHIFT)
+                | (workerId << WORKER_ID_SHIFT)
+                | sequence;
+    }
+
+    private long tilNextMillis(long lastTimestamp) {
+        long timestamp = System.currentTimeMillis();
+        while (timestamp <= lastTimestamp) {
+            timestamp = System.currentTimeMillis();
+        }
+        return timestamp;
+    }
+}
+```
+
+***
+
+## 2. 下单核心流程
+
+### 2.1 下单流程总图
+
+```
+用户提交订单
+    │
+    ├── 1. 参数校验（商品是否存在、库存是否充足、价格是否变化）
+    │
+    ├── 2. Redis 预扣库存（Lua 脚本原子扣减）
+    │       │
+    │       ├── 库存不足 → 返回「库存不足」错误
+    │       └── 成功 → 进入下一步
+    │
+    ├── 3. 创建订单（数据库事务）
+    │       ├── 插入 orders 表
+    │       ├── 批量插入 order_items 表
+    │       └── 事务提交
+    │
+    ├── 4. 异步扣减数据库库存（MQ 消息触发）
+    │
+    ├── 5. 发送延时消息（30 分钟关单检查）
+    │
+    └── 6. 返回 orderId 给前端（引导用户支付）
+```
+
+### 2.2 下单 Service 完整实现
+
+```java
+@Service
+@Slf4j
+public class OrderService {
+
+    @Autowired
+    private OrderMapper orderMapper;
+    @Autowired
+    private OrderItemMapper orderItemMapper;
+    @Autowired
+    private SkuStockService skuStockService;
+    @Autowired
+    private SnowflakeIdGenerator idGenerator;
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private UserCartService cartService;
+
+    /** 预扣库存 Lua 脚本 */
+    private static final String LOCK_STOCK_LUA =
+            "local stock = redis.call('GET', KEYS[1]) " +
+            "if not stock or tonumber(stock) < tonumber(ARGV[1]) then " +
+            "    return 0 " +
+            "end " +
+            "redis.call('DECRBY', KEYS[1], ARGV[1]) " +
+            "return 1";
+
+    @Transactional(rollbackFor = Exception.class)
+    public CreateOrderResponse createOrder(CreateOrderRequest request) {
+        // 1. 参数校验
+        ValidateResult validate = validateOrderParams(request);
+        if (!validate.isSuccess()) {
+            return CreateOrderResponse.fail(validate.getErrorMsg());
+        }
+
+        List<SkuInfo> skuList = validate.getSkuList();
+        String orderId = String.valueOf(idGenerator.nextId());
+
+        // 2. Redis 预扣库存（原子操作）
+        for (SkuInfo sku : skuList) {
+            String stockKey = "sku:stock:" + sku.getSkuId();
+            DefaultRedisScript<Long> script = new DefaultRedisScript<>(LOCK_STOCK_LUA, Long.class);
+            Long result = redisTemplate.execute(script,
+                    Collections.singletonList(stockKey),
+                    String.valueOf(sku.getQuantity()));
+
+            if (result == null || result == 0) {
+                // 预扣失败，归还已扣库存
+                revertLockedStock(skuList, sku.getSkuId());
+                log.warn("库存不足，SKU={}, 请求数量={}", sku.getSkuId(), sku.getQuantity());
+                return CreateOrderResponse.fail("商品「" + sku.getSkuName() + "」库存不足");
+            }
+        }
+
+        try {
+            // 3. 创建订单（数据库）
+            Orders order = buildOrder(request, orderId, validate);
+            orderMapper.insert(order);
+
+            List<OrderItem> items = buildOrderItems(request, orderId, skuList);
+            orderItemMapper.batchInsert(items);
+
+            // 4. 删除购物车中已下单的商品
+            cartService.removeItems(request.getUserId(), request.getSkuIds());
+
+        } catch (Exception e) {
+            // 事务回滚时，归还 Redis 库存
+            revertLockedStock(skuList, null);
+            log.error("创建订单失败，归还Redis库存", e);
+            throw new RuntimeException("创建订单失败", e);
+        }
+
+        // 5. 发送延时消息：30分钟后检查支付状态
+        sendDelayCloseMessage(orderId, 30 * 60 * 1000);
+
+        // 6. 异步扣减数据库库存（保证最终一致性）
+        rabbitTemplate.convertAndSend("stock.exchange", "stock.deduct", new StockDeductMessage(orderId, skuList));
+
+        return CreateOrderResponse.success(orderId);
+    }
+
+    /**
+     * 归还指定 SKU 之前的库存
+     */
+    private void revertLockedStock(List<SkuInfo> skuList, String excludeSkuId) {
+        for (SkuInfo sku : skuList) {
+            if (sku.getSkuId().equals(excludeSkuId)) {
+                break;
+            }
+            String stockKey = "sku:stock:" + sku.getSkuId();
+            redisTemplate.opsForValue().increment(stockKey, sku.getQuantity());
+        }
+    }
+
+    /**
+     * 发送延时消息
+     */
+    private void sendDelayCloseMessage(String orderId, long delayMillis) {
+        rabbitTemplate.convertAndSend(
+                "order.delay.exchange",
+                "order.close.delay",
+                orderId,
+                message -> {
+                    message.getMessageProperties().setDelay((int) delayMillis);
+                    return message;
+                }
+        );
+    }
+
+    /**
+     * 构建订单实体
+     */
+    private Orders buildOrder(CreateOrderRequest request, String orderId, ValidateResult validate) {
+        Orders order = new Orders();
+        order.setOrderId(orderId);
+        order.setUserId(request.getUserId());
+        order.setTotalAmount(validate.getTotalAmount());
+        order.setDiscountAmount(validate.getDiscountAmount());
+        order.setPayAmount(validate.getPayAmount());
+        order.setStatus(OrderStatus.WAIT_PAY.getCode());
+        order.setReceiverName(request.getReceiverName());
+        order.setReceiverPhone(request.getReceiverPhone());
+        order.setReceiverAddress(request.getReceiverAddress());
+        order.setUserRemark(request.getRemark());
+        return order;
+    }
+}
+```
+
+### 2.3 分布式事务：Seata AT 模式
+
+下单流程涉及多个服务（订单服务、库存服务、账户服务），使用 Seata AT 模式保证分布式事务一致性：
+
+**AT 模式工作原理：**
+
+```
+1. TM（事务协调器）向 TC（事务协调服务器）申请全局事务 ID（XID）
+2. RM（资源管理器，即数据库）执行业务 SQL，Seata 拦截并记录 UNDO_LOG
+3. 业务 SQL 提交前，RM 向 TC 注册分支事务
+4. 全部 RM 注册完毕，TM 发起全局提交/回滚请求
+5. 提交：TC 通知各 RM 删除 UNDO_LOG
+6. 回滚：TC 通知各 RM 根据 UNDO_LOG 反向补偿
+```
+
+**业务代码示例：**
+
+```java
+@GlobalTransactional(name = "create-order-tx", rollbackFor = Exception.class)
+public CreateOrderResponse createOrderWithSeata(CreateOrderRequest request) {
+    // 1. 扣减库存（库存服务，远程调用）
+    Boolean deductResult = stockServiceClient.deductStock(request.getSkuList());
+    if (!deductResult) {
+        throw new BusinessException("库存不足");
+    }
+
+    // 2. 扣减账户余额（账户服务，远程调用）
+    Boolean balanceResult = accountServiceClient.deductBalance(
+            request.getUserId(), request.getPayAmount());
+    if (!balanceResult) {
+        throw new BusinessException("余额不足");
+    }
+
+    // 3. 创建订单（订单服务，本地事务）
+    String orderId = saveOrder(request);
+
+    return CreateOrderResponse.success(orderId);
+    // 任何一个步骤失败，Seata 自动回滚所有已提交的分支事务
+}
+```
+
+**Seata 配置：**
+
+```yaml
+seata:
+  enabled: true
+  application-id: order-service
+  tx-service-group: my_test_tx_group
+  config:
+    type: nacos
+    nacos:
+      server-addr: 127.0.0.1:8848
+      group: SEATA_GROUP
+  registry:
+    type: nacos
+    nacos:
+      server-addr: 127.0.0.1:8848
+```
+
+***
+
+## 3. 支付系统
+
+### 3.1 支付流程
+
+```
+用户点击「去支付」
+    │
+    ├── 后端生成支付二维码
+    │       ├── 调支付宝/微信下单接口
+    │       ├── 获取 trade_no（支付平台交易号）
+    │       ├── 获取 code_url（二维码内容）
+    │       └── 返回前端展示二维码
+    │
+    ├── 用户扫码支付（用户在支付 App 完成付款）
+    │
+    ├── 支付平台回调商户后端（异步通知）
+    │       ├── 验签（验证回调真实性）
+    │       ├── 幂等处理（支付流水号去重）
+    │       ├── 更新订单状态（WAIT_PAY → PAID）
+    │       └── 返回 SUCCESS 给支付平台
+    │
+    └── 前端轮询订单状态 / WebSocket 推送支付结果
+            └── 跳转支付成功页
+```
+
+### 3.2 支付宝/微信支付接口对接
+
+#### 支付宝 Native 支付（当面付）
+
+```java
+@Service
+public class AlipayService {
+
+    @Autowired
+    private AlipayClient alipayClient;
+
+    /**
+     * 生成支付宝支付二维码
+     */
+    public AlipayPrecreateResponse precreate(String orderId, BigDecimal amount, String subject) {
+        AlipayTradePrecreateRequest request = new AlipayTradePrecreateRequest();
+
+        // 设置异步通知地址（公网可访问）
+        request.setNotifyUrl("https://api.yourapp.com/payment/alipay/callback");
+
+        // 业务参数
+        JSONObject bizContent = new JSONObject();
+        bizContent.put("out_trade_no", orderId);          // 商户订单号
+        bizContent.put("total_amount", amount.toString()); // 订单金额（元）
+        bizContent.put("subject", subject);                // 订单标题
+        bizContent.put("timeout_express", "30m");          // 交易超时时间
+
+        request.setBizContent(bizContent.toJSONString());
+
+        try {
+            AlipayTradePrecreateResponse response = alipayClient.execute(request);
+            if (response.isSuccess()) {
+                log.info("支付宝预下单成功，orderId={}, tradeNo={}, qrCode={}",
+                        orderId, response.getOutTradeNo(), response.getQrCode());
+                return response;
+            } else {
+                log.error("支付宝预下单失败，orderId={}, code={}, msg={}",
+                        orderId, response.getCode(), response.getMsg());
+                throw new PaymentException("支付宝下单失败：" + response.getSubMsg());
+            }
+        } catch (AlipayApiException e) {
+            log.error("支付宝API异常", e);
+            throw new PaymentException("支付宝接口调用异常", e);
+        }
+    }
+}
+```
+
+**支付宝核心参数说明：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `out_trade_no` | String | 是 | 商户订单号（需保证唯一） |
+| `total_amount` | String | 是 | 订单金额，单位为元，精确到小数点后两位 |
+| `subject` | String | 是 | 订单标题 |
+| `notify_url` | String | 是 | 异步通知地址，需公网可访问 |
+| `timeout_express` | String | 否 | 交易超时时间，如 `30m` |
+| `product_code` | String | 是 | 销售产品码，`FACE_TO_FACE_PAYMENT` |
+
+#### 微信支付 Native 支付
+
+```java
+@Service
+public class WechatPayService {
+
+    @Autowired
+    private WxPayV3HttpClient wxPayClient;
+
+    /**
+     * 生成微信支付二维码
+     */
+    public WechatPayResponse precreate(String orderId, Integer totalFee, String description) {
+        // 构建 API v3 请求
+        HttpPost httpPost = new HttpPost("https://api.mch.weixin.qq.com/v3/pay/transactions/native");
+
+        String body = JSON.toJSONString(Map.of(
+                "mchid", "商户号",
+                "appid", "公众号/小程序 APPID",
+                "description", description,
+                "out_trade_no", orderId,
+                "notify_url", "https://api.yourapp.com/payment/wechat/callback",
+                "amount", Map.of(
+                        "total", totalFee,      // 金额（分）
+                        "currency", "CNY"
+                )
+        ));
+
+        httpPost.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+
+        try {
+            HttpResponse response = wxPayClient.execute(httpPost);
+            String result = EntityUtils.toString(response.getEntity());
+            JSONObject json = JSON.parseObject(result);
+            String codeUrl = json.getString("code_url");
+
+            log.info("微信预下单成功，orderId={}, codeUrl={}", orderId, codeUrl);
+            return new WechatPayResponse(codeUrl);
+        } catch (Exception e) {
+            log.error("微信预下单异常", e);
+            throw new PaymentException("微信支付下单失败", e);
+        }
+    }
+}
+```
+
+**微信支付核心参数说明：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `out_trade_no` | String | 是 | 商户订单号 |
+| `amount.total` | Integer | 是 | 订单金额，单位为分（与支付宝不同） |
+| `description` | String | 是 | 商品描述 |
+| `notify_url` | String | 是 | 异步通知回调地址 |
+| `mchid` | String | 是 | 商户号 |
+| `appid` | String | 是 | 应用 ID |
+
+#### 支付回调处理（通用）
+
+```java
+@Service
+@Slf4j
+public class PaymentCallbackService {
+
+    @Autowired
+    private OrderMapper orderMapper;
+    @Autowired
+    private PaymentFlowMapper paymentFlowMapper;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    /**
+     * 处理支付异步回调（通用）
+     *
+     * @param platform    支付平台：alipay / wechat
+     * @param outTradeNo  商户订单号
+     * @param tradeNo     支付平台交易号
+     * @param totalAmount 实际支付金额
+     * @param gmtPayment  支付时间
+     * @return true-处理成功 false-需重试
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean handlePaymentCallback(String platform, String outTradeNo,
+                                          String tradeNo, BigDecimal totalAmount,
+                                          Date gmtPayment, String rawData) {
+
+        // ===== 幂等性保障：支付状态表 + 唯一索引 =====
+        // 插入支付流水，trade_no 唯一索引防止重复处理
+        PaymentFlow paymentFlow = new PaymentFlow();
+        paymentFlow.setOrderId(outTradeNo);
+        paymentFlow.setPlatform(platform);
+        paymentFlow.setPlatformTradeNo(tradeNo);   // 唯一索引字段
+        paymentFlow.setTotalAmount(totalAmount);
+        paymentFlow.setPayTime(gmtPayment);
+        paymentFlow.setNotifyRawData(rawData);
+        paymentFlow.setStatus(PaymentStatus.SUCCESS.getCode());
+
+        try {
+            paymentFlowMapper.insert(paymentFlow);
+        } catch (DuplicateKeyException e) {
+            // 重复回调，直接返回成功（幂等）
+            log.warn("收到重复支付回调，已忽略。orderId={}, tradeNo={}", outTradeNo, tradeNo);
+            return true;
+        }
+
+        // ===== 更新订单状态 =====
+        Orders order = orderMapper.selectByOrderId(outTradeNo);
+        if (order == null) {
+            log.error("订单不存在，orderId={}", outTradeNo);
+            return false;
+        }
+
+        // 状态检查：只有待支付状态才能更新为已支付
+        if (!OrderStatus.WAIT_PAY.getCode().equals(order.getStatus())) {
+            log.warn("订单状态异常，当前状态={}，期望={}",
+                    order.getStatus(), OrderStatus.WAIT_PAY.getCode());
+            return false;
+        }
+
+        // 更新订单
+        int updated = orderMapper.updateStatusByOrderId(
+                outTradeNo,
+                OrderStatus.WAIT_PAY.getCode(),
+                OrderStatus.PAID.getCode(),
+                totalAmount,
+                gmtPayment
+        );
+
+        if (updated == 0) {
+            log.error("更新订单状态失败，orderId={}", outTradeNo);
+            throw new RuntimeException("更新订单状态失败");
+        }
+
+        // ===== 发送支付成功消息 =====
+        rabbitTemplate.convertAndSend("order.paid.exchange", "order.paid",
+                new OrderPaidEvent(outTradeNo, tradeNo, totalAmount));
+
+        log.info("支付回调处理成功，orderId={}, tradeNo={}, amount={}",
+                outTradeNo, tradeNo, totalAmount);
+
+        return true;
+    }
+}
+```
+
+### 3.3 支付回调幂等性处理
+
+支付回调可能因为网络抖动等原因被多次调用，必须保证幂等。
+
+**方案：支付状态表 + 唯一索引**
+
+```sql
+CREATE TABLE `payment_flow` (
+    `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `order_id`          VARCHAR(32)     NOT NULL COMMENT '商户订单号',
+    `platform`          VARCHAR(20)     NOT NULL COMMENT '支付平台：alipay/wechat',
+    `platform_trade_no` VARCHAR(64)     NOT NULL COMMENT '支付平台交易号',
+    `total_amount`      DECIMAL(12,2)   NOT NULL COMMENT '支付金额（元）',
+    `pay_time`          DATETIME        NOT NULL COMMENT '支付时间',
+    `status`            TINYINT         NOT NULL DEFAULT 1 COMMENT '状态：1-成功 2-退款',
+    `notify_raw_data`   TEXT            COMMENT '回调原始数据（JSON）',
+    `create_time`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_platform_trade_no` (`platform_trade_no`) COMMENT '唯一索引保证幂等',
+    KEY `idx_order_id` (`order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付流水表';
+```
+
+**幂等处理逻辑：**
+
+```
+收到回调 → INSERT payment_flow（platform_trade_no 唯一索引）
+    ├── 成功 → 正常处理（更新订单状态）
+    └── 唯一键冲突 → 说明已处理过 → 直接返回成功
+```
+
+### 3.4 支付超时处理（RabbitMQ 延时队列）
+
+下单后 30 分钟未支付自动取消订单，使用 RabbitMQ 延时队列实现。
+
+```java
+@Configuration
+public class RabbitDelayConfig {
+
+    /** 延时队列：等待 30 分钟后过期，投递到死信队列 */
+    @Bean
+    public Queue delayQueue() {
+        return QueueBuilder.durable("order.delay.queue")
+                .withArgument("x-message-ttl", 30 * 60 * 1000)      // 30分钟 TTL
+                .withArgument("x-dead-letter-exchange", "order.close.exchange")
+                .withArgument("x-dead-letter-routing-key", "order.close")
+                .build();
+    }
+
+    /** 死信队列：真正处理关单 */
+    @Bean
+    public Queue closeQueue() {
+        return new Queue("order.close.queue", true);
+    }
+
+    @Bean
+    public DirectExchange delayExchange() {
+        return new DirectExchange("order.delay.exchange");
+    }
+
+    @Bean
+    public DirectExchange closeExchange() {
+        return new DirectExchange("order.close.exchange");
+    }
+
+    @Bean
+    public Binding delayBinding() {
+        return BindingBuilder.bind(delayQueue())
+                .to(delayExchange())
+                .with("order.close.delay");
+    }
+
+    @Bean
+    public Binding closeBinding() {
+        return BindingBuilder.bind(closeQueue())
+                .to(closeExchange())
+                .with("order.close");
+    }
+}
+```
+
+```java
+@Component
+@Slf4j
+public class OrderCloseListener {
+
+    @Autowired
+    private OrderMapper orderMapper;
+    @Autowired
+    private SkuStockService skuStockService;
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @RabbitListener(queues = "order.close.queue")
+    @Transactional(rollbackFor = Exception.class)
+    public void handleOrderClose(String orderId) {
+        log.info("收到关单消息，orderId={}", orderId);
+
+        // 查询订单
+        Orders order = orderMapper.selectByOrderId(orderId);
+        if (order == null) {
+            log.warn("订单不存在，orderId={}", orderId);
+            return;
+        }
+
+        // 只有待支付状态才执行关单
+        if (!OrderStatus.WAIT_PAY.getCode().equals(order.getStatus())) {
+            log.info("订单状态不是待支付，跳过关单。orderId={}, status={}",
+                    orderId, order.getStatus());
+            return;
+        }
+
+        // 更新订单状态为已取消
+        int updated = orderMapper.updateStatusByOrderId(
+                orderId,
+                OrderStatus.WAIT_PAY.getCode(),
+                OrderStatus.CANCELLED.getCode(),
+                null, null
+        );
+
+        if (updated == 0) {
+            log.error("关单失败，可能是并发状态变更，orderId={}", orderId);
+            throw new RuntimeException("关单失败");
+        }
+
+        // 归还 Redis 库存
+        List<OrderItem> items = orderItemMapper.selectByOrderId(orderId);
+        for (OrderItem item : items) {
+            String stockKey = "sku:stock:" + item.getSkuId();
+            redisTemplate.opsForValue().increment(stockKey, item.getQuantity());
+        }
+
+        // 异步归还数据库库存
+        rabbitTemplate.convertAndSend("stock.exchange", "stock.revert",
+                new StockRevertMessage(orderId, items));
+    }
+}
+```
+
+***
+
+## 4. 订单取消与退款
+
+### 4.1 未支付自动取消
+
+已在 3.4 节覆盖。核心机制：下单时发送 TTL=30min 的延时消息，到期检查订单状态，仅「待支付」状态才执行取消并归还库存。
+
+### 4.2 已支付退款流程
+
+```java
+@Service
+@Slf4j
+public class RefundService {
+
+    @Autowired
+    private OrderMapper orderMapper;
+    @Autowired
+    private PaymentFlowMapper paymentFlowMapper;
+    @Autowired
+    private RefundMapper refundMapper;
+    @Autowired
+    private AlipayClient alipayClient;
+
+    /**
+     * 申请退款
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void applyRefund(RefundRequest request) {
+        // 1. 校验订单状态
+        Orders order = orderMapper.selectByOrderId(request.getOrderId());
+        if (order == null) {
+            throw new BusinessException("订单不存在");
+        }
+        if (!OrderStatus.PAID.getCode().equals(order.getStatus())) {
+            throw new BusinessException("当前订单状态不允许退款");
+        }
+
+        // 2. 查询支付流水
+        PaymentFlow payment = paymentFlowMapper.selectByOrderId(request.getOrderId());
+        if (payment == null) {
+            throw new BusinessException("未找到支付记录");
+        }
+
+        // 3. 更新订单状态为「退款中」
+        orderMapper.updateStatus(order.getOrderId(), OrderStatus.REFUNDING.getCode());
+
+        // 4. 插入退款申请记录
+        RefundRecord refund = new RefundRecord();
+        refund.setOrderId(request.getOrderId());
+        refund.setPlatformTradeNo(payment.getPlatformTradeNo());
+        refund.setRefundAmount(request.getRefundAmount());
+        refund.setRefundReason(request.getReason());
+        refund.setStatus(RefundStatus.PENDING.getCode());
+        refundMapper.insert(refund);
+
+        // 5. 发送退款请求到支付平台（这里以支付宝为例）
+        sendRefundToAlipay(refund);
+    }
+
+    /**
+     * 支付宝退款
+     */
+    private void sendRefundToAlipay(RefundRecord refund) {
+        AlipayTradeRefundRequest request = new AlipayTradeRefundRequest();
+
+        JSONObject bizContent = new JSONObject();
+        bizContent.put("out_trade_no", refund.getOrderId());       // 商户订单号
+        bizContent.put("refund_amount", refund.getRefundAmount());  // 退款金额
+        bizContent.put("refund_reason", refund.getRefundReason());  // 退款原因
+        request.setBizContent(bizContent.toJSONString());
+
+        try {
+            AlipayTradeRefundResponse response = alipayClient.execute(request);
+            if (response.isSuccess()) {
+                // 退款成功
+                refundMapper.updateStatus(refund.getId(), RefundStatus.SUCCESS.getCode());
+                orderMapper.updateStatus(refund.getOrderId(), OrderStatus.REFUNDED.getCode());
+                log.info("退款成功，orderId={}, refundAmount={}", refund.getOrderId(), refund.getRefundAmount());
+            } else {
+                // 退款失败
+                refundMapper.updateStatus(refund.getId(), RefundStatus.FAILED.getCode());
+                orderMapper.updateStatus(refund.getOrderId(), OrderStatus.PAID.getCode());
+                log.error("退款失败，orderId={}, msg={}", refund.getOrderId(), response.getSubMsg());
+                throw new PaymentException("退款失败：" + response.getSubMsg());
+            }
+        } catch (AlipayApiException e) {
+            log.error("退款API异常", e);
+            throw new PaymentException("退款接口异常", e);
+        }
+    }
+}
+```
+
+### 4.3 退款事务一致性
+
+退款必须保证以下操作要么全部成功，要么全部回滚：
+
+```
+退款事务边界：
+┌──────────────────────────────────────────────┐
+│  1. 更新订单状态 → REFUNDING（订单库）         │
+│  2. 插入退款记录（退款库）                      │
+│  3. 调用支付平台退款接口（支付宝/微信）          │
+│  4. 更新退款记录状态 → SUCCESS（退款库）        │
+│  5. 更新订单状态 → REFUNDED（订单库）          │
+│  6. 归还库存                                 │
+└──────────────────────────────────────────────┘
+```
+
+**一致性保障策略：**
+
+| 场景 | 处理方式 |
+|------|---------|
+| 步骤 1-2 失败 | 本地事务回滚，无影响 |
+| 步骤 3 退款API超时 | 查询退款结果 + 定时补偿任务 |
+| 步骤 4-5 DB 更新失败 | 退款已发生，补偿任务修正订单状态 |
+| 全流程成功 | 结束 |
+
+**退款补偿任务：**
+
+```java
+@Component
+@Slf4j
+public class RefundCompensationTask {
+
+    @Autowired
+    private RefundMapper refundMapper;
+    @Autowired
+    private OrderMapper orderMapper;
+
+    /**
+     * 每 5 分钟扫描退款中但未完成的记录
+     */
+    @Scheduled(fixedDelay = 5 * 60 * 1000)
+    public void compensateRefund() {
+        List<RefundRecord> pendingRefunds = refundMapper.selectByStatus(RefundStatus.PENDING.getCode());
+        for (RefundRecord refund : pendingRefunds) {
+            try {
+                // 查询支付平台退款结果
+                Boolean success = queryRefundResultFromPlatform(refund);
+                if (success) {
+                    refundMapper.updateStatus(refund.getId(), RefundStatus.SUCCESS.getCode());
+                    orderMapper.updateStatus(refund.getOrderId(), OrderStatus.REFUNDED.getCode());
+                }
+            } catch (Exception e) {
+                log.error("退款补偿处理失败，refundId={}", refund.getId(), e);
+            }
+        }
+    }
+}
+```
+
+***
+
+## 5. 订单查询优化
+
+### 5.1 订单列表分页（ES 搜索 + MySQL 详情）
+
+**方案：ES 存储搜索字段 + MySQL 存储完整数据**
+
+```
+查询请求
+    │
+    ├── 条件拼装（userId + status + timeRange + keyword）
+    │
+    ├── ES 搜索 order_index
+    │       ├── 命中 → 返回 orderId 列表（分页）
+    │       └── 未命中 → 返回空
+    │
+    ├── 根据 orderId 列表回查 MySQL
+    │       └── SELECT * FROM orders WHERE order_id IN (...)
+    │
+    └── 组装结果返回
+```
+
+**ES 索引映射：**
+
+```json
+PUT /order_index
+{
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "orderId":     { "type": "keyword" },
+      "userId":      { "type": "long" },
+      "status":      { "type": "integer" },
+      "payAmount":   { "type": "double" },
+      "skuNames":    { "type": "text", "analyzer": "ik_smart" },
+      "receiverName":{ "type": "keyword" },
+      "receiverPhone":{ "type": "keyword" },
+      "createTime":  { "type": "date", "format": "yyyy-MM-dd HH:mm:ss" },
+      "payTime":     { "type": "date", "format": "yyyy-MM-dd HH:mm:ss" }
+    }
+  }
+}
+```
+
+**分页查询代码：**
+
+```java
+@Service
+@Slf4j
+public class OrderQueryService {
+
+    @Autowired
+    private RestHighLevelClient esClient;
+    @Autowired
+    private OrderMapper orderMapper;
+
+    public PageResult<OrderVO> queryOrderPage(OrderQuery query) {
+        // 1. ES 分页搜索
+        NativeSearchQueryBuilder builder = new NativeSearchQueryBuilder();
+
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        boolQuery.must(QueryBuilders.termQuery("userId", query.getUserId()));
+
+        if (query.getStatus() != null) {
+            boolQuery.must(QueryBuilders.termQuery("status", query.getStatus()));
+        }
+        if (query.getStartTime() != null && query.getEndTime() != null) {
+            boolQuery.must(QueryBuilders.rangeQuery("createTime")
+                    .gte(query.getStartTime()).lte(query.getEndTime()));
+        }
+        if (StringUtils.isNotBlank(query.getKeyword())) {
+            boolQuery.must(QueryBuilders.matchQuery("skuNames", query.getKeyword()));
+        }
+
+        builder.withQuery(boolQuery);
+        builder.withPageable(PageRequest.of(query.getPage() - 1, query.getSize()));
+        builder.withSort(SortBuilders.fieldSort("createTime").order(SortOrder.DESC));
+
+        SearchHits hits = esClient.search(
+                builder.build(), ElasticSearchRequestOptions.DEFAULT);
+
+        // 2. 提取 orderId 列表
+        List<String> orderIds = Arrays.stream(hits.getHits())
+                .map(hit -> {
+                    Map<String, Object> source = hit.getSourceAsMap();
+                    return (String) source.get("orderId");
+                })
+                .collect(Collectors.toList());
+
+        if (orderIds.isEmpty()) {
+            return PageResult.empty(query.getPage(), query.getSize());
+        }
+
+        // 3. 回查 MySQL 获取完整订单数据
+        List<Orders> orders = orderMapper.selectByOrderIds(orderIds);
+
+        // 4. 组装 VO
+        List<OrderVO> voList = orders.stream()
+                .map(this::toOrderVO)
+                .collect(Collectors.toList());
+
+        return new PageResult<>(query.getPage(), query.getSize(),
+                hits.getTotalHits().value, voList);
+    }
+}
+```
+
+### 5.2 订单状态统计（Redis 计数 + 定时同步 DB）
+
+实时统计各状态的订单数量，使用 Redis 计数避免频繁查库。
+
+```java
+@Service
+@Slf4j
+public class OrderStatService {
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    private OrderMapper orderMapper;
+
+    private static final String ORDER_COUNT_KEY = "order:stat:count";
+    private static final String ORDER_USER_COUNT_KEY = "order:user:count:";
+
+    /**
+     * 订单状态变更时更新 Redis 统计
+     */
+    public void onOrderStatusChanged(Long userId, Integer oldStatus, Integer newStatus) {
+        // 旧状态 -1
+        if (oldStatus != null) {
+            redisTemplate.opsForHash().increment(ORDER_COUNT_KEY, String.valueOf(oldStatus), -1);
+        }
+        // 新状态 +1
+        redisTemplate.opsForHash().increment(ORDER_COUNT_KEY, String.valueOf(newStatus), 1);
+
+        // 用户维度的订单计数
+        String userKey = ORDER_USER_COUNT_KEY + userId;
+        if (oldStatus != null) {
+            redisTemplate.opsForHash().increment(userKey, String.valueOf(oldStatus), -1);
+        }
+        redisTemplate.opsForHash().increment(userKey, String.valueOf(newStatus), 1);
+    }
+
+    /**
+     * 获取各状态订单数量
+     */
+    public Map<Integer, Long> getOrderStat() {
+        Map<Object, Object> entries = redisTemplate.opsForHash().entries(ORDER_COUNT_KEY);
+        Map<Integer, Long> result = new HashMap<>();
+        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+            result.put(Integer.parseInt(entry.getKey().toString()),
+                    Long.parseLong(entry.getValue().toString()));
+        }
+        return result;
+    }
+
+    /**
+     * 定时任务：每小时将 Redis 统计同步回数据库
+     */
+    @Scheduled(cron = "0 0 * * * ?")
+    public void syncStatToDB() {
+        Map<Integer, Long> stats = getOrderStat();
+        for (Map.Entry<Integer, Long> entry : stats.entrySet()) {
+            // 同步到 MySQL 统计表
+            orderMapper.updateOrderStat(entry.getKey(), entry.getValue());
+        }
+        log.info("订单统计已同步到数据库：{}", stats);
+    }
+}
+```
+
+***
+
+## 附录：关键设计要点总结
+
+| 关注点 | 解决方案 |
+|--------|---------|
+| 订单号唯一性 | 雪花算法（Snowflake） |
+| 库存防超卖 | Redis Lua 原子扣减 + 数据库乐观锁兜底 |
+| 支付幂等 | 支付流水表唯一索引 |
+| 超时关单 | RabbitMQ 延时队列（30min TTL → 死信队列） |
+| 分布式事务 | Seata AT 模式 + 本地事务 |
+| 高并发查询 | ES 搜索 + MySQL 详情分离 |
+| 实时统计 | Redis 计数 + 定时同步 DB |
+| 退款一致性 | 本地事务 + 平台退款 + 定时补偿任务 |

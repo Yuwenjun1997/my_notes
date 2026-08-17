@@ -1,0 +1,1244 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/1-spring-quan-jia-tong/index.md
+---
+# Spring 全家桶
+
+## 一、Spring Core
+
+### 1.1 IoC 容器
+
+IoC（Inversion of Control，控制反转）是 Spring 的核心思想。它将对象的创建和依赖关系的管理交给容器完成，而不是由对象自己控制。
+
+**传统方式 vs IoC 方式**
+
+```java
+// ❌ 传统方式：对象自己创建依赖
+public class OrderService {
+    private final UserService userService = new UserService();  // 硬编码创建
+    private final PaymentService paymentService = new PaymentService();
+}
+
+// ✅ IoC 方式：容器注入依赖
+public class OrderService {
+    private final UserService userService;
+    private final PaymentService paymentService;
+
+    public OrderService(UserService userService, PaymentService paymentService) {
+        this.userService = userService;
+        this.paymentService = paymentService;
+    }
+}
+```
+
+**Spring 容器的核心接口**
+
+```java
+// BeanFactory：最基础的容器（延迟加载）
+BeanFactory factory = new XmlBeanFactory(new ClassPathResource("beans.xml"));
+
+// ApplicationContext：更高级的容器（预加载，推荐使用）
+// 常用实现类：
+ApplicationContext context1 = new ClassPathXmlApplicationContext("applicationContext.xml");  // XML 配置
+ApplicationContext context2 = new AnnotationConfigApplicationContext(AppConfig.class);       // 注解配置
+ApplicationContext context3 = new GenericApplicationContext();                               // 编程式
+
+// 从容器获取 Bean
+UserService userService = context.getBean(UserService.class);
+UserService userService2 = (UserService) context.getBean("userService");
+```
+
+### 1.2 依赖注入（DI）
+
+依赖注入是实现 IoC 的主要方式，Spring 支持三种注入方式：
+
+**构造器注入（推荐）**
+
+```java
+@Component
+public class OrderService {
+    private final UserService userService;
+    private final PaymentService paymentService;
+
+    @Autowired  // Spring 4.3+ 可省略（单构造器情况下）
+    public OrderService(UserService userService, PaymentService paymentService) {
+        this.userService = userService;
+        this.paymentService = paymentService;
+    }
+}
+```
+
+**Setter 注入**
+
+```java
+@Component
+public class OrderService {
+    private UserService userService;
+
+    @Autowired
+    public void setUserService(UserService userService) {
+        this.userService = userService;
+    }
+}
+```
+
+**字段注入（不推荐）**
+
+```java
+@Component
+public class OrderService {
+    @Autowired
+    private UserService userService;  // 缺点：无法测试、隐藏依赖、违反单一职责
+}
+```
+
+**为什么推荐构造器注入？**
+
+| 特性 | 构造器注入 | Setter 注入 | 字段注入 |
+|------|:---------:|:----------:|:--------:|
+| 不可变性 | ✅ final 字段 | ❌ | ❌ |
+| 循环依赖检测 | ✅ 编译期可发现 | ❌ 运行时才暴露 | ❌ |
+| 可测试性 | ✅ 无需 Spring 启动 | ✅ | ❌ 需要反射 |
+| 依赖清晰 | ✅ 必选依赖显式声明 | ❌ 依赖可选 | ❌ 隐藏依赖 |
+
+### 1.3 AOP（面向切面编程）
+
+AOP 用于将横切关注点（日志、事务、权限等）从业务逻辑中分离。
+
+**核心概念**
+
+| 概念 | 说明 | 类比 |
+|------|------|------|
+| Joinpoint（连接点） | 程序执行的某个点（方法调用） | 检查站 |
+| Pointcut（切入点） | 匹配连接点的表达式 | 检查站规则（只检查特定车辆） |
+| Advice（通知） | 在切入点执行的具体逻辑 | 检查站执行的动作 |
+| Aspect（切面） | Pointcut + Advice 的组合 | 整个检查站 |
+| Weaving（织入） | 将切面应用到目标对象的过程 | 安装检查站 |
+| Target（目标对象） | 被 AOP 增强的对象 | 被检查的车辆 |
+| Proxy（代理对象） | AOP 创建的包含增强逻辑的对象 | 检查站门禁 |
+
+**通知类型**
+
+```java
+@Aspect
+@Component
+public class LoggingAspect {
+
+    // 1. @Before：方法执行前执行
+    @Before("execution(* com.example.service.*.*(..))")
+    public void beforeAdvice(JoinPoint joinPoint) {
+        String methodName = joinPoint.getSignature().getName();
+        Object[] args = joinPoint.getArgs();
+        log.info("方法 {} 开始执行，参数: {}", methodName, args);
+    }
+
+    // 2. @AfterReturning：方法正常返回后执行
+    @AfterReturning(value = "execution(* com.example.service.*.*(..))", returning = "result")
+    public void afterReturning(JoinPoint joinPoint, Object result) {
+        log.info("方法 {} 执行完成，结果: {}", joinPoint.getSignature().getName(), result);
+    }
+
+    // 3. @AfterThrowing：方法抛出异常后执行
+    @AfterThrowing(value = "execution(* com.example.service.*.*(..))", throwing = "ex")
+    public void afterThrowing(JoinPoint joinPoint, Exception ex) {
+        log.error("方法 {} 抛出异常: {}", joinPoint.getSignature().getName(), ex.getMessage());
+    }
+
+    // 4. @After：方法执行完毕后执行（无论成功还是异常）
+    @After("execution(* com.example.service.*.*(..))")
+    public void afterAdvice(JoinPoint joinPoint) {
+        log.info("方法 {} 执行完毕", joinPoint.getSignature().getName());
+    }
+
+    // 5. @Around：环绕通知，最强的通知类型（可控制方法执行）
+    @Around("@annotation(com.example.annotation.Measured)")
+    public Object aroundAdvice(ProceedingJoinPoint joinPoint) throws Throwable {
+        long startTime = System.currentTimeMillis();
+        try {
+            Object result = joinPoint.proceed();  // 执行目标方法
+            return result;
+        } finally {
+            long elapsed = System.currentTimeMillis() - startTime;
+            log.info("方法 {} 执行耗时: {}ms", joinPoint.getSignature().getName(), elapsed);
+        }
+    }
+}
+```
+
+**Pointcut 表达式**
+
+```java
+// 语法：execution(修饰符? 返回类型 方法名(参数) 异常?)
+@Pointcut("execution(public * com.example.service.*.*(..))")
+//                    └─────┬─────┘└──┬──┘└─┬─┘└┬┘
+//                  返回任意类型  service包下  任意方法 任意参数
+public void serviceMethods() {}
+
+// 常用表达式
+@Pointcut("execution(* com.example.service.*.*(..))")           // service 包下所有方法
+@Pointcut("execution(* com.example.service..*.*(..))")          // service 包及子包所有方法
+@Pointcut("within(com.example.service.*)")                       // service 包下所有类
+@Pointcut("bean(*Service)")                                      // 名字以 Service 结尾的 Bean
+@Pointcut("@annotation(org.springframework.transaction.annotation.Transactional)")  // 有 @Transactional 注解的方法
+@Pointcut("this(com.example.service.UserService)")               // 实现了 UserService 接口的代理对象
+@Pointcut("target(com.example.service.UserService)")             // 目标对象实现了 UserService 接口
+
+// 组合表达式
+@Pointcut("serviceMethods() && !noLoggingMethods()")            // 且、或、非
+```
+
+**AOP 代理机制**
+
+```text
+Spring AOP 默认使用：
+- JDK 动态代理：目标类实现了接口 → 代理类也实现相同接口
+- CGLIB 代理：目标类没有实现接口 → 生成目标类的子类
+
+Spring Boot 2.0+ 默认使用 CGLIB（spring.aop.proxy-target-class=true）
+```
+
+### 1.4 Bean 生命周期
+
+Spring Bean 的生命周期是面试高频考点，分为四个主要阶段：
+
+```text
+实例化（Instantiation）→ 属性赋值（Populate）→ 初始化（Initialization）→ 销毁（Destruction）
+```
+
+**完整生命周期流程图**
+
+```text
+1. BeanDefinition 加载和解析（从 XML/注解读取 Bean 配置）
+2. 实例化 Bean（通过反射创建对象）
+       ↓
+3. 设置对象属性（依赖注入）
+       ↓
+4. 检查 Aware 接口并注入相关依赖
+   ├─ BeanNameAware.setBeanName()
+   ├─ BeanClassLoaderAware.setBeanClassLoader()
+   └─ BeanFactoryAware.setBeanFactory()
+       ↓
+5. BeanPostProcessor.postProcessBeforeInitialization()   ← 前置处理
+       ↓
+6. 执行初始化方法
+   ├─ @PostConstruct 注解方法
+   ├─ InitializingBean.afterPropertiesSet()
+   └─ XML 配置的 init-method
+       ↓
+7. BeanPostProcessor.postProcessAfterInitialization()    ← 后置处理
+       ↓
+      Bean 就绪，可供使用
+       ↓
+8. 容器关闭时销毁
+   ├─ @PreDestroy 注解方法
+   ├─ DisposableBean.destroy()
+   └─ XML 配置的 destroy-method
+```
+
+**代码演示 Bean 生命周期**
+
+```java
+@Component
+public class LifecycleDemoBean implements BeanNameAware, BeanFactoryAware,
+        InitializingBean, DisposableBean {
+
+    private String name;
+
+    public LifecycleDemoBean() {
+        System.out.println("1. 实例化：构造函数调用");
+    }
+
+    @Autowired
+    public void setName(String name) {
+        this.name = name;
+        System.out.println("2. 属性赋值：依赖注入 name = " + name);
+    }
+
+    @Override
+    public void setBeanName(String name) {
+        System.out.println("3.1 BeanNameAware: bean 名称为 " + name);
+    }
+
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) {
+        System.out.println("3.3 BeanFactoryAware: 获取 BeanFactory");
+    }
+
+    @PostConstruct
+    public void postConstruct() {
+        System.out.println("5. @PostConstruct: JSR-250 初始化回调");
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        System.out.println("6. InitializingBean.afterPropertiesSet()");
+    }
+
+    @Bean(initMethod = "customInit")
+    public void customInit() {
+        System.out.println("7. 自定义 init-method");
+    }
+
+    @PreDestroy
+    public void preDestroy() {
+        System.out.println("8. @PreDestroy: JSR-250 销毁回调");
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("9. DisposableBean.destroy()");
+    }
+}
+```
+
+**BeanPostProcessor 示例**
+
+```java
+@Component
+public class MyBeanPostProcessor implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) {
+        if (bean instanceof LifecycleDemoBean) {
+            System.out.println("BeanPostProcessor BeforeInitialization: " + beanName);
+        }
+        return bean;  // 可以返回包装后的代理对象
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
+        if (bean instanceof LifecycleDemoBean) {
+            System.out.println("BeanPostProcessor AfterInitialization: " + beanName);
+            // 可以在这里对 Bean 进行代理增强
+        }
+        return bean;
+    }
+}
+```
+
+### 1.5 Bean 的作用域
+
+| 作用域 | 说明 | 使用场景 |
+|-------|------|---------|
+| `singleton`（默认） | 容器中只创建一个实例 | 无状态 Bean（Service、DAO） |
+| `prototype` | 每次请求创建新实例 | 有状态 Bean |
+| `request` | 每个 HTTP 请求创建一个 | Web 应用中的请求上下文 |
+| `session` | 每个 HTTP Session 创建一个 | Web 应用中的用户上下文 |
+| `application` | 每个 ServletContext 创建一个 | Web 应用全局上下文 |
+| `websocket` | 每个 WebSocket 创建一个 | WebSocket 应用 |
+
+```java
+@Component
+@Scope("prototype")  // 或 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class ShoppingCart {
+    // 每次注入或 getBean 都创建新实例
+}
+
+@Component
+@Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class RequestContext {
+    // 每个请求一个实例
+}
+```
+
+***
+
+## 二、Spring MVC
+
+### 2.1 DispatcherServlet 工作原理
+
+DispatcherServlet 是 Spring MVC 的核心前端控制器，负责请求的接收和分发。
+
+**处理流程**
+
+```text
+请求到达
+    ↓
+1. DispatcherServlet 接收请求
+    ↓
+2. HandlerMapping 查找 Handler（处理器）
+   - 根据 URL 找到对应的 Controller 方法
+   - 返回 HandlerExecutionChain（Handler + 拦截器链）
+    ↓
+3. HandlerAdapter 适配调用 Handler
+   - 参数解析（@RequestParam、@PathVariable、@RequestBody 等）
+   - 调用 Controller 方法
+    ↓
+4. Controller 执行业务逻辑，返回 ModelAndView
+    ↓
+5. ViewResolver 解析视图（如果是 JSP/Thymeleaf）
+   - 或直接返回 @ResponseBody（JSON 响应）
+    ↓
+6. 渲染视图 / 返回 JSON
+    ↓
+响应返回客户端
+```
+
+**核心组件**
+
+```java
+@Configuration
+@EnableWebMvc
+@ComponentScan("com.example.controller")
+public class WebConfig implements WebMvcConfigurer {
+
+    @Bean
+    public ViewResolver viewResolver() {
+        InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+        resolver.setPrefix("/WEB-INF/views/");
+        resolver.setSuffix(".jsp");
+        return resolver;
+    }
+
+    // 配置静态资源处理
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/")
+                .setCachePeriod(3600);
+    }
+}
+```
+
+**DispatcherServlet 源码核心流程**
+
+```java
+// DispatcherServlet.doDispatch() 简化版
+protected void doDispatch(HttpServletRequest request, HttpServletResponse response) {
+    try {
+        // 1. 获取 HandlerExecutionChain
+        HandlerExecutionChain mappedHandler = getHandler(request);
+
+        // 2. 获取 HandlerAdapter
+        HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+
+        // 3. 执行拦截器 preHandle
+        if (!mappedHandler.applyPreHandle(request, response)) {
+            return;
+        }
+
+        // 4. 实际调用 Controller 方法
+        ModelAndView mv = ha.handle(request, response, mappedHandler.getHandler());
+
+        // 5. 执行拦截器 postHandle
+        mappedHandler.applyPostHandle(request, response, mv);
+
+        // 6. 渲染视图
+        processDispatchResult(request, response, mappedHandler, mv);
+
+    } catch (Exception ex) {
+        // 异常处理
+        processHandlerException(request, response, handler, ex);
+    } finally {
+        // 执行拦截器 afterCompletion
+        mappedHandler.applyAfterCompletion(request, response, ex);
+    }
+}
+```
+
+### 2.2 Controller 处理请求
+
+**常用注解**
+
+```java
+@RestController  // = @Controller + @ResponseBody
+@RequestMapping("/api/users")
+public class UserController {
+
+    // GET /api/users?page=1&size=20
+    @GetMapping
+    public Result<List<User>> list(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return Result.success(userService.list(page, size));
+    }
+
+    // GET /api/users/123
+    @GetMapping("/{id}")
+    public Result<User> getById(@PathVariable Long id) {
+        return Result.success(userService.getById(id));
+    }
+
+    // POST /api/users
+    @PostMapping
+    public Result<User> create(@Valid @RequestBody UserCreateRequest request) {
+        User user = userService.create(request);
+        return Result.success(user);
+    }
+
+    // PUT /api/users/123
+    @PutMapping("/{id}")
+    public Result<User> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UserUpdateRequest request) {
+        return Result.success(userService.update(id, request));
+    }
+
+    // DELETE /api/users/123
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        userService.delete(id);
+        return Result.success();
+    }
+}
+```
+
+**参数绑定详解**
+
+```java
+@RestController
+@RequestMapping("/api")
+public class ParamController {
+
+    // @RequestParam：从查询参数取值
+    @GetMapping("/search")
+    public Result<?> search(
+            @RequestParam String keyword,
+            @RequestParam(required = false) String type,       // 可选参数
+            @RequestParam(defaultValue = "1") int page,        // 默认值
+            @RequestParam Map<String, String> allParams) {     // 所有参数
+        return Result.success(allParams);
+    }
+
+    // @PathVariable：从路径中取值
+    @GetMapping("/users/{userId}/orders/{orderId}")
+    public Result<?> getUserOrder(
+            @PathVariable Long userId,
+            @PathVariable String orderId) {
+        return Result.success("user=" + userId + ", order=" + orderId);
+    }
+
+    // @RequestBody：从请求体中解析 JSON
+    @PostMapping("/users")
+    public Result<User> createUser(@Valid @RequestBody UserCreateRequest request) {
+        return Result.success(userService.create(request));
+    }
+
+    // @RequestHeader：从请求头中取值
+    @GetMapping("/info")
+    public Result<?> getInfo(
+            @RequestHeader("User-Agent") String userAgent,
+            @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
+        return Result.success("UA: " + userAgent + ", RequestId: " + requestId);
+    }
+
+    // @CookieValue：从 Cookie 中取值
+    @GetMapping("/session")
+    public Result<?> getSession(
+            @CookieValue(value = "sessionId", defaultValue = "") String sessionId) {
+        return Result.success("SessionId: " + sessionId);
+    }
+}
+```
+
+### 2.3 Filter 和 Interceptor 的区别
+
+| 特性 | Filter | Interceptor |
+|------|--------|-------------|
+| **规范** | Servlet 规范 | Spring 框架 |
+| **作用范围** | 所有 Web 资源（包括静态资源） | 仅 Spring 管理的 Controller |
+| **执行时机** | 在 Servlet 处理前后 | 在 HandlerAdapter 处理前后 |
+| **配置方式** | web.xml 或 @WebFilter | 实现 HandlerInterceptor 接口 |
+| **依赖** | 依赖 Servlet API | 不依赖 Servlet API |
+| **访问 Controller 上下文** | 不能 | 可以（获取 Handler、ModelAndView） |
+| **多次调用** | 请求只能被 Filter 过滤一次 | 可以多次调用（前后端分离） |
+
+**Filter 示例**
+
+```java
+@Component
+@WebFilter(urlPatterns = "/*")
+@Order(1)
+public class RequestLoggingFilter implements Filter {
+
+    @Override
+    public void init(FilterConfig filterConfig) {
+        log.info("RequestLoggingFilter 初始化");
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+
+        long startTime = System.currentTimeMillis();
+        try {
+            // 请求前处理
+            log.info("请求开始: {} {}", httpRequest.getMethod(), httpRequest.getRequestURI());
+
+            // 放行到下一个 Filter 或 Servlet
+            chain.doFilter(request, response);
+        } finally {
+            // 响应后处理
+            long elapsed = System.currentTimeMillis() - startTime;
+            log.info("请求完成: {} {} - 耗时 {}ms",
+                    httpRequest.getMethod(), httpRequest.getRequestURI(), elapsed);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        log.info("RequestLoggingFilter 销毁");
+    }
+}
+```
+
+**Interceptor 示例**
+
+```java
+@Component
+public class AuthInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
+                             Object handler) throws Exception {
+        // 在 Controller 方法执行前调用
+        // 返回 true 放行，false 拦截
+
+        if (handler instanceof HandlerMethod) {
+            HandlerMethod hm = (HandlerMethod) handler;
+            String controllerName = hm.getBeanType().getSimpleName();
+            String methodName = hm.getMethod().getName();
+            log.info("访问 Controller: {}.{}", controllerName, methodName);
+        }
+
+        // 检查 Token（从请求头获取）
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            response.setStatus(401);
+            response.getWriter().write("{\"code\":401,\"message\":\"未授权\"}");
+            return false;
+        }
+
+        // 验证 Token 并设置用户上下文
+        String userId = JwtUtil.parseToken(token.substring(7));
+        UserContext.setUserId(userId);
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response,
+                           Object handler, ModelAndView modelAndView) throws Exception {
+        // Controller 方法执行后，视图渲染前调用
+        log.info("postHandle: 视图渲染前");
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+                                Object handler, Exception ex) throws Exception {
+        // 整个请求完成后调用（视图渲染后）
+        UserContext.clear();  // 清理线程上下文
+        if (ex != null) {
+            log.error("请求异常", ex);
+        }
+    }
+}
+
+// 注册 Interceptor
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private AuthInterceptor authInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(authInterceptor)
+                .addPathPatterns("/api/**")       // 拦截 /api/ 下的所有请求
+                .excludePathPatterns(
+                    "/api/auth/**",                // 登录注册不拦截
+                    "/api/public/**",              // 公共接口不拦截
+                    "/error"                       // 错误页面不拦截
+                );
+
+        // 可以添加多个拦截器，按注册顺序执行
+        registry.addInterceptor(new RateLimitInterceptor())
+                .addPathPatterns("/api/**");
+    }
+}
+```
+
+***
+
+## 三、Spring Boot
+
+### 3.1 自动配置原理
+
+Spring Boot 自动配置的核心在于 `@EnableAutoConfiguration` 注解。
+
+**@SpringBootApplication 组合注解**
+
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@SpringBootConfiguration     // = @Configuration，表明是配置类
+@EnableAutoConfiguration     // 开启自动配置
+@ComponentScan               // 组件扫描
+public @interface SpringBootApplication {}
+```
+
+**自动配置工作流程**
+
+```text
+启动类上的 @SpringBootApplication
+    ↓
+@EnableAutoConfiguration
+    ↓
+@Import(AutoConfigurationImportSelector.class)
+    ↓
+AutoConfigurationImportSelector.selectImports()
+    ↓
+扫描 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+（Spring Boot 3.0+）或 META-INF/spring.factories（旧版本）
+    ↓
+加载所有 AutoConfiguration 类
+    ↓
+每个 AutoConfiguration 类使用 @ConditionalOnXxx 条件判断
+    ↓
+条件满足 → 创建配置的 Bean
+条件不满足 → 跳过
+```
+
+**条件注解**
+
+```java
+@Configuration
+// 仅在存在 DataSource 类时才加载
+@ConditionalOnClass(DataSource.class)
+public class DataSourceAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean  // 用户没有自定义 DataSource 时才创建
+    @ConditionalOnProperty(prefix = "spring.datasource", name = "url")  // 有配置属性才创建
+    public DataSource dataSource(DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder().build();
+    }
+
+    @Configuration
+    @ConditionalOnProperty(prefix = "spring.datasource", name = "type")
+    static class SpecificTypeConfiguration {
+        @Bean
+        @ConditionalOnMissingBean
+        public DataSource specificDataSource(DataSourceProperties properties) {
+            return properties.initializeDataSourceBuilder().build();
+        }
+    }
+}
+```
+
+**自定义 Starter 示例**
+
+```java
+// 1. 自动配置类
+@Configuration
+@ConditionalOnClass(RedisClient.class)
+@EnableConfigurationProperties(RedisProperties.class)
+public class RedisAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RedisClient redisClient(RedisProperties properties) {
+        return new RedisClient(properties.getHost(), properties.getPort());
+    }
+}
+
+// 2. 配置属性类
+@ConfigurationProperties(prefix = "custom.redis")
+public class RedisProperties {
+    private String host = "localhost";
+    private int port = 6379;
+    private int timeout = 3000;
+    // getters & setters
+}
+
+// 3. spring.factories（放在 resources/META-INF/ 下）
+// org.springframework.boot.autoconfigure.AutoConfiguration.imports
+// com.example.starter.RedisAutoConfiguration
+```
+
+### 3.2 Starter 依赖
+
+**常用 Starter**
+
+```xml
+<!-- Web 开发 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+<!-- 数据访问 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+
+<!-- 安全 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+<!-- 测试 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+
+<!-- 缓存 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+
+<!-- 消息队列 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.kafka</groupId>
+    <artifactId>spring-kafka</artifactId>
+</dependency>
+
+<!-- 监控 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+<!-- 验证 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+```
+
+### 3.3 Actuator 监控
+
+Spring Boot Actuator 提供了生产级的监控和管理功能。
+
+**配置**
+
+```yaml
+# application.yml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,loggers,threaddump,heapdump
+      # 或暴露所有端点
+      # include: "*"
+  endpoint:
+    health:
+      show-details: always       # 显示详细健康信息
+      show-components: always
+    shutdown:
+      enabled: true              # 允许远程关闭（慎用）
+  server:
+    port: 9001                   # 管理端口分离
+```
+
+**常用端点**
+
+| 端点 | 路径 | 说明 |
+|------|------|------|
+| health | `/actuator/health` | 健康检查（用于容器探针） |
+| info | `/actuator/info` | 应用信息 |
+| metrics | `/actuator/metrics` | 性能指标 |
+| env | `/actuator/env` | 环境属性 |
+| beans | `/actuator/beans` | 所有 Bean 列表 |
+| loggers | `/actuator/loggers` | 日志级别管理（可在运行时修改） |
+| threaddump | `/actuator/threaddump` | 线程快照 |
+| heapdump | `/actuator/heapdump` | 堆转储 |
+| mappings | `/actuator/mappings` | 请求映射 |
+| shutdown | `/actuator/shutdown` | 关闭应用（POST） |
+
+**自定义 Health Indicator**
+
+```java
+@Component
+public class DatabaseHealthIndicator implements HealthIndicator {
+
+    @Autowired
+    private DataSource dataSource;
+
+    @Override
+    public Health health() {
+        try (Connection conn = dataSource.getConnection()) {
+            if (conn.isValid(1000)) {
+                return Health.up()
+                        .withDetail("database", "MySQL")
+                        .withDetail("status", "连接正常")
+                        .build();
+            } else {
+                return Health.down()
+                        .withDetail("database", "MySQL")
+                        .withDetail("status", "连接无效")
+                        .build();
+            }
+        } catch (SQLException e) {
+            return Health.down(e)
+                    .withDetail("database", "MySQL")
+                    .withDetail("error", e.getMessage())
+                    .build();
+        }
+    }
+}
+```
+
+***
+
+## 四、ORM 框架
+
+### 4.1 Spring Data JPA
+
+**核心概念**
+
+JPA（Java Persistence API）是 Java 的 ORM 标准规范，Hibernate 是其最流行的实现。
+
+**实体定义**
+
+```java
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 50)
+    private String name;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // JPA 关联关系
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Order> orders = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dept_id")
+    private Department department;
+
+    // getters & setters
+}
+```
+
+**Repository 接口**
+
+```java
+// 基础 CRUD Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    // 1. 方法命名查询（无需写 SQL）
+    List<User> findByName(String name);
+
+    Optional<User> findByEmail(String email);
+
+    List<User> findByNameAndStatus(String name, UserStatus status);
+
+    List<User> findByNameContaining(String keyword);     // LIKE '%keyword%'
+
+    List<User> findByCreatedAtAfter(LocalDateTime date);  // 大于指定时间
+
+    long countByStatus(UserStatus status);
+
+    boolean existsByEmail(String email);
+
+    // 2. JPQL 查询
+    @Query("SELECT u FROM User u WHERE u.email LIKE %:domain%")
+    List<User> findByEmailDomain(@Param("domain") String domain);
+
+    // 3. 原生 SQL 查询
+    @Query(value = "SELECT * FROM users WHERE DATE(created_at) = ?1", nativeQuery = true)
+    List<User> findByCreatedDate(String date);
+
+    // 4. 分页排序
+    Page<User> findByStatus(UserStatus status, Pageable pageable);
+}
+
+// 使用示例
+@Service
+public class UserService {
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public Page<UserDTO> listUsers(int page, int size, String keyword) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<User> users;
+        if (keyword != null && !keyword.isEmpty()) {
+            users = userRepository.findByNameContaining(keyword, pageable);
+        } else {
+            users = userRepository.findAll(pageable);
+        }
+
+        return users.map(user -> {
+            UserDTO dto = new UserDTO();
+            dto.setId(user.getId());
+            dto.setName(user.getName());
+            dto.setEmail(user.getEmail());
+            dto.setStatus(user.getStatus());
+            dto.setCreatedAt(user.getCreatedAt());
+            return dto;
+        });
+    }
+}
+```
+
+**关联关系 JPA 映射**
+
+```java
+// 一对一
+@Entity
+public class UserProfile {
+    @Id private Long id;
+
+    @OneToOne
+    @MapsId  // 共享 User 的主键
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    private String avatar;
+    private String bio;
+}
+
+// 一对多
+@Entity
+public class Order {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+}
+
+// 多对多
+@Entity
+public class Student {
+    @Id private Long id;
+    private String name;
+
+    @ManyToMany
+    @JoinTable(
+        name = "student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private Set<Course> courses = new HashSet<>();
+}
+```
+
+**N+1 问题及解决**
+
+```java
+// ❌ N+1 问题：查询 1 个用户，N 次查询订单
+@ManyToOne(fetch = FetchType.LAZY)  // LAZY 只是延迟加载，还是会有 N+1
+
+// ✅ 解决方案 1：JOIN FETCH
+@Query("SELECT u FROM User u LEFT JOIN FETCH u.orders WHERE u.id = :id")
+Optional<User> findByIdWithOrders(@Param("id") Long id);
+
+// ✅ 解决方案 2：@EntityGraph
+@EntityGraph(attributePaths = {"orders", "department"})
+@Query("SELECT u FROM User u WHERE u.id = :id")
+Optional<User> findByIdWithAll(@Param("id") Long id);
+
+// ✅ 解决方案 3：@BatchSize
+@OneToMany(mappedBy = "user")
+@BatchSize(size = 10)  // 一次查询 10 个用户的订单
+private List<Order> orders;
+```
+
+### 4.2 MyBatis
+
+**XML 配置方式**
+
+```xml
+<!-- UserMapper.xml -->
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.UserMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="userResultMap" type="User">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="email" column="email"/>
+        <result property="createdAt" column="created_at"/>
+
+        <!-- 关联查询 -->
+        <association property="department" javaType="Department"
+                     column="dept_id" select="findDepartmentById"/>
+
+        <collection property="orders" ofType="Order"
+                    column="id" select="findOrdersByUserId"/>
+    </resultMap>
+
+    <!-- 基础 CRUD -->
+    <select id="findById" resultMap="userResultMap">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultType="User">
+        SELECT * FROM users
+        <where>
+            <if test="name != null">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users(name, email, phone, status)
+        VALUES(#{name}, #{email}, #{phone}, #{status})
+    </insert>
+
+    <update id="update">
+        UPDATE users
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phone != null">phone = #{phone},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+
+    <!-- 批量操作 -->
+    <insert id="batchInsert">
+        INSERT INTO users(name, email) VALUES
+        <foreach collection="list" item="user" separator=",">
+            (#{user.name}, #{user.email})
+        </foreach>
+    </insert>
+</mapper>
+```
+
+**注解配置方式**
+
+```java
+@Mapper
+public interface UserMapper {
+
+    @Select("SELECT * FROM users WHERE id = #{id}")
+    @Results(id = "userMap", value = {
+        @Result(property = "id", column = "id", id = true),
+        @Result(property = "name", column = "name"),
+        @Result(property = "email", column = "email"),
+        @Result(property = "createdAt", column = "created_at")
+    })
+    User findById(Long id);
+
+    @Select("SELECT * FROM users WHERE email = #{email}")
+    @ResultMap("userMap")
+    Optional<User> findByEmail(String email);
+
+    @Insert("INSERT INTO users(name, email, phone, status) VALUES(#{name}, #{email}, #{phone}, #{status})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insert(User user);
+
+    @Update("UPDATE users SET name=#{name}, email=#{email} WHERE id=#{id}")
+    int update(User user);
+
+    @Delete("DELETE FROM users WHERE id = #{id}")
+    int deleteById(Long id);
+
+    // 动态 SQL（注解方式使用 script 标签）
+    @Select("<script>"
+          + "SELECT * FROM users WHERE 1=1"
+          + "<if test='name != null'> AND name LIKE CONCAT('%', #{name}, '%')</if>"
+          + "<if test='status != null'> AND status = #{status}</if>"
+          + "</script>")
+    List<User> search(@Param("name") String name, @Param("status") String status);
+}
+```
+
+### 4.3 JPA vs MyBatis 对比
+
+| 对比维度 | Spring Data JPA | MyBatis |
+|---------|----------------|---------|
+| **学习曲线** | 较陡（需要理解 JPA 规范） | 较平缓（SQL 直观） |
+| **SQL 控制** | 自动生成，精细控制较难 | 完全手工编写 SQL，控制力强 |
+| **开发效率** | 高（CRUD 几乎无需写 SQL） | 较低（每个操作都要写 SQL） |
+| **复杂查询** | 需要 JPQL 或 native SQL | SQL 直接编写，灵活 |
+| **动态 SQL** | 较弱（Specification/QueryDSL） | 强大（`<if>`、`<where>` 标签） |
+| **性能优化** | 较难（N+1 问题、缓存控制） | 容易（SQL 可控，缓存可配置） |
+| **对象映射** | 自动映射，支持级联 | 需手动配置 ResultMap |
+| **批量操作** | 较弱 | 支持 `<foreach>` 批量 |
+| **适用场景** | 标准 CRUD、表结构固定 | 复杂报表、遗留数据库、高性能要求 |
+
+**选择建议**
+
+| 场景 | 推荐 |
+|------|------|
+| 新项目、表结构规整 | JPA（开发效率高） |
+| 复杂查询、报表系统 | MyBatis（SQL 控制力强） |
+| 高性能要求 | MyBatis |
+| 快速原型开发 | JPA |
+| 遗留数据库、非规范表结构 | MyBatis |
+| 中小型项目 | JPA |
+| 大型复杂项目 | 两者结合（JPA 做基础 CRUD，MyBatis 做复杂查询） |
+
+***
+
+## 五、实践项目
+
+### Spring Boot CRUD 项目
+
+**目标**：创建一个完整的 Spring Boot Web 应用，包含用户管理的 CRUD 操作。
+
+**技术栈**：
+
+* Spring Boot 3.x
+* Spring Data JPA 或 MyBatis
+* MySQL
+* RESTful API
+
+**核心功能**：
+
+1. 用户注册（POST /api/users）
+2. 用户列表（GET /api/users）
+3. 用户详情（GET /api/users/{id}）
+4. 用户更新（PUT /api/users/{id}）
+5. 用户删除（DELETE /api/users/{id}）
+6. 参数校验（@Valid 注解）
+7. 统一异常处理（@ControllerAdvice）
+8. 分页查询（Pageable）

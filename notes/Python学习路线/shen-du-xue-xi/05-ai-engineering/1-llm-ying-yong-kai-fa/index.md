@@ -1,0 +1,385 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/shen-du-xue-xi/05-ai-engineering/1-llm-ying-yong-kai-fa/index.md
+---
+# LLM 应用开发
+
+> 面向 Python 开发者的 LLM（大语言模型）应用开发指南，从 openai SDK 基础调用、提示词工程、Function Calling 工具调用，到结构化输出与生产化控制，帮助你构建真正可用的 AI 应用。
+
+***
+
+## 一、openai SDK 基础
+
+### 1.1 安装与客户端初始化
+
+**openai 官方 SDK**：Python 生态中调用大语言模型最主流的库，支持 OpenAI 及兼容协议的服务（Azure OpenAI、国产大模型网关等）。
+
+```bash
+# 安装 SDK（注意：新版本推荐 1.x）
+pip install openai
+```
+
+```python
+from openai import OpenAI
+
+# 推荐：API Key 从环境变量读取，不要硬编码到代码里
+import os
+client = OpenAI(
+    api_key=os.environ["OPENAI_API_KEY"],
+    # 默认请求 https://api.openai.com；使用兼容服务时改 base_url
+    # base_url="https://your-gateway.example.com/v1",
+)
+
+# ❌ 不推荐：密钥写死在代码中，容易泄露到版本库
+# client = OpenAI(api_key="sk-xxxx")
+```
+
+**模型选择**：`gpt-4o`（通用最强）、`gpt-4o-mini`（低成本高性价比）、`gpt-4-turbo`（知识截止新）、`text-embedding-3-small`（Embedding 向量化）。
+
+### 1.2 Chat Completions 核心
+
+**messages 结构**：与模型对话的历史消息列表，每条消息包含 `role`（角色）与 `content`（内容）。
+
+| 角色 | 说明 |
+|------|------|
+| `system` | 系统提示，设定模型身份、行为规范、输出格式（可选但强烈建议） |
+| `user` | 用户输入，即用户的提问或指令 |
+| `assistant` | 模型的回复，多轮对话时需回传历史回复 |
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "你是一个严谨的 Python 技术顾问，回答要简洁准确。"},
+        {"role": "user", "content": "解释 Python 的 GIL 是什么？"},
+    ],
+    temperature=0.3,   # 0~2，越低越稳定，事实类问题建议低值
+)
+
+# 提取回复文本
+answer = response.choices[0].message.content
+print(answer)
+```
+
+**参数详解**：
+
+| 参数 | 作用 | 建议 |
+|------|------|------|
+| `temperature` | 采样随机性，0~2 | 代码/事实类用 0.2~0.4；创意类用 0.8+ |
+| `max_tokens` | 单次回复最大 Token 数 | 防止超长输出浪费 Token |
+| `top_p` | 核采样概率阈值 | 通常与 temperature 二选一调整 |
+| `stop` | 停止词列表 | 命中即终止生成 |
+| `n` | 生成几个候选 | 一般 1，评测时可设多 |
+
+### 1.3 流式输出
+
+**流式响应**：长回答逐段返回，用户体验更好（打字机效果），也能提前展示已生成内容。
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "写一首关于秋天的五言绝句"}],
+    stream=True,   # 开启流式
+)
+
+# 逐段接收增量内容
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="", flush=True)
+```
+
+> 💡 **注意**：流式输出在网关代理（如 Nginx）下可能被缓冲，需关闭 gzip 或使用 chunked transfer；WebSocket 场景天然适合流式转发。
+
+***
+
+## 二、提示词工程
+
+### 2.1 系统提示与角色设定
+
+**角色设定**：通过 system 消息固定模型的身份与行为边界，是成本最低、收益最大的提示技巧。
+
+```python
+SYSTEM_PROMPT = """
+你是电商平台的客服助手。要求：
+1. 只回答与订单、退款、物流相关的问题
+2. 遇到不确定的信息，明确说"需要人工客服确认"
+3. 回复控制在 50 字以内，语气友好
+4. 禁止编造订单状态数据
+"""
+```
+
+**提示词三要素**：角色（你是谁）+ 任务（做什么）+ 约束（怎么做/不要做什么）。
+
+### 2.2 少样本示例（Few-shot）
+
+**少样本**：在提示中给出 2~5 个输入-输出示例，让模型模仿示例的模式，尤其适合分类、抽取、格式转换任务。
+
+```python
+FEW_SHOT = [
+    {"role": "user", "content": "把句子改成客服话术：快递还没到。"},
+    {"role": "assistant", "content": "您好，非常抱歉让您久等了，我帮您查询一下物流进度。"},
+    {"role": "user", "content": "把句子改成客服话术：我要退货！"},
+    {"role": "assistant", "content": "好的亲，我理解您的需求，请问是什么原因需要退货呢？"},
+]
+
+messages = [{"role": "system", "content": "你是专业客服，把用户原话改写成礼貌的客服话术。"}] + FEW_SHOT
+messages.append({"role": "user", "content": "把句子改成客服话术：东西是坏的。"})
+```
+
+### 2.3 思维链（CoT）
+
+**思维链**：让模型先"逐步推理"再给出结论，能显著提升数学、逻辑类问题的准确率。
+
+```python
+# 零样本思维链：直接要求一步步思考
+prompt = """一个仓库上午入库 120 件，下午出库 45 件，第二天又入库 80 件。问现在库存多少件？
+请一步一步推理，最后给出答案。"""
+
+# 进阶：限定思考范围，避免模型泄露思路（应对敏感场景）
+prompt = """请先在心里逐步计算，但最终只输出答案。"""
+```
+
+| 技巧 | 适用场景 | 代价 |
+|------|---------|------|
+| 角色设定 | 几乎所有任务 | 无 |
+| 少样本 | 分类、抽取、格式转换 | 增加输入 Token |
+| 思维链 | 数学、逻辑、多步任务 | 增加输出 Token |
+| 结构化约束（JSON） | 需程序化解析的输出 | 偶发格式不稳定 |
+
+***
+
+## 三、Function Calling 工具调用
+
+### 3.1 函数定义（JSON Schema）
+
+**工具调用**：让模型识别用户意图并返回一个"函数调用请求"，由你的代码真正执行（查库、调 API），再回传给模型生成最终回答。这是 Agent 能力的核心。
+
+```python
+# 用 JSON Schema 描述一个工具函数
+TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "get_order_status",
+        "description": "查询订单的实时物流状态",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "order_id": {"type": "string", "description": "订单号"},
+            },
+            "required": ["order_id"],
+        },
+    },
+}]
+```
+
+### 3.2 工具调用循环
+
+**调用流程**：请求 → 模型返回 tool\_calls → 执行函数 → 把结果以 `role=tool` 回传 → 模型生成最终回答。
+
+```python
+import json
+
+def get_order_status(order_id: str) -> str:
+    # 实际开发中这里查询订单数据库或物流 API
+    return json.dumps({"order_id": order_id, "status": "已发货", "express": "顺丰"})
+
+def chat_with_tools(user_input: str):
+    messages = [{"role": "user", "content": user_input}]
+
+    # 第一轮：让模型判断是否调用工具
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini", messages=messages, tools=TOOLS,
+    )
+    msg = resp.choices[0].message
+    messages.append(msg)  # 回传模型消息（可能带 tool_calls）
+
+    # 如果模型要求调用工具，就执行并回传结果
+    while msg.tool_calls:
+        for tc in msg.tool_calls:
+            args = json.loads(tc.function.arguments)
+            # 按函数名分发执行（此处省略 if-else 分发）
+            result = get_order_status(args["order_id"])
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,      # 必须与模型返回的 id 对应
+                "content": result,
+            })
+        # 第二轮：把工具结果给模型，生成最终回答
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini", messages=messages, tools=TOOLS,
+        )
+        msg = resp.choices[0].message
+        messages.append(msg)
+
+    return msg.content
+
+print(chat_with_tools("我的订单 20260815 现在到哪了？"))
+```
+
+> ⚠️ **关键细节**：`tool_call_id` 必须与模型返回的 id 一一对应；工具循环要设置最大轮数（如 5 轮）防止死循环。
+
+### 3.3 结构化输出（JSON Mode）
+
+**结构化输出**：要求模型返回合法 JSON，方便程序直接解析，是构建稳定 AI 接口的必备能力。
+
+```python
+# 方案一：response_format 强制 JSON
+resp = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "把这句话抽取为 JSON：王五昨天下单了两件红色衬衫"}],
+    response_format={"type": "json_object"},
+)
+data = json.loads(resp.choices[0].message.content)
+# data -> {"name": "王五", "item": "红色衬衫", "count": 2, "time": "昨天"}
+
+# ❌ 不推荐：让模型返回 JSON 却不加约束，容易出现围栏/说明文字
+# ✅ 推荐：response_format + 在提示中明确 JSON 字段名，双保险
+```
+
+| 方案 | 稳定性 | 适用 |
+|------|-------|------|
+| 提示词说明 "返回 JSON" | 中 | 快速原型 |
+| `response_format={"type": "json_object"}` | 高 | 生产接口 |
+| 函数调用 + 强制 tool\_choice | 最高 | 需严格 schema |
+
+***
+
+## 四、生产化：Token 与成本控制
+
+### 4.1 Token 与上下文管理
+
+**Token 计数**：输入与输出都按 Token 计费，中文约 1 个汉字 ≈ 1~2 Token。
+
+```python
+# 使用 tiktoken 精确计数（官方分词器）
+import tiktoken
+enc = tiktoken.encoding_for_model("gpt-4o-mini")
+tokens = enc.encode("你好，世界")
+print(len(tokens))  # 输出 Token 数
+```
+
+**上下文管理策略**：多轮对话会无限增长，需裁剪历史消息。
+
+```python
+def trim_messages(messages, max_tokens=3000):
+    """从最早的消息开始裁剪，保留最近的上下文。"""
+    # 粗略按字符估算，精确场景用 tiktoken
+    total = sum(len(m["content"]) for m in messages)
+    while total > max_tokens and len(messages) > 1:
+        if messages[0]["role"] == "system":
+            # system 提示优先保留，从下一条开始裁
+            if len(messages) > 2:
+                messages.pop(1)
+        else:
+            messages.pop(0)
+        total = sum(len(m["content"]) for m in messages)
+    return messages
+```
+
+**常见策略**：滑动窗口（只保留最近 N 轮）、摘要压缩（定期把历史摘要成一段）、系统提示常驻。
+
+### 4.2 限流、重试与超时
+
+**稳健调用**：生产环境必须处理限流（429）、超时、网络错误。
+
+```python
+import time
+from openai import RateLimitError, APITimeoutError, APIConnectionError
+
+def call_with_retry(fn, retries=3, base_delay=1.0):
+    """指数退避重试：429 限流 / 连接错误 / 超时。"""
+    for attempt in range(retries):
+        try:
+            return fn()
+        except RateLimitError as e:
+            # 服务端告知的等待时间优先
+            wait = getattr(e, "retry_after", base_delay * (2 ** attempt))
+            time.sleep(wait)
+        except (APITimeoutError, APIConnectionError):
+            time.sleep(base_delay * (2 ** attempt))
+    raise RuntimeError("模型调用多次失败")
+
+resp = call_with_retry(lambda: client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "hi"}],
+    timeout=60,   # 显式超时，默认可能挂起很久
+))
+```
+
+### 4.3 示例：构建一个带工具的助手
+
+**完整示例**：融合角色设定、工具调用、JSON 输出，实现一个"订单助手"。
+
+```python
+class OrderAssistant:
+    """订单助手：查询订单 + 生成 JSON 报告。"""
+
+    TOOLS = [{  # 简写：一个查订单工具
+        "type": "function",
+        "function": {
+            "name": "query_order",
+            "description": "按订单号查询订单详情",
+            "parameters": {
+                "type": "object",
+                "properties": {"order_id": {"type": "string"}},
+                "required": ["order_id"],
+            },
+        },
+    }]
+
+    def __init__(self, client):
+        self.client = client
+        self.messages = [{"role": "system", "content": "你是订单查询助手，用工具查询后如实回答。"}]
+
+    def ask(self, user_input: str, max_rounds=5) -> str:
+        self.messages.append({"role": "user", "content": user_input})
+        for _ in range(max_rounds):
+            resp = self.client.chat.completions.create(
+                model="gpt-4o-mini", messages=self.messages, tools=self.TOOLS,
+            )
+            msg = resp.choices[0].message
+            self.messages.append(msg)
+            if not msg.tool_calls:
+                return msg.content
+            for tc in msg.tool_calls:
+                self.messages.append({
+                    "role": "tool", "tool_call_id": tc.id,
+                    "content": "订单不存在，请如实告知用户",
+                })
+        return "已达最大轮数"
+
+# 使用
+assistant = OrderAssistant(client)
+print(assistant.ask("帮我查一下 20260815 的订单"))
+```
+
+***
+
+## 实践项目
+
+### 目标
+
+构建一个 **「智能客服机器人」**，支持：多轮对话、调用查询工具获取订单状态、返回结构化 JSON 报告，并做好限流重试与上下文裁剪。
+
+### 步骤
+
+1. 安装 `openai`、`tiktoken`，配置环境变量 `OPENAI_API_KEY`
+2. 封装 `LLMClient` 类：带指数退避重试的 `chat()` 方法与 `chat_stream()` 流式方法
+3. 定义 `query_order`、`get_weather` 两个工具函数与 JSON Schema
+4. 实现工具调用循环（含最大轮数保护），回传 `role=tool` 结果
+5. 加入上下文裁剪：保留 system 提示 + 最近 6 轮对话
+6. 用 Flask/FastAPI 封装成 `/chat` 接口，前端可用流式展示
+
+### 目录结构参考
+
+```text
+llm-assistant/
+├── main.py                 # FastAPI 入口，/chat 接口
+├── llm_client.py           # LLMClient：重试/流式/上下文裁剪
+├── tools.py                # 工具函数注册表与 Schema
+├── requirements.txt        # openai, tiktoken, fastapi, uvicorn
+└── .env                    # OPENAI_API_KEY=sk-xxx（加入 .gitignore）
+```
+
+> 🔗 **拓展指引**：本模块掌握 LLM 基础调用后，如需编排多步骤 Agent（自主规划、记忆、多工具协同），请转入仓库 `LangChain学习路线/` 深入学习。

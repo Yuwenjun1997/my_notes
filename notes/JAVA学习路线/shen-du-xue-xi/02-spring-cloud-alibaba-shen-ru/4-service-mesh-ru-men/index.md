@@ -1,0 +1,1234 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/4-service-mesh-ru-men/index.md
+---
+# Service Mesh 入门
+
+## 1. Service Mesh 概念
+
+### 1.1 什么是 Sidecar 模式
+
+Sidecar 模式源自现实世界的"侧三轮摩托车"——在主摩托车旁挂载一个辅助边车，提供额外的载物能力，但不改变主车的结构。在微服务架构中，Sidecar 是一个与主服务同生命周期、同 Pod 部署的辅助代理容器，负责处理主服务所有的网络通信。
+
+```
+┌─────────────────────────────────────┐
+│            Kubernetes Pod            │
+│                                      │
+│  ┌────────────────┐                  │
+│  │   Main Service  │   HTTP/gRPC     │
+│  │  (业务容器)      │ ──────────────► │
+│  │                │                  │
+│  └───────┬────────┘                  │
+│          │ 所有进出流量都经过 Sidecar  │
+│          ▼                           │
+│  ┌────────────────┐                  │
+│  │   Sidecar Proxy│                  │
+│  │   (Envoy)      │  流量管理、安全、   │
+│  │                │  观测、熔断、重试   │
+│  └───────┬────────┘                  │
+│          │                           │
+└──────────┼───────────────────────────┘
+           │
+           ▼
+      ┌──────────┐
+      │  其他服务  │
+      │  (also with│
+      │   Sidecar) │
+      └──────────┘
+```
+
+Sidecar 的核心原则：
+
+* **透明拦截**：通过 iptables 规则透明劫持所有进出流量，应用无感知
+* **同生命周期**：Sidecar 容器与应用容器在同一个 Pod 中，同生共死
+* **无侵入**：应用代码不需要任何修改，不需要引入任何 SDK
+* **统一管控**：所有 Sidecar 由统一的控制平面管理，策略全局一致
+
+### 1.2 从 Spring Cloud 到 Service Mesh 的演进
+
+```
+阶段 1: 单体应用
+┌──────────────────────┐
+│  Monolithic App      │
+│  所有功能在一个进程   │
+│  服务发现、熔断、重试  │
+│  全部在代码中实现     │
+└──────────────────────┘
+
+        │
+        ▼
+
+阶段 2: Spring Cloud 微服务
+┌─────────────────────────────────────────────────┐
+│  Service A           Service B           Service C │
+│  ┌──────────┐       ┌──────────┐       ┌──────────┐ │
+│  │ Ribbon   │       │ Ribbon   │       │ Ribbon   │ │
+│  │ Hystrix  │       │ Hystrix  │       │ Hystrix  │ │
+│  │ Feign    │       │ Feign    │       │ Feign    │ │
+│  │ Eureka   │       │ Eureka   │       │ Eureka   │ │
+│  │ Sentinel │       │ Sentinel │       │ Sentinel │ │
+│  └──────────┘       └──────────┘       └──────────┘ │
+│  ↑──── SDK 侵入 ──── 每个服务都需要引入所有 SDK ────↑  │
+└──────────────────────────────────────────────────────┘
+
+        │
+        ▼
+
+阶段 3: Service Mesh（Istio）
+┌──────────────────────────────────────────────────────┐
+│  Control Plane (Pilot + Citadel + Galley)            │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  │
+│  │   Pilot       │  │   Citadel    │  │   Galley   │  │
+│  │  服务发现/流量  │  │  安全/证书   │  │  配置校验  │  │
+│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘  │
+│         └─────────────────┼────────────────┘          │
+│                           │                           │
+└───────────────────────────┼───────────────────────────┘
+                            │ xDS 协议下发配置
+                            │
+┌───────────────────────────┼───────────────────────────┐
+│ Data Plane                │                           │
+│                           ▼                           │
+│  ┌──────────────────┐  ┌──────────────────┐           │
+│  │  Service A       │  │  Service B       │           │
+│  │  ┌────┐ ┌─────┐  │  │  ┌────┐ ┌─────┐  │           │
+│  │  │App │ │Envoy│  │  │  │App │ │Envoy│  │           │
+│  │  └────┘ └─────┘  │  │  └────┘ └─────┘  │           │
+│  └──────────────────┘  └──────────────────┘           │
+└──────────────────────────────────────────────────────┘
+```
+
+演进过程中的关键变化：
+
+| 维度 | Spring Cloud | Service Mesh | 说明 |
+|------|-------------|-------------|------|
+| **侵入性** | 强侵入，需引入 SDK、注解 | 零侵入，应用代码无感知 | 切换成本天壤之别 |
+| **语言限制** | 仅 Java | 任何语言 | 异构系统统一治理 |
+| **升级成本** | 逐个服务修改代码、重新部署 | 升级控制平面 + 重启 Sidecar | Mesh 升级更简单 |
+| **治理能力** | 取决于框架版本 | 与业务代码完全解耦 | 可以独立迭代 |
+| **可观测性** | 需手动集成 | 自动追踪、指标、日志 | 开箱即用 |
+
+### 1.3 Istio 整体架构
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                     Istio 架构（Control Plane）                    │
+│                                                                    │
+│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐     │
+│  │   istiod        │  │                  │  │                  │     │
+│  │  ┌────────┐    │  │   (混部为单个     │  │                  │     │
+│  │  │ Pilot   │    │  │   二进制)         │  │   WebAssembly    │     │
+│  │  │ -服务发现 │    │  │                  │  │   扩展插件管理    │     │
+│  │  │ -流量管理│    │  │                  │  │                  │     │
+│  │  │ -xDS API │    │  │  Citadel(安全)   │  │  ingress/egress  │     │
+│  │  └────────┘    │  │  证书管理          │  │  gateway         │     │
+│  │  ┌────────┐    │  │                  │  │                  │     │
+│  │  │ Citadel │    │  │                  │  │                  │     │
+│  │  │ -mTLS   │    │  │                  │  │                  │     │
+│  │  │ -证书签发│    │  │                  │  │                  │     │
+│  │  └────────┘    │  │                  │  │                  │     │
+│  │  ┌────────┐    │  │                  │  │                  │     │
+│  │  │ Galley │    │  │                  │  │                  │     │
+│  │  │ -配置校验│    │  │                  │  │                  │     │
+│  │  │ -配置下发│    │  │                  │  │                  │     │
+│  │  └────────┘    │  │                  │  │                  │     │
+│  └────────────────┘  └────────────────┘  └──────────────────┘     │
+│                                                                    │
+│                xDS / SDS / ADS 协议（gRPC 双向流）                  │
+└──────────────────────────────┬───────────────────────────────────┘
+                               │
+     ┌─────────────────────────┼─────────────────────────┐
+     │                         │                         │
+     ▼                         ▼                         ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  Data Plane   │    │  Data Plane   │    │  Data Plane   │
+│  Pod A        │    │  Pod B        │    │  Ingress GW   │
+│  ┌──┐ ┌────┐  │    │  ┌──┐ ┌────┐  │    │  ┌────┐       │
+│  │App│ │Envoy│  │    │  │App│ │Envoy│  │    │  │Envoy│       │
+│  └──┘ └────┘  │    │  └──┘ └────┘  │    │  └────┘       │
+│  127.0.0.1:80 │    │  127.0.0.1:80 │    │               │
+│  outbound→15001│   │  outbound→15001│   │               │
+│  inbound→15006│    │  inbound→15006│    │               │
+└──────────────┘    └──────────────┘    └──────────────┘
+```
+
+Istio 架构分为两大平面：
+
+**Control Plane（控制平面）**：
+
+* **istiod**：Istio 1.5 之后将 Pilot、Citadel、Galley 合并为一个单体二进制 `istiod`
+* **Pilot**：负责服务发现和流量管理配置，通过 xDS 协议下发到 Envoy
+* **Citadel**：负责证书签发和 mTLS 密钥管理
+* **Galley**：负责配置校验、处理、分发
+
+**Data Plane（数据平面）**：
+
+* **Envoy Proxy**：以 Sidecar 模式注入到每个 Pod 中，拦截所有进出流量
+* 实现流量控制、熔断、重试、超时、可观测性等能力
+* 通过 iptables 规则透明劫持流量，应用完全无感知
+
+***
+
+## 2. Istio 核心组件
+
+### 2.1 Pilot（服务发现与流量管理）
+
+Pilot 是 Istio 中最核心的组件，负责将高级路由规则翻译成 Envoy 能理解的低级配置。
+
+```yaml
+# Pilot 核心流程
+# 1. 从平台（Kubernetes）获取服务和实例信息
+# 2. 接收用户定义的流量管理规则（VirtualService, DestinationRule）
+# 3. 将两者合并，生成 Envoy 端口的 xDS 配置
+# 4. 通过 gRPC 双向流推送到所有 Envoy Sidecar
+
+# xDS API 协议族（Envoy 配置发现服务）：
+# - LDS: Listener Discovery Service    → 监听器配置
+# - RDS: Route Discovery Service       → 路由配置
+# - CDS: Cluster Discovery Service     → 集群配置
+# - EDS: Endpoint Discovery Service    → 端点（实例）配置
+# - SDS: Secret Discovery Service      → 证书配置
+```
+
+### 2.2 Mixer（已废弃）
+
+Mixer 在 Istio 1.5 之前负责策略控制和遥测收集，但在 1.5+ 版本中已被移除，其功能迁移到 Envoy 的 WebAssembly 扩展和 `Telemetry API` 中。
+
+```
+旧版本架构（1.5之前）：
+Service A ──► Envoy ──► Mixer ──► Backend (Prometheus, Stackdriver, etc.)
+                │
+                └── 每个请求都经过 Mixer，性能开销大
+
+新版本架构（1.5+）：
+Service A ──► Envoy ──► Prometheus (通过 Wasm 扩展直接上报)
+                │
+                └── 去除了 Mixer，性能提升了 50%+
+```
+
+### 2.3 Citadel（安全）
+
+Citadel 负责整个 Mesh 中的证书管理和身份认证。
+
+```yaml
+# Citadel 职责
+# 1. 为每个 Service Account 签发 SPIFFE 兼容的 X.509 证书
+# 2. 证书轮换（默认 24 小时自动轮换）
+# 3. 通过 SDS 协议将证书下发给 Envoy
+# 4. 管理 mTLS 双向认证策略
+
+# 证书格式：spiffe://cluster.local/ns/<namespace>/sa/<service-account>
+# 通过这个身份标识，确定"谁在调用谁"
+
+示例：
+  source: spiffe://cluster.local/ns/default/sa/httpbin
+  target: spiffe://cluster.local/ns/default/sa/sleep
+  action: ALLOW（白名单模式）或 DENY（黑名单模式）
+```
+
+### 2.4 Envoy（Sidecar 代理）
+
+Envoy 是由 Lyft 开源的 C++ 高性能代理，是 Istio 数据平面的核心。
+
+```yaml
+# Envoy 核心能力
+# - 第 7 层（HTTP/gRPC）和第 4 层（TCP）代理
+# - 高级负载均衡（轮询、最少连接、一致性哈希、Maglev）
+# - 服务发现（主动/被动健康检查）
+# - 熔断器（Circuit Breaker）
+# - 重试与超时控制
+# - 流量分割（金丝雀发布）
+# - 请求镜像（影子流量）
+# - 访问日志
+# - 分布式追踪（OpenTelemetry / Zipkin / Jaeger）
+# - Prometheus 指标输出
+# - WebAssembly 扩展（Lua 或 WASM 插件）
+```
+
+### 2.5 新版本架构（1.5+，无 Mixer）
+
+```
+Istio 1.5+ 架构（当前主流）：
+
+                     ┌─────────────────────────────────────┐
+                     │         istiod（全合一控制平面）      │
+                     │  ┌──────┐ ┌────────┐ ┌──────────┐  │
+                     │  │Pilot │ │Citadel │ │  Galley   │  │
+                     │  └──┬───┘ └───┬────┘ └────┬─────┘  │
+                     │     │         │           │          │
+                     │     │ 整合为  │           │          │
+                     │     │ 一个二进制│           │          │
+                     └─────┼─────────┼───────────┼──────────┘
+                           │         │           │
+               xDS──── ────┤  SDS────┤           │
+                           │         │           │
+┌──────────────────────────┼─────────┼───────────┼──────────┐
+│ Data Plane               │         │           │          │
+│                          ▼         ▼           ▼          │
+│  Pod ┌──────────────────────────────────────────┐         │
+│      │  Envoy Proxy                             │         │
+│      │  ┌──────┐ ┌────────┐ ┌────────────────┐  │         │
+│      │  │LDS   │ │  RDS   │ │     Cluster     │  │         │
+│      │  │监听器│ │  路由   │ │    集群/端点    │  │         │
+│      │  └──────┘ └────────┘ └────────────────┘  │         │
+│      │  ┌──────┐ ┌────────┐ ┌────────────────┐  │         │
+│      │  │Wasm  │ │  Stats │ │   Access Log   │  │         │
+│      │  │扩展   │ │  指标   │ │    访问日志     │  │         │
+│      │  └──────┘ └────────┘ └────────────────┘  │         │
+│      │  ┌──────┐                                │         │
+│      │  │TLS   │ 直接出站，不再经过 Mixer        │         │
+│      │  └──────┘                                │         │
+│      └──────────────────────────────────────────┘         │
+└───────────────────────────────────────────────────────────┘
+```
+
+***
+
+## 3. 核心功能
+
+### 3.1 流量管理（VirtualService + DestinationRule）
+
+Istio 流量管理的核心是 `VirtualService` 和 `DestinationRule` 这两个 CRD。
+
+```yaml
+# 1. VirtualService：定义路由规则
+#    将请求按照规则转发到不同的 Destination
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: user-service-routing
+spec:
+  # 匹配的主机
+  hosts:
+    - user-service
+  # 网关（如果为空，则仅匹配集群内部流量）
+  # 如果配置了 ingress gateway，则匹配外部流量
+  gateways:
+    - mesh        # 集群内部所有 Sidecar 流量
+    - user-gateway  # 外部流量通过 ingress gateway
+  http:
+    # 匹配规则：按优先级从上到下
+    - match:
+        - headers:
+            end-user:
+              exact: admin
+      route:
+        - destination:
+            host: user-service
+            subset: v2    # 指向 DestinationRule 中定义的 v2 子集
+            port:
+              number: 8080
+      # 注入请求头（向下游传递信息）
+      headers:
+        request:
+          set:
+            x-istio-user-role: admin
+
+    - match:
+        - uri:
+            prefix: /api/v1/experimental
+      route:
+        - destination:
+            host: user-service
+            subset: canary  # 指向金丝雀版本
+          weight: 10        # 10% 流量进入金丝雀
+        - destination:
+            host: user-service
+            subset: stable
+          weight: 90
+
+    # 默认路由：所有流量到 v1 版本
+    - route:
+        - destination:
+            host: user-service
+            subset: v1
+      timeout: 5s           # 超时 5 秒
+      retries:
+        attempts: 3         # 重试 3 次
+        perTryTimeout: 2s
+        retryOn: connect-failure,refused-stream,504
+```
+
+```yaml
+# 2. DestinationRule：定义目标服务的负载均衡、连接池、熔断等策略
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: user-service-destination
+spec:
+  host: user-service
+  # 流量策略
+  trafficPolicy:
+    # 负载均衡算法
+    loadBalancer:
+      simple: ROUND_ROBIN  # LEAST_CONN, RANDOM, PASSTHROUGH
+      # 一致性哈希（用于 session 粘性）
+      # consistentHash:
+      #   httpHeaderName: x-user-id
+
+    # 连接池配置
+    connectionPool:
+      tcp:
+        maxConnections: 100           # 最大连接数
+        connectTimeout: 5s            # 连接超时
+      http:
+        http1MaxPendingRequests: 10   # HTTP/1.1 最大等待请求
+        http2MaxRequests: 1000        # HTTP/2 最大请求数
+        maxRequestsPerConnection: 50  # 连接最大请求数
+
+    # 熔断器配置
+    outlierDetection:
+      consecutive5xxErrors: 5        # 连续 5 次 5xx 触发熔断
+      interval: 30s                   # 熔断检测间隔
+      baseEjectionTime: 60s          # 基础驱逐时间（会指数递增）
+      maxEjectionPercent: 50         # 最多驱逐 50% 的实例
+
+  # 子集定义（用于灰度发布和版本路由）
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+    - name: stable
+      labels:
+        version: v2
+    - name: canary
+      labels:
+        version: v3
+      trafficPolicy:
+        # 金丝雀版本可以使用不同的负载均衡策略
+        loadBalancer:
+          simple: RANDOM
+```
+
+### 3.2 灰度发布（金丝雀发布）
+
+```yaml
+# 金丝雀发布流程
+# 1. 部署 v3 版本（金丝雀），只给少数实例打上 version=v3 标签
+# 2. 通过 VirtualService 将 10% 流量引入 v3
+# 3. 观察指标（错误率、延迟、业务指标）
+# 4. 逐步增加流量比例：10% → 30% → 50% → 100%
+# 5. 全部切换后，下线旧版本
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-service-canary
+spec:
+  hosts:
+    - order-service
+  http:
+    # 基于请求头的精准路由：内部测试人员可以指定版本
+    - match:
+        - headers:
+            x-canary-test:
+              exact: "true"
+      route:
+        - destination:
+            host: order-service
+            subset: v3-new
+
+    # 按比例分发流量
+    - route:
+        - destination:
+            host: order-service
+            subset: v3-new
+          weight: 10    # 10% 流量到新版本
+        - destination:
+            host: order-service
+            subset: v2-stable
+          weight: 90    # 90% 流量到旧版本
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: order-service-destination
+spec:
+  host: order-service
+  subsets:
+    - name: v2-stable
+      labels:
+        version: v2
+    - name: v3-new
+      labels:
+        version: v3
+```
+
+### 3.3 熔断与超时
+
+```yaml
+# 熔断配置（基于 DestinationRule 的 outlierDetection）
+# 当后端服务出现连续错误时，Envoy 会自动将其从负载均衡池中移除
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: payment-service-cb
+spec:
+  host: payment-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 10
+      http:
+        http1MaxPendingRequests: 5
+        http2MaxRequests: 20
+    outlierDetection:
+      consecutive5xxErrors: 3         # 连续 3 次 5xx
+      interval: 10s                    # 每 10 秒检测一次
+      baseEjectionTime: 30s           # 驱逐 30 秒
+      maxEjectionPercent: 100         # 最多驱逐所有实例
+      # 支持更多异常检测条件
+      consecutiveGatewayErrors: 5     # 连续 5 次网关错误（502/503/504）
+      consecutiveLocalOriginFailures: 5  # 本地连接失败
+      # 异常检测百分比模式
+      splitExternalLocalOriginErrors: true
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: payment-service-timeout
+spec:
+  hosts:
+    - payment-service
+  http:
+    - route:
+        - destination:
+            host: payment-service
+      # 超时控制
+      timeout: 3s
+      retries:
+        attempts: 2
+        perTryTimeout: 1.5s
+        retryOn: connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes
+```
+
+### 3.4 可观测性
+
+Istio 提供开箱即用的可观测性能力，通常与以下组件配合使用：
+
+```yaml
+# 可观测性组件栈
+# Prometheus       → 指标收集（延迟、流量、错误、饱和度）
+# Grafana          → 指标可视化仪表盘
+# Kiali            → 服务拓扑可视化（服务间调用关系图）
+# Jaeger/Tempo     → 分布式追踪（请求链路）
+# Loki             → 日志聚合
+
+# 启用 Istio 可观测性（通过 IstioOperator）
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: install-observability
+spec:
+  meshConfig:
+    # 访问日志配置
+    accessLogFile: /dev/stdout
+    accessLogFormat: |
+      [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+      %RESPONSE_CODE% %RESPONSE_FLAGS% %RESPONSE_CODE% %BYTES_RECEIVED%
+      %UPSTREAM_CLUSTER% %UPSTREAM_HOST%
+      %REQ(X-FORWARDED-FOR)%
+    # 默认开启 mTLS 指标
+    enableTracing: true
+    # 指定追踪采样率
+    defaultConfig:
+      tracing:
+        sampling: 1.0  # 100% 采样（生产环境推荐 0.1-1%）
+
+  # 集成 Prometheus 指标
+  values:
+    telemetry:
+      enabled: true
+      v2:
+        enabled: true
+    meshConfig:
+      enablePrometheusMerge: true
+```
+
+### 3.5 mTLS 双向认证
+
+```yaml
+# 全局开启 mTLS（Mesh 内所有服务间通信加密）
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  # 网格级别策略
+  mtls:
+    mode: STRICT  # STRICT = 强制 mTLS, PERMISSIVE = 兼容模式, DISABLE = 关闭
+
+---
+# Namespace 级别 mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: payment-ns-mtls
+  namespace: payment
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# 端口级别覆盖
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: payment-port-override
+  namespace: payment
+spec:
+  selector:
+    matchLabels:
+      app: payment-service
+  portLevelMtls:
+    8080:
+      mode: DISABLE     # 8080 端口关闭 mTLS（例如健康检查端点）
+    8443:
+      mode: STRICT      # 8443 端口强制 mTLS
+
+---
+# 授权策略（基于 mTLS 身份）
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: payment-service-authz
+  namespace: payment
+spec:
+  selector:
+    matchLabels:
+      app: payment-service
+  action: ALLOW
+  rules:
+    # 只允许 order-service 和 user-service 访问
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/default/sa/order-service
+              - cluster.local/ns/default/sa/user-service
+      to:
+        - operation:
+            methods: ["POST", "GET"]
+            paths: ["/api/v1/payments/*"]
+    # 允许 istio-ingressgateway 通过
+    - from:
+        - source:
+            namespaces: ["istio-system"]
+```
+
+***
+
+## 4. Kubernetes 上部署 Istio
+
+### 4.1 istioctl 安装
+
+```bash
+# 1. 下载 Istio（Linux/macOS）
+curl -L https://istio.io/downloadIstio | sh -
+cd istio-1.20.0
+export PATH=$PWD/bin:$PATH
+
+# 2. 检查安装条件
+istioctl x precheck
+
+# 3. 安装 Istio（使用 demo 配置集，包含完整功能）
+istioctl install --set profile=demo -y
+
+# 4. 查看安装状态
+istioctl version
+kubectl -n istio-system get pods
+kubectl -n istio-system get svc
+
+# 5. 给命名空间打上自动注入标签
+kubectl label namespace default istio-injection=enabled
+```
+
+### 4.2 自定义安装配置
+
+```yaml
+# istio-config.yaml
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: production-install
+spec:
+  # 使用 production profile 作为基础
+  profile: default
+
+  # 组件配置
+  components:
+    base:
+      enabled: true
+    pilot:
+      enabled: true
+      k8s:
+        replicaCount: 3
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        hpaSpec:
+          minReplicas: 3
+          maxReplicas: 6
+          metrics:
+            - resource:
+                name: cpu
+                targetAverageUtilization: 80
+              type: Resource
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          replicaCount: 2
+          service:
+            type: LoadBalancer
+            ports:
+              - port: 80
+                name: http2
+              - port: 443
+                name: https
+              - port: 15021
+                name: status-port
+    egressGateways:
+      - name: istio-egressgateway
+        enabled: true
+
+  # Mesh 全局配置
+  meshConfig:
+    # 出口流量模式
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY  # 只允许访问注册中心中的服务
+    # 开启访问日志
+    accessLogFile: /dev/stdout
+    # 启用遥测
+    enablePrometheusMerge: true
+    # 默认 mTLS 模式
+    defaultConfig:
+      proxyMetadata:
+        ISTIO_META_DNS_CAPTURE: "true"
+    # 配置 SDS
+    sds:
+      enabled: true
+
+  # 附加组件
+  addonComponents:
+    prometheus:
+      enabled: true
+    grafana:
+      enabled: true
+    kiali:
+      enabled: true
+      # Kiali 认证（demo 环境中关闭）
+      # kiali:
+      #   dashboard:
+      #     auth:
+      #       strategy: anonymous
+    tracing:
+      enabled: true
+```
+
+### 4.3 自动注入 Sidecar
+
+```bash
+# 方式 1：Namespace 级别注入（推荐）
+kubectl label namespace default istio-injection=enabled
+kubectl label namespace prod istio-injection=enabled
+
+# 方式 2：手动注入（用于测试或特定 Pod 不注入时）
+# Deploy 添加注解，覆盖 Namespace 设置
+kubectl annotate deployment user-service sidecar.istio.io/inject="true"
+
+# 方式 3：使用 istioctl 手动注入 YAML
+istioctl kube-inject -f deployment.yaml | kubectl apply -f -
+
+# 验证注入
+kubectl get pods -n default
+# NAME                              READY   STATUS    RESTARTS   AGE
+# user-service-6f4b7c8d9-2x3k9     2/2     Running   0          30s
+# 注意 READY 列显示 2/2，说明 Sidecar 已注入
+```
+
+### 4.4 Bookinfo 示例
+
+```yaml
+# Bookinfo 是 Istio 官方提供的演示应用，由四个微服务组成：
+# - productpage（Python）：首页，调用 details 和 reviews
+# - details（Ruby）：书籍详情
+# - reviews（Java）：书评，调用 ratings
+# - ratings（Node.js）：评分
+
+# 部署 Bookinfo
+# kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+
+---
+# productpage 部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+  labels:
+    app: productpage
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productpage
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: productpage
+        version: v1
+    spec:
+      containers:
+        - name: productpage
+          image: docker.io/istio/examples-bookinfo-productpage-v1:1.18.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          env:
+            - name: DETAILS_HOSTNAME
+              value: details
+            - name: REVIEWS_HOSTNAME
+              value: reviews
+            - name: RATINGS_HOSTNAME
+              value: ratings
+---
+# reviews 服务（三个版本演示灰度发布）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v1
+  labels:
+    app: reviews
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v1
+    spec:
+      containers:
+        - name: reviews
+          image: docker.io/istio/examples-bookinfo-reviews-v1:1.18.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          env:
+            - name: SERVICES_DOMAIN
+              value: .svc.cluster.local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+  labels:
+    app: reviews
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v2
+    spec:
+      containers:
+        - name: reviews
+          image: docker.io/istio/examples-bookinfo-reviews-v2:1.18.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          env:
+            - name: SERVICES_DOMAIN
+              value: .svc.cluster.local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v3
+  labels:
+    app: reviews
+    version: v3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v3
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v3
+    spec:
+      containers:
+        - name: reviews
+          image: docker.io/istio/examples-bookinfo-reviews-v3:1.18.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          env:
+            - name: SERVICES_DOMAIN
+              value: .svc.cluster.local
+---
+# 对应的 Service 定义
+apiVersion: v1
+kind: Service
+metadata:
+  name: productpage
+  labels:
+    app: productpage
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: productpage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews
+  labels:
+    app: reviews
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: reviews
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  labels:
+    app: ratings
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: ratings
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: details
+  labels:
+    app: details
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: details
+---
+# 为 Bookinfo 配置 Ingress Gateway
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: bookinfo-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: bookinfo
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - bookinfo-gateway
+  http:
+    - match:
+        - uri:
+            exact: /productpage
+        - uri:
+            prefix: /static
+        - uri:
+            exact: /login
+        - uri:
+            exact: /logout
+        - uri:
+            prefix: /api/v1/products
+      route:
+        - destination:
+            host: productpage
+            port:
+              number: 9080
+```
+
+***
+
+## 5. 与 Spring Cloud 对比
+
+### 5.1 侵入性对比
+
+```yaml
+# Spring Cloud 方式：强侵入，代码中大量注解和 SDK 依赖
+# 每个服务都需要引入：
+#   spring-cloud-starter-netflix-eureka-client    → 服务注册与发现
+#   spring-cloud-starter-netflix-hystrix          → 熔断器
+#   spring-cloud-starter-netflix-ribbon           → 客户端负载均衡
+#   spring-cloud-starter-openfeign                → 声明式 HTTP 客户端
+#   spring-cloud-starter-sleuth                   → 分布式追踪
+#   spring-cloud-starter-zipkin                   → 链路追踪上报
+#   spring-cloud-bus                              → 配置刷新
+#   spring-cloud-starter-kubernetes-all           → K8s 集成
+
+# 示例：Spring Cloud 服务中的 Feign 客户端
+@FeignClient(name = "order-service", path = "/api/v1/orders", fallback = OrderFallback.class)
+public interface OrderClient {
+    
+    @PostMapping("/create")
+    Result<OrderVO> createOrder(@RequestBody CreateOrderRequest request);
+    
+    @GetMapping("/{orderId}")
+    Result<OrderVO> getOrder(@PathVariable("orderId") Long orderId);
+}
+
+// 每个 Feign 接口都需要定义 fallback 类
+@Component
+class OrderFallback implements OrderClient {
+    @Override
+    public Result<OrderVO> createOrder(CreateOrderRequest request) {
+        return Result.error("订单服务暂时不可用，请稍后重试");
+    }
+    
+    @Override
+    public Result<OrderVO> getOrder(Long orderId) {
+        return Result.error("订单服务暂时不可用");
+    }
+}
+```
+
+```yaml
+# Service Mesh 方式：零侵入
+# 应用代码中只需要一个普通的 HTTP 客户端，不需要任何框架依赖
+
+# 示例：Service Mesh 中的服务调用（任意语言）
+# 应用只需通过 localhost:8080 调用即可，Envoy 劫持流量
+# 熔断、重试、超时、负载均衡全部由 Sidecar 处理，应用无感知
+
+# Python 示例
+import requests
+import json
+
+def create_order(user_id, product_id, quantity):
+    # 直接调用服务名（DNS 解析到 Service IP）
+    # Envoy 自动处理：负载均衡、熔断、重试、mTLS
+    # 应用代码完全不需要关注基础设施
+    url = "http://order-service:8080/api/v1/orders/create"
+    payload = {
+        "userId": user_id,
+        "productId": product_id,
+        "quantity": quantity
+    }
+    response = requests.post(url, json=payload, timeout=5)
+    return response.json()
+
+def get_order(order_id):
+    url = f"http://order-service:8080/api/v1/orders/{order_id}"
+    response = requests.get(url, timeout=5)
+    return response.json()
+```
+
+### 5.2 演进路径对比
+
+```
+Spring Cloud 演进路径：
+┌──────────────────────────────────────────────────────────────┐
+│  基础设施            微服务治理              监控      成本   │
+│  ┌────┐             ┌────────┐          ┌──────┐  ┌─────┐  │
+│  │Eureka│────────►│Ribbon│────────►│Hystrix│─►│Zipkin│─►│升级 │
+│  └────┘             └────────┘          └──────┘  └──────┘  │
+│  停止维护             维护模式            维护模式     │  ┌─────┐│
+│                                                    │  │高   ││
+│  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐   │  │耦   ││
+│  │Nacos   │  │LoadBal│  │Sentinel│  │Skywalk│   │  │合   ││
+│  │Discovery│  │ancer   │  │熔断/流控│  │追踪    │   │  │严   ││
+│  └────────┘  └────────┘  └────────┘  └────────┘   │  │重   ││
+│  接入新组件           替换组件          替换组件        │  └─────┘│
+└──────────────────────────────────────────────────────────────┘
+  问题：每次组件演进都需要应用修改代码、重新部署
+
+Service Mesh 演进路径：
+┌──────────────────────────────────────────────────────────────┐
+│  安装 Istio → 自动注入 Sidecar → 应用无感                        │
+│                                                                │
+│  阶段 1: 基础设施层                                             │
+│  ┌────────────────────────────────────────────┐               │
+│  │  Istio 直接对接 K8s API，天然获取服务注册信息  │               │
+│  │  无需 Eureka/Nacos/Consul                    │               │
+│  └────────────────────────────────────────────┘               │
+│                                                                │
+│  阶段 2: 流量治理层                                             │
+│  ┌────────────────────────────────────────────┐               │
+│  │  配置 VirtualService + DestinationRule      │               │
+│  │  实现：灰度、熔断、重试、超时、流量镜像        │               │
+│  │  应用代码零修改                              │               │
+│  └────────────────────────────────────────────┘               │
+│                                                                │
+│  阶段 3: 安全层                                                │
+│  ┌────────────────────────────────────────────┐               │
+│  │  开启 mTLS、配置 AuthorizationPolicy        │               │
+│  │  服务间所有通信自动加密                      │               │
+│  └────────────────────────────────────────────┘               │
+│                                                                │
+│  阶段 4: 可观测性层                                            │
+│  ┌────────────────────────────────────────────┐               │
+│  │  Kiali 拓扑图 / Grafana 仪表盘 / Jaeger 链路 │               │
+│  │  全部自动生成，无需埋点代码                   │               │
+│  └────────────────────────────────────────────┘               │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 5.3 混合架构过渡方案
+
+在实际生产中，从 Spring Cloud 平滑过渡到 Service Mesh 是一个渐进过程，**不需要一刀切**。
+
+```yaml
+# 混合架构原则
+# 1. 新服务直接接入 Mesh（自动注入 Sidecar）
+# 2. 旧 Spring Cloud 服务逐步迁移
+#    - 第一阶段：Mesh 接管流量控制，Spring Cloud 的 SDK 仍保留
+#    - 第二阶段：逐步移除 Spring Cloud SDK，由 Mesh 同能力替代
+#    - 第三阶段：完全迁移完成，仅保留 Mesh
+
+# 混合架构下 Spring Cloud 的 PeerAuthentication 配置
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: legacy-spring-cloud-ns
+  namespace: legacy
+spec:
+  # PERMISSIVE 模式：接受 mTLS 和非 mTLS 流量
+  # 这允许 Mesh 中的服务和遗留 Spring Cloud 服务通信
+  mtls:
+    mode: PERMISSIVE
+---
+# Mesh 服务的 PeerAuthentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: mesh-ns
+  namespace: mesh
+spec:
+  mtls:
+    mode: STRICT
+
+# 过渡步骤：
+# 步骤 1: Service Mesh 新服务使用 STRICT mTLS
+# 步骤 2: 旧服务所在 ns 使用 PERMISSIVE 模式（兼容两套）
+# 步骤 3: 迁移完成后，旧服务 ns 改为 STRICT，移除 Spring Cloud SDK
+```
+
+***
+
+## 6. 适用场景与局限
+
+### 6.1 适用场景
+
+| 场景 | 说明 | 推荐度 |
+|------|------|--------|
+| **多语言异构系统** | 同时存在 Java、Go、Python、Node.js 等多种语言服务 | ★★★★★ |
+| **大规模微服务** | 服务数量超过 50+，手动管理治理 SDK 版本困难 | ★★★★★ |
+| **需要灰度发布** | 频繁进行金丝雀发布、A/B 测试 | ★★★★★ |
+| **安全合规要求高** | 需要服务间通信加密（金融、医疗行业） | ★★★★★ |
+| **Kubernetes 为主** | 已全面容器化和 K8s 化部署 | ★★★★★ |
+| **云原生转型** | 从传统架构向云原生架构演进 | ★★★★☆ |
+| **渐进式迁移** | 需要逐步从 Spring Cloud 过渡 | ★★★★☆ |
+
+### 6.2 局限性
+
+```yaml
+# 1. 性能开销
+# Envoy Sidecar 为每个请求增加约 2-5ms 延迟（P99 场景）
+# 每个 Pod 额外消耗约 50-100MB 内存和 0.5-1 核 CPU
+# 对于高吞吐低延迟场景（如量化交易），需要谨慎评估
+
+性能对比（典型值）：
+  直接调用:          0.5ms (P50)  |  2ms (P99)  |  0% CPU 额外开销
+  通过 Envoy:        1.0ms (P50)  |  5ms (P99)  |  ~1% CPU 额外开销
+  Envoy + mTLS:      1.5ms (P50)  |  7ms (P99)  |  ~2% CPU 额外开销
+
+# 2. 运维复杂度
+# 需要专门的团队维护 Istio 基础设施
+# 排错链路变长：应用 → Envoy → 另一个 Envoy → 应用
+# 控制平面故障会影响整个网格
+
+# 3. 调试困难
+# 网络故障排查需要理解 Envoy 的配置模型
+# 传统的 tcpdump 抓包可能看不到真实的应用流量（已被 Envoy 转发）
+# 需要使用 istioctl proxy-status / proxy-config 等调试工具
+
+# 4. 版本升级代价
+# Istio 大版本升级（如 1.x → 2.x）可能需要重新注入所有 Sidecar
+# CRD 字段变更可能需要更新所有资源配置
+
+# 5. 学习曲线陡峭
+# 运维人员需要掌握：Kubernetes、Envoy、Istio CRD、xDS 协议
+# 调试工具链不成熟，问题定位依赖专家经验
+
+# 6. 小规模不适用
+# 服务数量 < 10 时，引入 Mesh 的复杂度远超收益
+# 建议：5-10 个服务用 Spring Cloud / Nacos 即可
+#        50+ 服务强烈推荐 Service Mesh
+#        10-50 个服务需要根据团队能力评估
+
+适用性决策树：
+  
+  服务数量 < 10 ？
+  ├── 是 → Spring Cloud / Nacos / Consul 即可
+  └── 否 → 
+       团队是否有 K8s 运维经验？
+       ├── 否 → 先练兵，再引入 Mesh
+       └── 是 →
+            语言栈是否单一（只有 Java）？
+            ├── 是 → 可以继续用 Spring Cloud，也可以考虑 Mesh
+            └── 否 → 强烈推荐 Service Mesh（异构系统统一治理）
+```
+
+### 6.3 总结
+
+```
+Service Mesh = 微服务治理的最终形态
+    ↓
+将微服务治理能力从应用代码中剥离，下沉到基础设施层
+    ↓
+应用只需要关注业务逻辑，所有的网络通信由 Sidecar 代理完成
+    ↓
+Istio = 当前最成熟的 Service Mesh 实现
+    ↓
+不是银弹，需要根据团队规模和技术栈评估是否引入
+```

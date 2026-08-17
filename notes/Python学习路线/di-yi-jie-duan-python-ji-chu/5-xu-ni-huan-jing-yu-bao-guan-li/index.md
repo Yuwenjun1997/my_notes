@@ -1,0 +1,347 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/di-yi-jie-duan-python-ji-chu/5-xu-ni-huan-jing-yu-bao-guan-li/index.md
+---
+# 虚拟环境与包管理
+
+## 一、venv 虚拟环境
+
+### 1.1 虚拟环境原理
+
+**虚拟环境（Virtual Environment）** 是 Python 的依赖隔离机制：为每个项目创建独立的 `site-packages` 目录，避免不同项目的依赖版本互相冲突。
+
+```
+系统 Python 的 site-packages
+└── 全局安装的包（requests 2.30）
+
+项目 A/.venv/site-packages       项目 B/.venv/site-packages
+└── requests 2.28                └── requests 3.0
+```
+
+> ⚠️ 全局安装的包与虚拟环境隔离，虚拟环境中 `pip list` 只看到自己装的包。
+
+### 1.2 创建与激活
+
+```bash
+# 创建虚拟环境（在项目目录下）
+python -m venv .venv
+
+# 激活（Windows）
+.venv\Scripts\activate
+
+# 激活（macOS / Linux）
+source .venv/bin/activate
+
+# 激活后命令行前缀会出现 (.venv)
+# 检查当前解释器
+which python          # macOS/Linux
+where python          # Windows
+
+# 退出虚拟环境
+deactivate
+```
+
+**Windows 激活报错处理**
+
+```bash
+# 若提示 "禁止运行脚本"，以管理员运行 PowerShell：
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### 1.3 最佳实践
+
+| 实践 | 说明 |
+|:-----|:-----|
+| 目录命名 | 统一 `.venv`，加入 `.gitignore` |
+| 勿提交虚拟环境 | 只提交 `requirements.txt` / `pyproject.toml` |
+| 每个项目独立环境 | 即使依赖相同也各自建环境 |
+| 避免全局安装 | 优先用 venv 或 uv 隔离 |
+
+***
+
+## 二、pip 包管理
+
+### 2.1 pip 常用命令
+
+```bash
+# 安装包
+pip install requests
+pip install "requests==2.31.0"       # 指定精确版本
+pip install "requests>=2.20,<3"      # 指定版本范围
+pip install -r requirements.txt      # 批量安装
+
+# 升级 / 卸载
+pip install --upgrade pip
+pip uninstall requests
+
+# 查看
+pip list                             # 列出所有包
+pip show requests                    # 查看包详情
+pip check                            # 检查依赖冲突
+
+# 冻结依赖导出
+pip freeze > requirements.txt
+```
+
+### 2.2 requirements.txt
+
+```text
+# requirements.txt —— 锁定项目依赖
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+sqlalchemy==2.0.35
+redis==5.0.8
+celery==5.4.0
+
+# 按用途拆分的做法：
+# requirements-dev.txt 额外包含
+pytest==8.3.2
+pytest-cov==5.0.0
+ruff==0.6.0
+```
+
+> 💡 大型项目常用 `requirements.txt`（运行依赖）与 `requirements-dev.txt`（开发/测试依赖）分离。
+
+### 2.3 安装时使用 `python -m pip`
+
+```bash
+# ✅ 推荐：绑定当前解释器
+python -m pip install requests
+
+# ❌ 直接调用 pip 可能命中系统 PATH 中的其他环境
+pip install requests
+```
+
+***
+
+## 三、pyproject.toml（PEP 621）
+
+现代 Python 项目以 `pyproject.toml` 统一描述元数据与构建配置，取代老旧的 `setup.py`。
+
+```toml
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-app"
+version = "0.1.0"
+description = "示例项目"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "sqlalchemy>=2.0",
+]
+
+[project.optional-dependencies]     # 可选依赖组
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[project.scripts]                   # 命令行入口
+my-app = "my_app.cli:main"
+
+[tool.ruff]                         # 工具配置（ruff）
+line-length = 100
+```
+
+```bash
+# 安装可编辑模式（开发时生效）
+pip install -e ".[dev]"
+```
+
+***
+
+## 四、包管理工具对比
+
+### 4.1 工具选型对比
+
+| 工具 | 定位 | 锁定文件 | 虚拟环境 | 速度 | 适用场景 |
+|:-----|:-----|:---------|:---------|:-----|:---------|
+| **pip + venv** | 基础 | requirements.txt | 手动 | 中 | 简单项目、学习 |
+| **uv** | 极速新一代 | uv.lock | 自动 | 极快 | 新项目首选 |
+| **poetry** | 依赖+发布 | poetry.lock | 自动 | 中 | 库/应用工程化 |
+| **pdm** | PEP 582 | pdm.lock | 自动 | 快 | 偏好标准规范 |
+| **pipenv** | 传统选择 | Pipfile.lock | 自动 | 慢 | 老项目 |
+| **conda** | 跨语言环境 | environment.yml | 自动 | 中 | 科学计算、Windows |
+
+### 4.2 uv 快速上手
+
+```bash
+# 安装 uv
+pip install uv
+
+# 创建虚拟环境 + 安装依赖（一步到位）
+uv venv
+uv pip install fastapi "uvicorn[standard]"
+
+# 依赖管理（类似 poetry，生成 uv.lock）
+uv add fastapi
+uv sync                  # 按锁文件精确安装
+
+# 运行命令（自动使用虚拟环境）
+uv run python main.py
+```
+
+**uv vs pip 速度对比**
+
+| 维度 | pip | uv |
+|:-----|:----|:---|
+| 安装 100+ 包 | 数十秒 | 秒级（并行下载 + 硬链接缓存） |
+| 锁文件 | 无 | uv.lock 支持精确可复现 |
+| 解析依赖 | 慢（回溯） | 快（重写了解析器） |
+
+> ✅ 新项目建议直接使用 `uv`；学习阶段用 `pip + venv` 打好基础即可。
+
+### 4.3 依赖锁定与可复现构建
+
+```bash
+# 生成锁文件（uv 会自动维护，poetry 用 poetry lock）
+uv lock
+
+# 精确复现环境
+uv sync --frozen
+
+# 生产环境安装（跳过 dev 依赖）
+uv sync --no-dev
+```
+
+**为什么需要锁定？**
+
+```
+requirements.txt:  fastapi>=0.115   ← 范围宽，构建结果不可预期
+uv.lock:           fastapi==0.115.6 + 传递依赖全部精确固定   ← 可复现
+```
+
+***
+
+## 五、发布自己的包
+
+### 5.1 包结构与配置
+
+```text
+my-package/
+├── pyproject.toml
+├── README.md
+├── src/
+│   └── my_package/          # 源码目录（src 布局）
+│       ├── __init__.py
+│       └── core.py
+└── tests/
+    └── test_core.py
+```
+
+```toml
+[project]
+name = "my-package"
+version = "0.1.0"
+description = "示例包"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "You", email = "you@example.com" }]
+requires-python = ">=3.11"
+
+[tool.setuptools]
+packages = ["my_package"]     # 或使用自动发现
+```
+
+### 5.2 构建与发布
+
+```bash
+# 安装构建工具
+pip install build twine
+
+# 构建 sdist + wheel
+python -m build
+# 生成 dist/my_package-0.1.0.tar.gz
+#      dist/my_package-0.1.0-py3-none-any.whl
+
+# 发布到 PyPI（需要注册账号与 Token）
+python -m twine upload dist/*
+
+# 发布到测试仓库试运行
+python -m twine upload --repository testpypi dist/*
+```
+
+> ❌ 发布前在测试环境 `pip install -e .` 验证可安装；`twine upload` 需谨慎，发布后版本不可覆盖。
+
+### 5.3 .gitignore 实践
+
+```gitignore
+# 虚拟环境
+.venv/
+venv/
+
+# Python 缓存与构建产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+
+# 环境变量（含密钥）
+.env
+```
+
+***
+
+## 六、实践项目
+
+### 项目 1：搭建项目骨架并发布本地包
+
+**目标**：从零搭建一个带虚拟环境、pyproject.toml 与可安装本地包的项目骨架。
+
+**步骤**：
+
+1. 创建 `my-package` 目录，采用 src 布局
+2. 编写 `pyproject.toml`（依赖 + dev 可选组）
+3. 创建虚拟环境并 `pip install -e ".[dev]"` 安装
+4. 编写一个工具函数并 import 验证
+5. 用 `python -m build` 构建出 wheel
+6. 配置 `.gitignore` 忽略缓存与虚拟环境
+
+**目录结构参考**：
+
+```
+my-package/
+├── pyproject.toml
+├── .gitignore
+├── README.md
+├── src/my_package/
+│   ├── __init__.py
+│   └── core.py
+└── tests/
+    └── test_core.py
+```
+
+### 项目 2：用 uv 管理多项目环境
+
+**目标**：使用 uv 快速创建两个依赖不同的项目环境，验证隔离性。
+
+**步骤**：
+
+1. 安装 uv 并创建两个项目目录
+2. 项目 A 安装 `fastapi`，项目 B 安装 `requests`
+3. 分别 `uv run` 运行脚本，打印各自依赖版本
+4. 用 `uv lock` 生成锁文件并查看差异
+5. 验证两个项目 `python -c "import ..."` 互不干扰
+
+**目录结构参考**：
+
+```
+uv-demo/
+├── api-project/
+│   ├── pyproject.toml
+│   ├── uv.lock
+│   └── main.py
+└── cli-project/
+    ├── pyproject.toml
+    ├── uv.lock
+    └── script.py
+```

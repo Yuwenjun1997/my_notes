@@ -1,0 +1,699 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/di-yi-jie-duan-he-xin-ji-chu/2-shu-ju-ku-ji-chu/index.md
+---
+# 数据库基础
+
+## 一、SQL 核心知识
+
+### 1.1 JOIN 详解
+
+SQL JOIN 用于根据两个或多个表之间的相关列来查询数据。
+
+**创建示例表**
+
+```sql
+-- 用户表
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    dept_id INT
+);
+
+-- 部门表
+CREATE TABLE departments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    dept_name VARCHAR(50) NOT NULL,
+    location VARCHAR(100)
+);
+
+INSERT INTO users VALUES
+(1, '张三', 'zhangsan@example.com', 1),
+(2, '李四', 'lisi@example.com', 2),
+(3, '王五', 'wangwu@example.com', 1),
+(4, '赵六', 'zhaoliu@example.com', NULL);  -- 无部门
+
+INSERT INTO departments VALUES
+(1, '技术部', '北京'),
+(2, '市场部', '上海'),
+(3, '财务部', '深圳');  -- 无用户
+```
+
+**INNER JOIN（内联接）**
+
+返回两个表中匹配的行，不匹配的行不返回。
+
+```sql
+-- 查询用户及其部门信息（仅返回有部门的用户）
+SELECT u.name, u.email, d.dept_name, d.location
+FROM users u
+INNER JOIN departments d ON u.dept_id = d.id;
+
+-- 结果：
+-- 张三 | zhangsan@example.com | 技术部 | 北京
+-- 李四 | lisi@example.com     | 市场部 | 上海
+-- 王五 | wangwu@example.com   | 技术部 | 北京
+-- （赵六不返回，因为 dept_id=NULL；财务部不返回，因为没有用户关联）
+```
+
+**LEFT JOIN（左外联接）**
+
+返回左表所有行，右表无匹配则填充 NULL。
+
+```sql
+-- 查询所有用户及其部门信息（包括无部门的用户）
+SELECT u.name, u.email, d.dept_name
+FROM users u
+LEFT JOIN departments d ON u.dept_id = d.id;
+
+-- 结果：
+-- 张三 | zhangsan@example.com | 技术部
+-- 李四 | lisi@example.com     | 市场部
+-- 王五 | wangwu@example.com   | 技术部
+-- 赵六 | zhaoliu@example.com  | NULL    ← 无部门
+```
+
+**RIGHT JOIN（右外联接）**
+
+返回右表所有行，左表无匹配则填充 NULL。
+
+```sql
+-- 查询所有部门及其用户（包括无用户的部门）
+SELECT u.name, d.dept_name
+FROM users u
+RIGHT JOIN departments d ON u.dept_id = d.id;
+
+-- 结果：
+-- 张三    | 技术部
+-- 王五    | 技术部
+-- 李四    | 市场部
+-- NULL    | 财务部    ← 无用户
+```
+
+**FULL OUTER JOIN（全外联接）**
+
+返回两个表的所有行。MySQL 不直接支持，可用 UNION 实现。
+
+```sql
+-- MySQL 模拟 FULL OUTER JOIN
+SELECT u.name, d.dept_name
+FROM users u
+LEFT JOIN departments d ON u.dept_id = d.id
+UNION
+SELECT u.name, d.dept_name
+FROM users u
+RIGHT JOIN departments d ON u.dept_id = d.id;
+
+-- 结果：
+-- 张三 | 技术部
+-- 李四 | 市场部
+-- 王五 | 技术部
+-- 赵六 | NULL      ← 赵六无部门
+-- NULL  | 财务部    ← 财务部无用户
+```
+
+**CROSS JOIN（交叉联接）**
+
+返回两个表的笛卡尔积（A 表行数 × B 表行数）。
+
+```sql
+-- 用户和部门的所有组合
+SELECT u.name, d.dept_name
+FROM users u
+CROSS JOIN departments d;
+
+-- 4 个用户 × 3 个部门 = 12 行
+```
+
+**自联接（Self JOIN）**
+
+将表与其自身进行联接，必须使用别名。
+
+```sql
+-- 员工表包含上级 ID
+CREATE TABLE employees (
+    id INT PRIMARY KEY,
+    name VARCHAR(50),
+    manager_id INT  -- 上级的员工 ID
+);
+
+-- 查询员工及其上级姓名
+SELECT e.name AS 员工, m.name AS 上级
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;
+```
+
+### 1.2 索引
+
+**B+ 树索引原理**
+
+B+ 树是 Innodb 的默认索引结构：
+
+```
+                   [根节点 - 存储键值范围]
+                  /         |         \
+            [内部节点]  [内部节点]  [内部节点]
+            /    |      /    |      /    |
+      [叶子] [叶子] [叶子] [叶子] [叶子] [叶子]
+      (叶子节点存储完整行数据或主键+行指针，且通过双向链表连接)
+```
+
+**B+ 树特点**：
+
+* 所有数据存储在叶子节点
+* 叶子节点之间通过双向链表连接，支持范围查询
+* 非叶子节点只存储键值用于路由
+* 树的高度通常在 2-4 层，查询效率稳定（千万级数据也只需 3-4 次 IO）
+
+**索引类型**
+
+```sql
+-- 1. 主键索引（PRIMARY KEY）
+-- 自动创建，叶子节点存储完整行数据（聚簇索引）
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,  -- 自动创建主键索引
+    name VARCHAR(50)
+);
+
+-- 2. 唯一索引（UNIQUE）
+CREATE UNIQUE INDEX idx_email ON users(email);
+
+-- 3. 普通索引（INDEX）
+CREATE INDEX idx_name ON users(name);
+
+-- 4. 联合索引（复合索引）
+-- 最左前缀原则：查询必须从最左列开始
+CREATE INDEX idx_name_dept ON users(name, dept_id);
+-- 有效使用：WHERE name = ?           ✓
+--          WHERE name = ? AND dept_id = ?  ✓
+--          WHERE dept_id = ?          ✗（跳过了 name）
+
+-- 5. 全文索引（FULLTEXT）
+-- 用于文本内容的全文搜索
+CREATE FULLTEXT INDEX idx_content ON articles(content);
+```
+
+**索引优化策略**
+
+```sql
+-- 1. 查看查询执行计划
+EXPLAIN SELECT * FROM users WHERE name = '张三';
+-- type: const/ref/range/index/ALL（从优到差）
+-- rows: 扫描行数估算
+-- Extra: Using index（覆盖索引）/ Using filesort（需要优化）
+
+-- 2. 覆盖索引优化
+-- 索引包含所有查询字段，无需回表
+CREATE INDEX idx_name_email ON users(name, email);
+-- 以下查询只用索引就拿到所有数据（Using index）
+SELECT name, email FROM users WHERE name = '张三';
+
+-- 3. 索引下推（ICP）
+-- 在索引遍历过程中就过滤，减少回表次数
+-- MySQL 5.6+ 自动优化，EXPLAIN 显示 Using index condition
+
+-- 4. 避免索引失效
+-- 不要在索引列上使用函数
+WHERE YEAR(create_time) = 2024  -- ✗ 索引失效
+WHERE create_time >= '2024-01-01' AND create_time < '2025-01-01'  -- ✓
+
+-- 不要对索引列进行隐式类型转换
+WHERE phone = 13800138000  -- ✗ phone 是 VARCHAR，索引失效
+WHERE phone = '13800138000'  -- ✓
+
+-- LIKE 以通配符开头
+WHERE name LIKE '%张%'  -- ✗ 索引失效
+WHERE name LIKE '张%'   -- ✓ 有效使用索引
+
+-- OR 条件中存在非索引列
+WHERE name = '张三' OR age = 30  -- ✗ age 无索引，全表扫描
+-- 优化为 UNION
+SELECT * FROM users WHERE name = '张三'
+UNION
+SELECT * FROM users WHERE age = 30;
+```
+
+**索引设计原则**
+
+| 原则 | 说明 |
+|------|------|
+| 高选择性列优先 | 区分度高的列更适合索引（如身份证号 > 性别） |
+| 小表不建索引 | 表记录 < 1000 时全表扫描可能更快 |
+| 避免过多索引 | 写操作变慢，占用磁盘空间 |
+| 短键优先 | 索引键越短，B+ 树每层能存更多键值 |
+| 频繁查询建索引 | 针对 WHERE、JOIN、ORDER BY 的列 |
+
+### 1.3 事务
+
+**ACID 四大特性**
+
+```
+A - Atomicity（原子性）：事务不可分割，要么全部成功，要么全部回滚
+C - Consistency（一致性）：事务前后数据完整性一致
+I - Isolation（隔离性）：多个事务并发执行互不干扰
+D - Durability（持久性）：事务提交后数据永久保存
+```
+
+**事务操作**
+
+```sql
+-- 开始事务
+START TRANSACTION;
+-- 或
+BEGIN;
+
+-- 执行操作
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+
+-- 提交事务
+COMMIT;
+
+-- 回滚事务
+ROLLBACK;
+
+-- 设置保存点
+SAVEPOINT sp1;
+-- ... 执行一些操作 ...
+ROLLBACK TO SAVEPOINT sp1;  -- 回滚到保存点
+```
+
+**四种隔离级别**
+
+| 隔离级别 | 脏读 | 不可重复读 | 幻读 | 默认数据库 |
+|---------|:----:|:---------:|:----:|-----------|
+| READ UNCOMMITTED | 可能 | 可能 | 可能 |  |
+| READ COMMITTED | 避免 | 可能 | 可能 | Oracle/SQL Server |
+| REPEATABLE READ | 避免 | 避免 | 可能 | **MySQL 默认** |
+| SERIALIZABLE | 避免 | 避免 | 避免 |  |
+
+**并发问题演示**
+
+```sql
+-- 1. 脏读（Dirty Read）：读到未提交的数据
+-- 事务A：               事务B：
+-- UPDATE account
+-- SET balance=900        SELECT balance → 读到 900（未提交！）
+--                        （如果 A 回滚，B 读到的就是脏数据）
+-- ROLLBACK
+
+-- 2. 不可重复读（Non-Repeatable Read）：同事务两次读到不同值
+-- 事务A：               事务B：
+-- SELECT balance → 1000
+--                        UPDATE → balance=900
+--                        COMMIT
+-- SELECT balance → 900（和第一次不一样！）
+
+-- 3. 幻读（Phantom Read）：同事务两次查询发现记录数量不同
+-- 事务A：               事务B：
+-- SELECT * FROM users
+-- WHERE age > 20 → 3条
+--                        INSERT INTO users (age=25)
+--                        COMMIT
+-- SELECT * FROM users
+-- WHERE age > 20 → 4条（多了一条！像幻觉一样）
+```
+
+**MVCC（多版本并发控制）**
+
+MySQL InnoDB 通过 MVCC 实现 RC 和 RR 隔离级别：
+
+```
+每个事务开始时生成一个 ReadView：
+- trx_ids：活跃事务 ID 列表
+- low_limit_id：最大事务 ID + 1
+- up_limit_id：最小活跃事务 ID
+- creator_trx_id：当前事务 ID
+
+判断行版本可见性：
+- 行事务 ID < up_limit_id → 已提交，可见
+- 行事务 ID >= low_limit_id → 未来事务，不可见
+- 行事务 ID 在 trx_ids 中 → 未提交，不可见
+- 行事务 ID == creator_trx_id → 当前事务，可见
+```
+
+**RR vs RC 的 MVCC 区别**：
+
+* **RC**：每次 SELECT 都生成新的 ReadView
+* **RR**：事务第一次 SELECT 时生成 ReadView，整个事务期间复用
+
+### 1.4 锁
+
+**锁分类**
+
+```
+按粒度：行级锁、表级锁、页面锁
+按模式：共享锁（S）、排他锁（X）、意向锁（IS/IX）
+按算法：记录锁（Record Lock）、间隙锁（Gap Lock）、临键锁（Next-Key Lock）
+```
+
+**行级锁**
+
+```sql
+-- 共享锁（S Lock）：允许其他事务读取，但不允许修改
+SELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE;
+
+-- 排他锁（X Lock）：不允许其他事务读取或修改
+SELECT * FROM users WHERE id = 1 FOR UPDATE;
+
+-- 意向锁（表级锁，InnoDB 自动管理）
+-- 表示"某个事务正在对某些行加锁"
+-- IS：有意加共享锁
+-- IX：有意加排他锁
+```
+
+**间隙锁与临键锁**
+
+```sql
+-- 临键锁（Next-Key Lock）= 记录锁 + 间隙锁
+-- 用于防止幻读，仅在 RR 级别生效
+
+-- 假设表数据 id: 1, 3, 5, 7
+-- 对 id=5 加间隙锁，锁定范围 (3,5] 和 (5,7] 可以理解中的 gap
+
+-- 间隙锁示例：
+-- 事务A：
+SELECT * FROM users WHERE id BETWEEN 3 AND 5 FOR UPDATE;
+-- 锁定了 (1,3], (3,5], 以及索引之间的间隙
+
+-- 事务B：
+INSERT INTO users(id) VALUES (4);  -- 阻塞！间隙锁阻止插入 id=4
+```
+
+**死锁**
+
+```sql
+-- 死锁示例：两个事务互相等待
+-- 事务A：                    事务B：
+UPDATE users SET name='A1'
+WHERE id=1                    UPDATE users SET name='B2'
+                              WHERE id=2
+UPDATE users SET name='A2'
+WHERE id=2                    UPDATE users SET name='B1'
+                              WHERE id=1
+-- 死锁发生！
+
+-- InnoDB 自动检测，回滚代价较小的事务
+-- 查看最近死锁：
+SHOW ENGINE INNODB STATUS;
+```
+
+**避免死锁的最佳实践**
+
+* 以固定顺序访问表和数据行
+* 在事务中尽快提交，缩小锁定范围
+* 使用较低的隔离级别（如 RC）
+* 为表添加合适的索引（减少锁扫描范围）
+
+***
+
+## 二、JDBC 原理
+
+### 2.1 JDBC 连接数据库
+
+JDBC（Java Database Connectivity）是 Java 访问数据库的标准 API。
+
+**基本步骤**
+
+```java
+import java.sql.*;
+
+public class JdbcDemo {
+    public static void main(String[] args) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // 1. 加载驱动（JDBC 4.0+ 可省略，自动从 spi 加载）
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
+            // 2. 建立连接
+            String url = "jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Shanghai";
+            String user = "root";
+            String password = "password";
+            conn = DriverManager.getConnection(url, user, password);
+
+            // 3. 创建 PreparedStatement（预编译，防 SQL 注入）
+            String sql = "SELECT id, name, email FROM users WHERE dept_id = ? AND age > ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, 1);      // 设置第一个参数
+            pstmt.setInt(2, 18);     // 设置第二个参数
+
+            // 4. 执行查询
+            rs = pstmt.executeQuery();
+
+            // 5. 处理结果集
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String email = rs.getString("email");
+                System.out.printf("id=%d, name=%s, email=%s%n", id, name, email);
+            }
+
+        } catch (ClassNotFoundException e) {
+            System.err.println("MySQL 驱动未找到: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("数据库操作异常: " + e.getMessage());
+            // SQLException 包含：错误码、SQLSTATE、异常链
+        } finally {
+            // 6. 释放资源（从后往前关闭）
+            closeQuietly(rs);
+            closeQuietly(pstmt);
+            closeQuietly(conn);
+        }
+    }
+
+    private static void closeQuietly(AutoCloseable resource) {
+        if (resource != null) {
+            try {
+                resource.close();
+            } catch (Exception ignored) {
+                // 关闭资源时的异常通常可以忽略
+            }
+        }
+    }
+}
+```
+
+### 2.2 PreparedStatement vs Statement
+
+| 对比维度 | Statement | PreparedStatement |
+|---------|-----------|-----------------|
+| **SQL 注入** | 不安全 | **安全**（参数化查询） |
+| **性能** | 每次编译一次 SQL | 预编译，重复执行性能好 |
+| **可读性** | 拼接字符串，可读性差 | 参数化占位符，清晰 |
+| **批量处理** | 不支持 | 支持 addBatch()/executeBatch() |
+
+**SQL 注入对比**
+
+```java
+// ❌ Statement - 不安全
+String userName = "admin' OR '1'='1";
+String sql = "SELECT * FROM users WHERE name = '" + userName + "'";
+// 实际执行：SELECT * FROM users WHERE name = 'admin' OR '1'='1'  → 返回所有用户！
+Statement stmt = conn.createStatement();
+ResultSet rs = stmt.executeQuery(sql);
+
+// ✅ PreparedStatement - 安全
+String sql = "SELECT * FROM users WHERE name = ?";
+PreparedStatement pstmt = conn.prepareStatement(sql);
+pstmt.setString(1, userName);
+// 参数被转义为字符串常量，'admin' OR '1'='1' 整体作为用户名字符串
+ResultSet rs = pstmt.executeQuery();
+```
+
+### 2.3 批量操作
+
+```java
+// 批量插入
+String sql = "INSERT INTO users(name, email) VALUES(?, ?)";
+PreparedStatement pstmt = conn.prepareStatement(sql);
+
+conn.setAutoCommit(false);  // 关闭自动提交
+
+for (int i = 0; i < 10000; i++) {
+    pstmt.setString(1, "user" + i);
+    pstmt.setString(2, "user" + i + "@example.com");
+    pstmt.addBatch();
+
+    if (i % 1000 == 0) {
+        pstmt.executeBatch();  // 每 1000 条执行一次
+        pstmt.clearBatch();
+    }
+}
+pstmt.executeBatch();  // 执行剩余批次
+conn.commit();         // 提交事务
+```
+
+### 2.4 事务管理
+
+```java
+try {
+    conn.setAutoCommit(false);  // 关闭自动提交
+
+    String sql1 = "UPDATE accounts SET balance = balance - 100 WHERE id = ?";
+    PreparedStatement pstmt1 = conn.prepareStatement(sql1);
+    pstmt1.setInt(1, 1);
+    pstmt1.executeUpdate();
+
+    String sql2 = "UPDATE accounts SET balance = balance + 100 WHERE id = ?";
+    PreparedStatement pstmt2 = conn.prepareStatement(sql2);
+    pstmt2.setInt(1, 2);
+    pstmt2.executeUpdate();
+
+    conn.commit();  // 提交事务
+} catch (SQLException e) {
+    conn.rollback();  // 出错了回滚
+} finally {
+    conn.setAutoCommit(true);  // 恢复自动提交
+}
+```
+
+***
+
+## 三、连接池
+
+### 3.1 HikariCP 配置与使用
+
+HikariCP 是目前性能最快的 Java 数据库连接池，Spring Boot 2.0+ 默认使用。
+
+**原理**：连接池维护一组数据库连接，应用程序从池中获取连接而不是新建连接，使用完毕后归还到池中，避免了频繁创建和销毁连接的开销。
+
+**Maven 依赖**
+
+```xml
+<dependency>
+    <groupId>com.zaxxer</groupId>
+    <artifactId>HikariCP</artifactId>
+    <version>5.1.0</version>
+</dependency>
+```
+
+**手动配置**
+
+```java
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+public class DataSourceConfig {
+    public static HikariDataSource createDataSource() {
+        HikariConfig config = new HikariConfig();
+
+        // 基本配置
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/mydb?useSSL=false");
+        config.setUsername("root");
+        config.setPassword("password");
+        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+
+        // 连接池配置
+        config.setMaximumPoolSize(20);           // 最大连接数（默认 10）
+        config.setMinimumIdle(5);                // 最小空闲连接数
+        config.setConnectionTimeout(30000);      // 获取连接超时时间（毫秒，默认 30s）
+        config.setIdleTimeout(600000);           // 空闲超时时间（毫秒，默认 10min）
+        config.setMaxLifetime(1800000);          // 连接最大存活时间（毫秒，默认 30min）
+        config.setConnectionTestQuery("SELECT 1"); // 连接测试语句（MySQL 可选）
+
+        // 性能优化
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        config.addDataSourceProperty("useServerPrepStmts", "true");
+
+        // 监控
+        config.setPoolName("MyPool");
+        config.setMetricsTrackerFactory(null);
+
+        return new HikariDataSource(config);
+    }
+}
+```
+
+**Spring Boot 配置（application.yml）**
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: root
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: HikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+```
+
+**使用连接池**
+
+```java
+public class UserDao {
+    private static final HikariDataSource dataSource = DataSourceConfig.createDataSource();
+
+    public List<User> findAll() {
+        String sql = "SELECT id, name, email FROM users";
+        try (Connection conn = dataSource.getConnection();  // 从池中获取
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            List<User> users = new ArrayList<>();
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setName(rs.getString("name"));
+                user.setEmail(rs.getString("email"));
+                users.add(user);
+            }
+            return users;
+        } catch (SQLException e) {
+            throw new RuntimeException("查询用户失败", e);
+        }
+        // 连接自动归还到池中（try-with-resources 自动关闭）
+    }
+}
+```
+
+### 3.2 连接池参数调优建议
+
+| 参数 | 建议 | 说明 |
+|------|------|------|
+| maximumPoolSize | CPU 核心数 × 2 + 磁盘数 | 不是越大越好，过多连接增加线程切换开销 |
+| minimumIdle | 与 maximumPoolSize 相同（固定池）或 5-10 | 建议固定池大小以避免连接建立延迟 |
+| connectionTimeout | 1000-5000ms | 超过此时间获取不到连接就报错 |
+| idleTimeout | 600000（10min） | 只在 minimumIdle < maximumPoolSize 时生效 |
+| maxLifetime | 1800000（30min） | 略小于数据库的连接超时时间 |
+| connectionTestQuery | SELECT 1（MySQL） | 验证连接有效性 |
+
+**Pool Sizing 公式**
+
+```
+连接数 = ((核心数 × 2) + 有效磁盘数)
+推荐最大连接数 = Tn × (Cm - 1) + 1
+其中 Tn = 线程数，Cm = 每个连接最大并发数
+```
+
+***
+
+## 四、实践项目
+
+### 项目 1：JDBC + HikariCP 实现用户管理
+
+**目标**：使用 JDBC 配合 HikariCP 实现数据库连接和 CRUD 查询。
+
+**要求**：
+
+1. 使用 HikariCP 配置连接池
+2. 实现用户的增删改查操作
+3. 使用 PreparedStatement 防止 SQL 注入
+4. 实现批量插入功能
+5. 添加事务管理（转账操作）

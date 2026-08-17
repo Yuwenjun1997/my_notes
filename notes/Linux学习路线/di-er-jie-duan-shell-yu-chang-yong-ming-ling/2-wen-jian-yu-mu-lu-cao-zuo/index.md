@@ -1,0 +1,292 @@
+---
+url: >-
+  /my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/2-wen-jian-yu-mu-lu-cao-zuo/index.md
+---
+# 文件与目录操作
+
+## 一、基础文件操作
+
+### 1.1 目录导航
+
+```bash
+pwd                     # 打印当前工作目录
+cd /path/to/dir         # 切换到指定目录
+cd                      # 切换到用户家目录
+cd ~                    # 同上
+cd -                    # 切换到上一个工作目录
+cd ..                   # 切换到上级目录
+cd ../../               # 切换到上两级目录
+```
+
+### 1.2 列出文件与目录 (ls)
+
+```bash
+# 基础用法
+ls                      # 列出当前目录
+ls /etc                 # 列出指定目录
+ls -l                   # 详细格式（权限、大小、时间）
+ls -a                   # 显示所有文件（含隐藏文件 .开头）
+ls -h                   # 人类可读的文件大小（K/M/G）
+ls -t                   # 按修改时间排序
+ls -r                   # 逆序排列
+ls -S                   # 按文件大小排序
+ls -R                   # 递归列出子目录
+
+# 常用组合
+ls -lah                 # ⭐ 最常用：详细 + 隐藏 + 人类可读
+ls -ltr                 # 按时间排序（最新在最后）
+ls -lhS                 # 按大小排序 + 人类可读
+ls -d */                # 只列出目录
+```
+
+### 1.3 创建与删除
+
+```bash
+# ===== 创建 =====
+touch file.txt                    # 创建空文件，或更新文件时间戳
+touch file{1,2,3}.txt            # 批量创建（Bash 大括号展开）
+mkdir dirname                     # 创建目录
+mkdir -p a/b/c/d                  # 递归创建多级目录
+
+# ===== 删除 =====
+rm file.txt                       # 删除文件
+rm -i file.txt                    # 删除前确认
+rm -f file.txt                    # 强制删除（无确认）
+rm -rf directory/                 # ⚠️ 递归强制删除目录（危险！）
+rmdir emptydir/                   # 只删除空目录
+
+# ===== 复制 =====
+cp source.txt dest.txt            # 复制文件
+cp -i source.txt dest.txt         # 覆盖前确认
+cp -r sourcedir/ destdir/         # 递归复制目录
+cp -a sourcedir/ destdir/         # 归档复制（保留权限、时间戳）
+cp -v source.txt dest.txt         # 显示复制过程
+
+# ===== 移动/重命名 =====
+mv oldname.txt newname.txt        # 重命名
+mv file.txt /target/dir/          # 移动文件
+mv -i source.txt target.txt       # 覆盖前确认
+```
+
+> ⚠️ **危险警告**：
+>
+> * `rm -rf /` 会删除整个系统（现代系统有保护，但仍然极其危险）
+> * `rm -rf *` 删除当前目录下所有内容
+> * `rm -rf .*` 会匹配 `..` 导致灾难
+> * **删除前务必用 `ls` 确认路径，养成 `pwd` 确认当前目录的习惯**
+
+### 1.4 查看文件内容
+
+```bash
+# ===== 完整查看 =====
+cat file.txt              # 全部输出到终端
+cat -n file.txt           # 带行号
+tac file.txt              # 反向输出（最后一行在前）
+
+# ===== 分页查看 =====
+less file.txt             # ⭐ 推荐：分页查看
+# less 快捷键:
+#   空格 = 下一页    b = 上一页
+#   /keyword = 搜索   n = 下一个  N = 上一个
+#   g = 开头       G = 末尾
+#   q = 退出
+
+# ===== 部分查看 =====
+head file.txt             # 前 10 行
+head -n 20 file.txt       # 前 20 行
+head -c 100 file.txt      # 前 100 字节
+
+tail file.txt             # 后 10 行
+tail -n 50 file.txt       # 后 50 行
+tail -f /var/log/syslog   # ⭐ 实时跟踪（CTRL+C 退出）
+tail -F /var/log/syslog   # 同上，但文件被删除重创建后能继续跟踪
+```
+
+***
+
+## 二、文件查找
+
+### 2.1 find — 强大的文件搜索
+
+```bash
+find [路径] [条件] [动作]
+
+# ===== 按名称查找 =====
+find . -name "*.log"                  # 按名称（区分大小写）
+find . -iname "*.LOG"                 # 按名称（不区分大小写）
+find / -name "nginx.conf" 2>/dev/null # 全局搜索（忽略无权限报错）
+
+# ===== 按类型查找 =====
+find . -type f                        # 文件
+find . -type d                        # 目录
+find . -type l                        # 符号链接
+
+# ===== 按大小查找 =====
+find . -size +100M                    # 大于 100MB
+find . -size -10k                     # 小于 10KB
+find . -size +1G -size -5G           # 1GB ~ 5GB
+
+# ===== 按时间查找 =====
+find . -mtime -7                      # 7 天内修改的文件
+find . -atime +30                     # 30 天前访问的文件
+find . -mmin -60                      # 60 分钟内修改的文件
+find . -newer reference.txt           # 比 reference.txt 更新的文件
+
+# ===== 按权限查找 =====
+find . -perm 644                      # 权限恰好为 644
+find . -perm -u=w                     # 所有者有写权限
+
+# ===== 执行操作 =====
+find . -name "*.tmp" -delete          # 查找并删除
+find . -name "*.log" -exec ls -l {} \;   # 对每个结果执行命令
+find . -name "*.log" -exec grep "ERROR" {} \;  # 在找到的文件中搜索
+find . -name "*.gz" -exec rm -i {} +  # 批量删除（+ 比 \; 更高效）
+```
+
+### 2.2 locate — 快速文件定位
+
+```bash
+# locate 基于数据库索引，速度快但不实时
+sudo apt install plocate -y
+
+sudo updatedb         # 更新文件索引数据库
+locate nginx.conf     # 查找包含 nginx.conf 的路径
+locate -i nginx       # 不区分大小写
+locate -l 20 java     # 限制结果数量
+```
+
+### 2.3 which / whereis
+
+```bash
+which java            # 查找可执行文件的路径（基于 $PATH）
+whereis java          # 查找二进制、源码、手册页
+type java             # 判断命令类型（别名/内置/外部）
+```
+
+***
+
+## 三、压缩与归档
+
+### 3.1 tar — 归档工具
+
+```bash
+# ===== 创建归档 =====
+tar -cvf archive.tar dir/                 # 创建 tar 归档
+tar -czvf archive.tar.gz dir/             # 创建 gzip 压缩归档 ⭐ 最常用
+tar -cjvf archive.tar.bz2 dir/            # 创建 bzip2 压缩归档（体积更小）
+
+# 参数说明:
+#   -c  创建归档
+#   -v  显示详细信息
+#   -f  指定文件名（必须放最后）
+#   -z  gzip 压缩
+#   -j  bzip2 压缩
+#   -J  xz 压缩（压缩率最高但慢）
+
+# ===== 解压 =====
+tar -xvf archive.tar                      # 解压
+tar -xzvf archive.tar.gz                  # 解压 gzip
+tar -xjvf archive.tar.bz2                 # 解压 bzip2
+tar -xvf archive.tar.gz -C /target/dir/   # 解压到指定目录
+
+# ===== 查看内容（不解压）=====
+tar -tvf archive.tar.gz                   # 查看归档内容列表
+```
+
+### 3.2 gzip / zip
+
+```bash
+# ===== gzip =====
+gzip file.txt              # 压缩为 file.txt.gz（源文件被删除）
+gzip -k file.txt           # 压缩但保留源文件
+gunzip file.txt.gz         # 解压
+gzip -d file.txt.gz        # 同上
+
+# ===== zip（跨平台兼容）=====
+zip -r archive.zip dir/    # 压缩目录
+unzip archive.zip          # 解压
+unzip -l archive.zip       # 列出内容
+```
+
+### 3.3 压缩格式对比
+
+| 格式 | 压缩率 | 速度 | 命令 |
+|:-----|:-------|:-----|:-----|
+| `.tar.gz` (gzip) | 中等 | 快 | `tar -czvf` |
+| `.tar.bz2` (bzip2) | 较高 | 较慢 | `tar -cjvf` |
+| `.tar.xz` (xz) | 最高 | 最慢 | `tar -cJvf` |
+| `.zip` | 中等 | 快 | `zip -r` |
+
+***
+
+## 四、文件同步 (rsync)
+
+```bash
+# 基本语法
+rsync [选项] 源 目标
+
+# 本地同步
+rsync -av /source/dir/ /dest/dir/        # 同步目录（保留属性）
+rsync -av --delete /source/ /dest/       # 目标中多余的文件会被删除
+
+# 远程同步（基于 SSH）
+rsync -avz /local/dir/ user@host:/remote/dir/    # 本地 → 远程
+rsync -avz user@host:/remote/dir/ /local/dir/    # 远程 → 本地
+
+# 常用选项
+#   -a  归档模式（保留权限、时间戳等）
+#   -v  显示详细信息
+#   -z  传输时压缩
+#   -P  显示进度 + 支持断点续传
+#   --exclude='*.log'  排除匹配文件
+#   --dry-run  模拟运行（只看不做）
+#   --delete  删除目标中源没有的文件（保持完全同步）
+
+# 实际示例：备份项目目录（排除 node_modules 和 .git）
+rsync -avP --exclude='node_modules' --exclude='.git' \
+    ~/projects/ /backup/projects/
+```
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+熟练使用文件查找、压缩归档命令。
+
+### 步骤
+
+1. **创建测试文件结构**
+   ```bash
+   mkdir -p ~/file-practice/{src,logs,backup}
+   cd ~/file-practice
+   for i in {1..5}; do echo "log entry $i" > "logs/app_$(date +%Y%m%d)_$i.log"; done
+   echo "config data" > src/config.yaml
+   touch src/.hidden-file
+   ```
+
+2. **查找练习**
+   ```bash
+   find ~/file-practice -name "*.log"
+   find ~/file-practice -type f -name "*.yaml"
+   find ~/file-practice -name ".*"          # 查找隐藏文件
+
+   # 查找并统计日志中的行数
+   find ~/file-practice/logs -name "*.log" -exec wc -l {} \;
+   ```
+
+3. **压缩归档练习**
+   ```bash
+   cd ~/file-practice
+   tar -czvf logs-backup.tar.gz logs/
+   tar -tvf logs-backup.tar.gz   # 查看内容
+   ls -lh logs-backup.tar.gz     # 查看压缩后大小
+   ```
+
+4. **rsync 同步练习**
+   ```bash
+   rsync -av ~/file-practice/logs/ ~/file-practice/backup/
+   # 验证
+   diff -r ~/file-practice/logs/ ~/file-practice/backup/
+   ```

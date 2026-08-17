@@ -1,0 +1,149 @@
+---
+url: >-
+  /my_notes/notes/LangChain学习路线/di-er-jie-duan-lang-graph-bian-pai/2-chi-jiu-hua-yu-ren-lei-shen-pi/index.md
+---
+# 持久化与人类审批
+
+> 上一节结尾的思考题：图跑完状态就丢了。这一节解决两个"生产级 Agent"的刚需：**跑一半不丢**（持久化）和 **干危险事前问一句**（人类审批）。这两个能力也是 Deep Agents 内置能力的底层支撑。
+
+## 一、为什么需要持久化
+
+### 1.1 没有持久化的痛
+
+默认情况下，每次 `invoke` 都是一个**全新会话**：模型不记得上次说了什么，进程一断，所有状态清零。真实场景却要求：
+
+* 多轮对话记住上下文（用户上一轮说过的需求）；
+* 流程中断（崩溃、人工介入）后能从断点**续跑**；
+* 一个流程跨越几天、多台机器仍能继续。
+
+### 1.2 官方术语：Checkpointer 与 Thread
+
+| 官方术语 | 大白话 | 类比 |
+|:---------|:-------|:-----|
+| **Checkpointer**（检查点存储） | 一个"存档器"，每执行一步就把 State 存一份 | 游戏自动存档 |
+| **Thread**（线程/会话） | 一个带 `thread_id` 的会话存档，同一个 id 的多次调用共享状态 | 一个存档文件 |
+| **thread\_id** | 会话的唯一标识 | 存档文件名 |
+
+> 💡 **含义解释**：你给一次对话起个名（`thread_id`），之后每次调用都带着这个名字，LangGraph 就知道"这是同一局游戏"，把最新存档读出来继续。
+
+***
+
+## 二、接入 Checkpointer
+
+### 2.1 最小示例
+
+```python
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver   # 内存版存档器（演示用）
+
+graph = StateGraph(State)
+# ... 省略节点和边（同上一节） ...
+
+checkpointer = MemorySaver()              # 创建存档器
+app = graph.compile(checkpointer=checkpointer)   # 编译时挂上
+
+# 第一次调用：指定 thread_id
+config = {"configurable": {"thread_id": "user-123"}}
+app.invoke({"messages": ["第1轮：我想订机票"]}, config=config)
+
+# 第二次调用：同一个 thread_id → 它记得上一轮！
+app.invoke({"messages": ["第2轮：去北京"]}, config=config)
+```
+
+> ✅ 官方有专门的说法：**"Use a consistent thread\_id to maintain conversation context across invocations"**（用一致的 thread\_id 跨调用保持对话上下文）。两次调用用同一个 `thread_id`，就是一个连续会话；换一个 id，就是另开一局。
+
+> ⚠️ `MemorySaver` 存在内存里，进程重启即丢，**仅供演示**。生产环境用持久化存储（如 `langgraph-checkpoint-postgres`）。
+
+### 2.2 常见错误
+
+```python
+# ❌ 没传 thread_id：每次都是新会话，模型"失忆"
+app.invoke({"messages": [...]})
+
+# ✅ 每次都带同一个 thread_id：连续会话
+config = {"configurable": {"thread_id": "user-123"}}
+app.invoke({"messages": [...]}, config=config)
+```
+
+***
+
+## 三、人类审批（Human-in-the-loop）
+
+### 3.1 为什么需要"人参与"
+
+有些操作**风险高、不可逆**：给用户打钱、删除数据库、对外发邮件。官方术语叫 **Human-in-the-loop（人在环内 / 人工介入）**——流程跑到关键步骤时**暂停，等人工批准**再继续。
+
+> 🧠 **类比**：银行大额转账要"双人复核"。系统自动走到转账这一步时，先**卡住**，等主管点头（approve）才真正执行；主管拒绝，就撤销。
+
+### 3.2 用 `interrupt` 实现暂停
+
+LangGraph 提供 `interrupt()` 函数：节点执行到它时，把当前状态存好并**暂停**，把控制权交回给你的代码；你可以在之后**用新的输入继续**。
+
+```python
+def review_node(state):
+    # 关键节点：先问人工，得到批准才继续
+    approved = interrupt({"question": "是否批准这笔退款？金额：99元"})
+    if not approved:
+        return {"messages": state["messages"] + ["已取消"]}
+    return {"messages": state["messages"] + ["退款已执行"]}
+```
+
+```python
+# 编译时必须挂 checkpointer（interrupt 依赖存档才能续跑）
+app = graph.compile(checkpointer=checkpointer)
+
+config = {"configurable": {"thread_id": "order-42"}}
+
+# 第一次执行 → 停在 review_node，等待人工
+app.invoke({"messages": ["发起退款"]}, config=config)
+
+# 人工决定"批准"→ 用批准结果继续执行（LangGraph 会记住停在哪、续到哪里）
+app.invoke(
+    {"messages": [{"role": "user", "content": "approve"}]},  # 人工输入
+    config=config,
+)
+```
+
+> 🔑 **关键规则**：**interrupt 必须配 checkpointer**。原因：暂停时状态要"存起来"，续跑时才能找到断点。没配 checkpointer 的图里用 interrupt，官方直接视为错误。
+
+### 3.3 审批 vs 强制顺序（小结）
+
+| 能力 | 解决的问题 | 用的机制 |
+|:-----|:-----------|:---------|
+| 强制顺序 | 流程步骤必须按序 | Edge（边） |
+| 分支 | 按条件走不同路径 | Conditional Edge |
+| 持久化 | 状态不丢、断点续跑 | Checkpointer + thread\_id |
+| 人工审批 | 危险步骤等人工确认 | interrupt |
+
+***
+
+## 四、LangGraph 与 Deep Agents 的分工
+
+到这里你可能会想：这些我都得自己写，好麻烦。**对——所以官方才做了 Deep Agents。**
+
+| 能力 | 用 LangGraph 做 | 用 Deep Agents 做 |
+|:-----|:----------------|:------------------|
+| 持久化 | 自己接 Checkpointer、自己管 thread\_id | 传入 `checkpointer` 参数即可，行为内置 |
+| 人工审批 | 自己写 `interrupt` 节点 | `interrupt_on={"write_file": True}` 一行开启 |
+| 记忆 | 自己设计 State 和 Store | 传入 `store` 参数，长期记忆内置 |
+| 任务规划 / 子代理 / 文件 | **完全没有**，全要自己造 | **全部内置** |
+
+> 💡 **一句话**：LangGraph 给你"精雕细琢每一根边"的自由；Deep Agents 把上面这些高频能力**打包成参数**，让你用"配置"代替"实现"。这就是下一阶段的主角。
+
+***
+
+## 📝 实践项目
+
+### 目标
+
+给上一节的流程图加**持久化 + 人工审批**。
+
+### 步骤
+
+1. **挂 Checkpointer**：用 `MemorySaver`，在 `compile(checkpointer=...)`。
+2. **验证跨轮记忆**：同一个 `thread_id` 调用两次，第二轮打印出第一轮的 State 内容。
+3. **新增审批节点**：在"发起退款"前插入一个 `review` 节点，用 `interrupt` 暂停并索要批准。
+4. **模拟审批**：第一次 `invoke` 停在审批点，观察返回内容；第二次传入"approve"，观察流程继续到"发送通知"。
+5. **对比实验**：故意**不传 `checkpointer`** 就想用 `interrupt`，看官方报什么错，加深记忆。
+
+> 🧠 **思考题**：如果用 Deep Agents，上面的"审批 + 持久化 + 规划 + 文件 + 子代理"五件事，大概要写几行配置？下一阶段见分晓。
