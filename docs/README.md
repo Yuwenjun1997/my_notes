@@ -1,7 +1,7 @@
 ---
 pageLayout: home
 title: 小鱼知识库
-description: 小鱼知识库 —— 技术知识、学习路线与参考文档，赛博朋克风格个人知识库站点
+description: 小鱼知识库 —— 技术知识沉淀与参考文档，赛博朋克风格个人知识库站点
 config:
   -
     type: hero
@@ -19,16 +19,12 @@ config:
     hero:
       name: 小鱼知识库
       tagline: 大鱼吃小鱼
-      text: "技术知识与系统化学习路线\n前端 · Java · Python · Linux · LangChain"
+      text: "技术知识沉淀与参考文档\n前端 · Java · Python · LangChain · 数据库 · Linux"
       actions:
         -
           theme: brand
-          text: 马上开始
+          text: 知识库导航
           link: /notes/前端学习路线/
-        -
-          theme: alt
-          text: Java 学习路线
-          link: /notes/JAVA学习路线/
         -
           theme: alt
           text: GitHub
@@ -37,192 +33,39 @@ config:
           target: _blank
   -
     type: features
-    title: 前端学习路线
-    description: 从 HTML/CSS 基础到工程化实战的阶段化学习路线，以及本站内置的实用能力
+    title: 知识库导航
+    description: 涵盖六大技术领域的知识沉淀与参考文档
     features:
       -
-        title: 第一阶段 · 网页基础
+        title: 前端开发
         icon: logos:html-5
-        details: HTML 结构、表单、CSS 盒模型、flex/grid 布局、响应式与动画
-        link: /notes/前端学习路线/第一阶段-网页基础/
-      -
-        title: 第二阶段 · JavaScript核心
-        icon: logos:javascript
-        details: 语言基础、函数与闭包、原型与 this、异步与事件循环、DOM 与数组
-        link: /notes/前端学习路线/第二阶段-JavaScript核心/
-      -
-        title: 第三阶段 · TypeScript
-        icon: logos:typescript-icon
-        details: 编译流程、类型基础、接口、类、泛型、枚举等
-        link: /notes/前端学习路线/第三阶段-TypeScript/
-      -
-        title: 第四阶段 · 工程化与实战
-        icon: 🛠️
-        details: Vite 构建工具与常用实战技巧（工具函数、上传、二维码、表格解析）
-        link: /notes/前端学习路线/第四阶段-工程化与实战/
-      -
-        title: 图表可视化
-        icon: 📊
-        details: 笔记内置 ECharts、Chart.js、Mermaid 图表能力
-      -
-        title: 全文搜索
-        icon: 🔍
-        details: 本地搜索，快速检索全部笔记内容
-      -
-        title: 赛博暗色
-        icon: 🌃
-        details: 默认暗色风格，支持一键切换明暗主题
-  -
-    type: features
-    title: 学习路线
-    description: 从零到进阶的系统化学习路线，每个路线按阶段编排，侧边栏自动生成
-    features:
-      -
-        title: 前端学习路线
-        icon: logos:html-5
-        details: HTML/CSS 基础 → JavaScript 核心 → TypeScript → 工程化与实战
+        details: HTML/CSS 基础、JavaScript 核心、TypeScript、工程化与实战
         link: /notes/前端学习路线/
       -
-        title: Java 后端学习路线
+        title: Java开发
         icon: logos:java
-        details: 核心基础 → 主流框架 → 进阶能力 → 分布式系统设计，以及并发/JVM/微服务等深度学习方向
+        details: 核心基础、主流框架、进阶能力、分布式系统设计
         link: /notes/JAVA学习路线/
       -
-        title: Python 全栈学习路线
+        title: Python开发
         icon: logos:python
-        details: Python 基础 → Web 开发 → 进阶能力 → 分布式与部署，以及爬虫/异步/DevOps 等方向
+        details: 语言基础、Web 开发、进阶能力、分布式与部署
         link: /notes/Python学习路线/
       -
-        title: Linux 系统学习路线
-        icon: logos:linux-tux
-        details: 基础入门 → Shell 常用命令 → 系统管理进阶 → 运维实战与脚本（Ubuntu）
-        link: /notes/Linux学习路线/
-      -
-        title: LangChain 生态学习路线
+        title: LangChain框架
         icon: simple-icons:langchain
-        details: LangChain → LangGraph → Deep Agents，从核心抽象到可工程化的 AI Agent 实战
+        details: LangChain 核心、LangGraph 编排、Deep Agents、工程化实战
         link: /notes/LangChain学习路线/
-  -
-    type: text-image
-    title: 前端学习路线
-    image: /cyberpunk/css.svg
-    width: 160
-    description: 从 HTML/CSS 基础到 JavaScript 核心、TypeScript 与工程化实战的系统化前端学习指南。<br><a href="./notes/前端学习路线/">查看全部前端学习路线 →</a>
-    list:
       -
-        title: '<a href="./notes/前端学习路线/第一阶段-网页基础/">第一阶段 · 网页基础</a>'
-        description: HTML、表单、CSS 盒模型、布局、响应式动画
+        title: 数据库
+        icon: logos:postgresql
+        details: MySQL 核心、PostgreSQL 核心、双库实战与对比
+        link: /notes/数据库知识库/
       -
-        title: '<a href="./notes/前端学习路线/第二阶段-JavaScript核心/">第二阶段 · JavaScript核心</a>'
-        description: 语言基础、函数闭包、原型this、异步、ES6+、DOM、数组
-      -
-        title: '<a href="./notes/前端学习路线/第三阶段-TypeScript/">第三阶段 · TypeScript</a>'
-        description: 编译、类型基础、接口、类、泛型、枚举
-      -
-        title: '<a href="./notes/前端学习路线/第四阶段-工程化与实战/">第四阶段 · 工程化与实战</a>'
-        description: Vite 构建工具与常用前端实战技巧
-  -
-    type: text-image
-    title: Java 学习路线
-    image: /cyberpunk/java.svg
-    width: 160
-    description: 系统化的 Java 后端学习指南，从核心基础到分布式系统设计，并附并发/JVM/微服务等深度学习方向。<br><a href="./notes/JAVA学习路线/">查看全部 Java 学习路线 →</a>
-    list:
-      -
-        title: '<a href="./notes/JAVA学习路线/第一阶段-核心基础/">第一阶段 · 核心基础</a>'
-        description: 构建工具、数据库基础、网络与 HTTP
-      -
-        title: '<a href="./notes/JAVA学习路线/第二阶段-主流框架/">第二阶段 · 主流框架</a>'
-        description: Spring 全家桶、ORM 框架
-      -
-        title: '<a href="./notes/JAVA学习路线/第三阶段-进阶能力/">第三阶段 · 进阶能力</a>'
-        description: 缓存、消息队列、安全、定时任务
-      -
-        title: '<a href="./notes/JAVA学习路线/第四阶段-分布式与系统设计/">第四阶段 · 分布式与系统设计</a>'
-        description: 微服务架构、可观测性、数据库进阶
-      -
-        title: '<a href="./notes/JAVA学习路线/深度学习/">深度学习</a>'
-        description: 并发编程、Spring Cloud Alibaba、电商实战、运维、架构
-  -
-    type: image-text
-    title: Python 学习路线
-    image: /cyberpunk/python.svg
-    width: 160
-    description: 通用全栈 Python 学习指南，覆盖 Web 后端 + 数据/爬虫 + 自动化/部署 三大方向。<br><a href="./notes/Python学习路线/">查看全部 Python 学习路线 →</a>
-    list:
-      -
-        title: '<a href="./notes/Python学习路线/第一阶段-Python基础/">第一阶段 · Python基础</a>'
-        description: 环境搭建、语法核心、函数与 OOP、标准库、虚拟环境
-      -
-        title: '<a href="./notes/Python学习路线/第二阶段-Web开发/">第二阶段 · Web开发</a>'
-        description: 网络异步、FastAPI、Django、ORM、API 设计
-      -
-        title: '<a href="./notes/Python学习路线/第三阶段-进阶能力/">第三阶段 · 进阶能力</a>'
-        description: 并发异步、Redis、任务队列、pytest、安全认证、爬虫
-      -
-        title: '<a href="./notes/Python学习路线/第四阶段-分布式与部署/">第四阶段 · 分布式与部署</a>'
-        description: 微服务与 MQ、Docker 部署、可观测性、性能优化
-  -
-    type: text-image
-    title: Linux 学习路线
-    image: /cyberpunk/linux-tux.svg
-    width: 160
-    description: 面向后端开发者的 Linux 系统化学习指南，聚焦 Ubuntu，从入门到运维实战。<br><a href="./notes/Linux学习路线/">查看全部 Linux 学习路线 →</a>
-    list:
-      -
-        title: '<a href="./notes/Linux学习路线/第一阶段-Linux基础入门/">第一阶段 · Linux基础入门</a>'
-        description: 概述发行版、安装配置、文件系统、用户权限
-      -
-        title: '<a href="./notes/Linux学习路线/第二阶段-Shell与常用命令/">第二阶段 · Shell与常用命令</a>'
-        description: Shell 基础、文件操作、文本处理、进程、包管理
-      -
-        title: '<a href="./notes/Linux学习路线/第三阶段-系统管理进阶/">第三阶段 · 系统管理进阶</a>'
-        description: 磁盘、网络、systemd、日志、定时任务
-      -
-        title: '<a href="./notes/Linux学习路线/第四阶段-运维实战与脚本/">第四阶段 · 运维实战与脚本</a>'
-        description: Shell 脚本、安全加固、故障排查、Docker 基础
-  -
-    type: image-text
-    title: LangChain 学习路线
-    image: /cyberpunk/langchain.svg
-    width: 160
-    description: 面向初学者的 LangChain 生态学习指南，从核心抽象到可工程化的 AI Agent 实战。<br><a href="./notes/LangChain学习路线/">查看全部 LangChain 学习路线 →</a>
-    list:
-      -
-        title: '<a href="./notes/LangChain学习路线/第一阶段-LangChain基础/">第一阶段 · LangChain基础</a>'
-        description: 生态总览、核心抽象与 RAG、Agent 入门
-      -
-        title: '<a href="./notes/LangChain学习路线/第二阶段-LangGraph编排/">第二阶段 · LangGraph编排</a>'
-        description: 状态图入门、持久化与人类审批
-      -
-        title: '<a href="./notes/LangChain学习路线/第三阶段-Deep-Agents深入/">第三阶段 · Deep-Agents深入</a>'
-        description: 核心概念、文件系统、子代理 Skills、安全实践
-      -
-        title: '<a href="./notes/LangChain学习路线/第四阶段-工程化与实战/">第四阶段 · 工程化与实战</a>'
-        description: LangSmith 可观测性、构建个人 AI 助手
+        title: Linux操作
+        icon: logos:linux-tux
+        details: 基础入门、Shell 命令、系统管理、运维实战
+        link: /notes/Linux学习路线/
   -
     type: custom
 ---
-
-## 关于本站
-
-这里是「小鱼知识库」——一个沉淀技术知识、系统学习路线与开发参考的赛博朋克风格个人知识库站点。
-
-**本站技术栈**：VuePress 2 · vuepress-theme-plume · Vite · TypeScript
-
-### 快速导航
-
-- [前端学习路线](/notes/前端学习路线/)
-- [Java 学习路线](/notes/JAVA学习路线/)
-- [Python 学习路线](/notes/Python学习路线/)
-- [Linux 学习路线](/notes/Linux学习路线/)
-- [LangChain 学习路线](/notes/LangChain学习路线/)
-- [GitHub](https://github.com/Yuwenjun1997)
-
-### 更新记录
-
-- 2026-08-17：前端开发重构为「前端学习路线」，按四阶段系统化组织
-- 2026-08-17：站点更名为「小鱼知识库」，定位调整为个人知识库
-- 2026-08-16：首页 hero 特效由闪电背景改为交互点阵
-- 2026-08-15：首页升级为赛博朋克风格
-- 2026-08-15：迁移 Java / Linux / LangChain / Python 学习路线
