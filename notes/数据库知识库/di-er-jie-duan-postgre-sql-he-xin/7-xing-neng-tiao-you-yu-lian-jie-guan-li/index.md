@@ -1,0 +1,296 @@
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/7-xing-neng-tiao-you-yu-lian-jie-guan-li/index.md
+---
+# 性能调优与连接管理
+
+## 一、核心参数调优
+
+### 1.1 内存参数
+
+```ini
+[postgresql.conf]
+# shared_buffers（最重要）
+# PostgreSQL 专用数据库服务器：物理内存的 25%
+# 共享缓冲区，所有连接共享，存放数据页
+shared_buffers = 4GB
+
+# effective_cache_size
+# 告诉查询优化器系统可用的总缓存（OS page cache + shared_buffers）
+# 一般设为物理内存的 50%-75%
+effective_cache_size = 12GB
+
+# work_mem
+# 每个操作（排序、哈希、合并）独立使用的内存
+# ⚠️ 每个连接的每个操作都会分配，高并发时注意
+# 复杂查询可能同时用多个 work_mem
+work_mem = 16MB
+
+# maintenance_work_mem
+# 维护操作（VACUUM、CREATE INDEX、ALTER TABLE）使用的内存
+# 设大些可以加速维护操作
+maintenance_work_mem = 1GB
+```
+
+### 1.2 WAL 与检查点
+
+```ini
+# WAL 级别
+wal_level = replica    # minimal/replica/logical
+
+# WAL 大小（触发 checkpoint）
+max_wal_size = 4GB
+min_wal_size = 1GB
+
+# checkpoint 平滑度（0-1，越大越平滑，对 IO 冲击越小）
+checkpoint_completion_target = 0.9
+
+# WAL 刷盘策略
+synchronous_commit = on  # on=最安全 off=可能丢少量已提交数据
+```
+
+### 1.3 查询优化器参数
+
+```ini
+# 默认统计采样目标（越大越精确，但 ANALYZE 越慢）
+default_statistics_target = 100
+
+# 并行查询（充分利用多核 CPU）
+max_parallel_workers_per_gather = 4
+max_parallel_workers = 8
+parallel_tuple_cost = 0.01
+parallel_setup_cost = 1000
+
+# JIT 编译（PG 11+，复杂查询加速）
+jit = on
+jit_above_cost = 100000
+```
+
+***
+
+## 二、连接管理
+
+### 2.1 连接数配置
+
+```ini
+# 最大连接数（根据业务并发量和 PgBouncer 是否使用来设置）
+max_connections = 200
+
+# 超级用户保留连接（防止连接耗尽时无法管理）
+superuser_reserved_connections = 3
+
+# 连接超时
+connect_timeout = 60        # 连接建立超时（秒）
+idle_in_transaction_session_timeout = 60  # 空闲事务超时（秒）
+statement_timeout = 0       # 单条 SQL 超时（0=不限）
+```
+
+### 2.2 连接数监控
+
+```sql
+-- 当前连接数
+SELECT count(*) FROM pg_stat_activity;
+
+-- 按数据库统计连接数
+SELECT
+  datname,
+  state,
+  COUNT(*) AS cnt
+FROM pg_stat_activity
+GROUP BY datname, state;
+
+-- 按状态统计
+SELECT state, COUNT(*) FROM pg_stat_activity GROUP BY state;
+-- active: 正在执行查询
+-- idle: 空闲连接
+-- idle in transaction: 事务中空闲（可能有问题）
+-- fastpath function: 快速路径函数调用
+
+-- 查看空闲事务（可能需要清理）
+SELECT pid, state, query_start, state_change, query
+FROM pg_stat_activity
+WHERE state = 'idle in transaction'
+  AND state_change < NOW() - INTERVAL '5 minutes';
+
+-- 取消空闲事务
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+WHERE state = 'idle in transaction'
+  AND state_change < NOW() - INTERVAL '5 minutes';
+```
+
+***
+
+## 三、PgBouncer 连接池
+
+### 3.1 为什么需要连接池
+
+PostgreSQL 每个连接对应一个后端进程（fork 模型），开销较大：
+
+| 连接方式 | 开销 | 适用场景 |
+|:---------|:-----|:---------|
+| 直连 PostgreSQL | 每连接约 5-10MB 内存 + fork 进程 | 连接数 < 100 |
+| PgBouncer 连接池 | 连接复用，大幅减少后端连接 | 连接数 > 100 |
+
+### 3.2 Docker 安装 PgBouncer
+
+```bash
+docker run -d \
+  --name pgbouncer \
+  -p 6432:6432 \
+  -v pgbouncer-config:/etc/pgbouncer \
+  edoburu/pgbouncer:latest
+```
+
+### 3.3 PgBouncer 配置（pgbouncer.ini）
+
+```ini
+[databases]
+mydb = host=postgres port=5432 dbname=mydb
+
+[pgbouncer]
+listen_addr = 0.0.0.0
+listen_port = 6432
+auth_type = scram-sha-256
+auth_file = /etc/pgbouncer/userlist.txt
+
+# 连接池模式
+pool_mode = transaction  # session/transaction/statement
+
+# 最小/最大连接数
+min_pool_size = 5
+default_pool_size = 20
+max_client_conn = 1000    # 最大客户端连接
+max_db_connections = 50   # 每个数据库最大后端连接
+
+# 连接超时
+server_idle_timeout = 300
+client_idle_timeout = 0
+```
+
+**三种池模式**：
+
+| 模式 | 说明 | 适用场景 |
+|:-----|:-----|:---------|
+| `session` | 客户端连接期间独占后端连接 | 需要 SET 会话变量、PREPARE |
+| `transaction` | 每个事务结束后释放连接 | 大多数应用（推荐） |
+| `statement` | 每条 SQL 结束后释放连接 | 最极端的连接复用（不支持多语句事务） |
+
+***
+
+## 四、慢查询监控
+
+### 4.1 pg\_stat\_statements（推荐）
+
+```sql
+-- 查看总耗时最高的 SQL
+SELECT
+  queryid,
+  LEFT(query, 100) AS short_query,
+  calls,
+  ROUND(total_exec_time::numeric, 2) AS total_ms,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  ROUND(stddev_exec_time::numeric, 2) AS stddev_ms,
+  rows
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 20;
+
+-- 查看平均耗时最高的 SQL（过滤调用次数少的）
+SELECT
+  LEFT(query, 100) AS short_query,
+  calls,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  rows
+FROM pg_stat_statements
+WHERE calls > 10
+ORDER BY mean_exec_time DESC
+LIMIT 20;
+
+-- 查看 IO 最高的 SQL（需要 pg_stat_statements 1.8+）
+SELECT
+  LEFT(query, 100) AS short_query,
+  calls,
+  shared_blks_read + shared_blks_written AS total_blks
+FROM pg_stat_statements
+ORDER BY shared_blks_read + shared_blks_written DESC
+LIMIT 20;
+```
+
+### 4.2 pgBadger 日志分析
+
+pgBadger 是 PostgreSQL 最强大的日志分析工具，生成 HTML 报告：
+
+```bash
+# 安装
+sudo apt install pgbadger
+
+# 分析日志
+pgbadger /var/log/postgresql/postgresql-*.log -o /var/www/html/pgbadger.html
+
+# 实时分析
+pgbadger --real-time /var/log/postgresql/postgresql-current.log
+
+# Docker 运行
+docker run --rm -v /var/log/postgresql:/logs \
+  dalibo/pgbadger /logs/postgresql-*.log > /tmp/pgbadger.html
+```
+
+**pgBadger 报告包含**：
+
+* QPS（每秒查询数）趋势图
+* 慢查询 Top N
+* 最频繁查询 Top N
+* 最大查询时间
+* 临时文件使用
+* 死锁统计
+* 数据库/用户/查询类型分布
+
+### 4.3 auto\_explain 自动执行计划
+
+```ini
+# postgresql.conf（需要重启）
+shared_preload_libraries = 'auto_explain'
+auto_explain.log_min_duration = '1000'  # 超过 1 秒自动记录执行计划
+auto_explain.log_analyze = true
+auto_explain.log_buffers = true
+auto_explain.log_timing = true
+auto_explain.log_triggers = true
+auto_explain.log_verbose = true
+```
+
+***
+
+## 五、日常维护检查清单
+
+```
+每日检查：
+□ pg_stat_activity 中 idle in transaction 超过 5 分钟的连接
+□ 磁盘空间使用率
+□ 慢查询日志 / pg_stat_statements 中的异常 SQL
+
+每周检查：
+□ 表膨胀率（n_dead_tup / (n_live_tup + n_dead_tup)）
+□ 索引使用率（未使用的索引可以考虑删除）
+□ 缓存命中率（shared hit / (shared hit + shared read)）
+□ 事务 ID 消耗（age(datfrozenxid)）
+
+每月检查：
+□ VACUUM 监控（是否有表需要手动 VACUUM）
+□ 参数调优（根据负载变化调整 shared_buffers, work_mem 等）
+□ 连接池效率（PgBouncer 连接利用率）
+□ pgBadger 报告分析
+```
+
+***
+
+## 六、MySQL vs PostgreSQL 连接管理对比
+
+| 特性 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| 连接模型 | 线程（每个连接一个线程） | 进程（每个连接一个后端进程） |
+| 连接开销 | 较小 | 较大（fork 进程） |
+| 连接池内置 | 无（用 ProxySQL/HikariCP） | 无（用 PgBouncer） |
+| 空闲连接超时 | `wait_timeout` | `idle_in_transaction_session_timeout` |
+| 连接数限制 | `max_connections` | `max_connections` + PgBouncer |
+
+***

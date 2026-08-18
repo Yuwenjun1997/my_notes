@@ -1,0 +1,441 @@
+---
+url: >-
+  /my_notes/notes/Python学习路线/shen-du-xue-xi/01-async-web/4-sse-shi-shi-tui-song-streaming-response-yu-event-source/index.md
+---
+# SSE 实时推送 — StreamingResponse 与 EventSource
+
+## 一、SSE 协议基础（Python 视角）
+
+### 1.1 SSE 协议格式
+
+SSE 基于 HTTP，服务端以 `text/event-stream` 内容类型持续推送事件：
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+data: 第一条消息
+
+data: 第二条消息
+event: notification
+id: 1001
+
+data: {"user": "alice", "text": "你好"}
+id: 1002
+retry: 5000
+
+: 这是注释行（心跳）
+```
+
+**字段规则**：
+
+* `data`：消息内容（多行 `data` 用 `\n` 拼接；空行 `=` 事件分隔符）
+* `event`：事件类型（默认 `"message"`）
+* `id`：事件 ID（断线重连时通过 `Last-Event-ID` 头回传）
+* `retry`：客户端重连间隔（毫秒）
+* `:` 开头的行为注释，客户端不处理（用于心跳保活）
+
+### 1.2 SSE vs WebSocket vs 轮询
+
+| 特性 | SSE | WebSocket | HTTP 轮询 |
+|:-----|:----|:----------|:----------|
+| **方向** | 服务端 → 客户端（单向） | 双向 | 客户端 → 服务端 |
+| **协议** | HTTP（极好的代理兼容性） | ws:// / wss:// | HTTP |
+| **数据格式** | 纯文本（UTF-8） | 文本或二进制 | 任意 |
+| **自动重连** | EventSource 内置 | 需手动实现 | 不适用 |
+| **断点续传** | Last-Event-ID 内置支持 | 需手动实现 | 不适用 |
+| **FastAPI 支持** | `StreamingResponse` 原生支持 | `WebSocket` 类原生支持 | 普通 `Response` |
+| **典型场景** | 通知推送、AI 流式输出、日志流 | 聊天、游戏、协同编辑 | 数据拉取 |
+
+***
+
+## 二、FastAPI SSE 实现
+
+### 2.1 StreamingResponse 基础
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
+import time
+
+app = FastAPI()
+
+# 异步生成器产出 SSE 事件
+async def event_generator():
+    for i in range(10):
+        await asyncio.sleep(1)
+        data = json.dumps({"count": i, "time": time.time()})
+        yield f"data: {data}\n\n"   # 每个事件以 \n\n 结尾
+
+@app.get("/events")
+async def events():
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # 禁用 Nginx 缓冲
+        },
+    )
+```
+
+### 2.2 完整 SSE 端点模板
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
+import uuid
+
+app = FastAPI()
+
+class EventBroadcaster:
+    def __init__(self):
+        self.subscribers: dict[str, asyncio.Queue] = {}
+
+    def subscribe(self) -> tuple[str, asyncio.Queue]:
+        client_id = str(uuid.uuid4())
+        queue = asyncio.Queue()
+        self.subscribers[client_id] = queue
+        return client_id, queue
+
+    def unsubscribe(self, client_id: str):
+        self.subscribers.pop(client_id, None)
+
+    async def publish(self, event: str, data: dict):
+        message = f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+        dead = []
+        for client_id, queue in self.subscribers.items():
+            try:
+                await queue.put(message)
+            except Exception:
+                dead.append(client_id)
+        for cid in dead:
+            self.unsubscribe(cid)
+
+broadcaster = EventBroadcaster()
+
+@app.get("/stream")
+async def stream(request: Request):
+    client_id, queue = broadcaster.subscribe()
+
+    async def event_generator():
+        try:
+            # 发送初始连接成功事件
+            yield f"event: connected\ndata: {json.dumps({'client_id': client_id})}\n\n"
+
+            while True:
+                # 检查客户端是否断开
+                if await request.is_disconnected():
+                    break
+
+                try:
+                    # 等待新消息（最多 30 秒无消息则发心跳）
+                    message = await asyncio.wait_for(queue.get(), timeout=30)
+                    yield message
+                except asyncio.TimeoutError:
+                    # 心跳注释行，保持连接活性
+                    yield ": heartbeat\n\n"
+        finally:
+            broadcaster.unsubscribe(client_id)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+@app.post("/broadcast")
+async def broadcast(event: str = "message", data: dict = {}):
+    await broadcaster.publish(event, data)
+    return {"status": "ok"}
+```
+
+### 2.3 依赖注入方式（推荐生产使用）
+
+```python
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import StreamingResponse
+from typing import AsyncGenerator
+import asyncio
+import json
+
+app = FastAPI()
+
+async def sse_generator(
+    request: Request,
+    queue: asyncio.Queue = Depends(lambda: asyncio.Queue()),
+) -> AsyncGenerator[str, None]:
+    """通用 SSE 生成器依赖"""
+    try:
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                message = await asyncio.wait_for(queue.get(), timeout=30)
+                yield message
+            except asyncio.TimeoutError:
+                yield ": keepalive\n\n"
+    finally:
+        pass  # 清理资源
+
+@app.get("/notifications")
+async def notifications(request: Request):
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def generate():
+        yield f"event: ready\ndata: {json.dumps({'status': 'connected'})}\n\n"
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                msg = await asyncio.wait_for(queue.get(), timeout=30)
+                yield msg
+            except asyncio.TimeoutError:
+                yield ": ping\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+```
+
+***
+
+## 三、SSE 与大语言模型流式输出
+
+### 3.1 对接 OpenAI/Claude API 流式输出
+
+```python
+import httpx
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import json
+
+app = FastAPI()
+
+async def call_llm_stream(prompt: str):
+    """调用大语言模型 API，流式返回 token"""
+    async with httpx.AsyncClient(timeout=60) as client:
+        async with client.stream(
+            "POST",
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": "gpt-4",
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": True,  # 开启流式输出
+            },
+        ) as response:
+            async for line in response.aiter_lines():
+                if line.startswith("data: ") and line != "data: [DONE]":
+                    chunk = json.loads(line[6:])
+                    token = chunk["choices"][0]["delta"].get("content", "")
+                    if token:
+                        yield f"data: {json.dumps({'token': token})}\n\n"
+            yield "data: [DONE]\n\n"
+
+@app.post("/chat/stream")
+async def chat_stream(prompt: str):
+    return StreamingResponse(
+        call_llm_stream(prompt),
+        media_type="text/event-stream",
+    )
+```
+
+### 3.2 对接 LangChain 流式输出
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import json
+
+app = FastAPI()
+llm = ChatOpenAI(model="gpt-4", streaming=True)
+
+@app.post("/langchain/stream")
+async def langchain_stream(prompt: str):
+    async def generate():
+        async for chunk in llm.astream([HumanMessage(content=prompt)]):
+            token = chunk.content
+            if token:
+                yield f"data: {json.dumps({'token': token})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+```
+
+***
+
+## 四、Django SSE 实现
+
+### 4.1 StreamingHttpResponse
+
+```python
+from django.http import StreamingHttpResponse
+import json
+import time
+
+def event_generator():
+    for i in range(100):
+        time.sleep(1)
+        data = json.dumps({"count": i, "timestamp": time.time()})
+        yield f"data: {data}\n\n"
+
+def sse_view(request):
+    response = StreamingHttpResponse(
+        event_generator(),
+        content_type="text/event-stream",
+    )
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
+```
+
+### 4.2 Django Channels（异步 SSE）
+
+```python
+# consumers.py
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+# 对于纯 SSE 场景，Django 推荐使用 StreamingHttpResponse
+# Channels 主要用于 WebSocket
+
+# SSE views.py（Django 4.2+ 异步视图）
+from django.http import StreamingHttpResponse
+import asyncio
+
+async def async_sse_view(request):
+    async def generate():
+        for i in range(60):
+            await asyncio.sleep(1)
+            yield f"data: {json.dumps({'tick': i})}\n\n"
+    return StreamingHttpResponse(generate(), content_type="text/event-stream")
+```
+
+***
+
+## 五、SSE 客户端实现
+
+### 5.1 浏览器 EventSource
+
+```javascript
+// 基础订阅
+const source = new EventSource('/stream');
+
+// 默认 message 事件
+source.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('收到:', data);
+};
+
+// 自定义事件
+source.addEventListener('notification', (event) => {
+    const data = JSON.parse(event.data);
+    showNotification(data.title, data.content);
+});
+
+// 连接成功事件
+source.addEventListener('connected', (event) => {
+    console.log('连接建立:', JSON.parse(event.data));
+});
+
+// 错误（自动重连）
+source.onerror = (err) => {
+    console.error('SSE 错误，将自动重连...');
+};
+
+// 关闭
+// source.close();
+```
+
+### 5.2 Python 客户端（httpx）
+
+```python
+import httpx
+import json
+
+async def subscribe_sse(url: str):
+    async with httpx.AsyncClient() as client:
+        async with client.stream("GET", url) as response:
+            event_type = "message"
+            event_id = None
+            data_lines = []
+
+            async for line in response.aiter_lines():
+                line = line.strip()
+
+                if line == "":
+                    # 空行 = 事件结束
+                    if data_lines:
+                        data = "\n".join(data_lines)
+                        yield event_type, event_id, data
+                    event_type = "message"
+                    event_id = None
+                    data_lines = []
+
+                elif line.startswith("event:"):
+                    event_type = line[6:].strip()
+                elif line.startswith("id:"):
+                    event_id = line[3:].strip()
+                elif line.startswith("data:"):
+                    data_lines.append(line[5:].strip())
+                elif line.startswith(":"):
+                    pass  # 注释行，忽略
+
+# 使用示例
+async for event_type, event_id, data in subscribe_sse("http://localhost:8000/stream"):
+    print(f"事件类型: {event_type}, ID: {event_id}, 数据: {data}")
+```
+
+***
+
+## 六、SSE 注意事项与最佳实践
+
+### 6.1 异步框架选型
+
+| 框架 | SSE 推荐方案 | 说明 |
+|:-----|:-------------|:-----|
+| **FastAPI** | `StreamingResponse` + async generator | 原生异步，性能极好 |
+| **Flask** | `Response` + generator（`stream_with_context`） | 同步框架，需配合 `gevent` 或 `gunicorn --threads` |
+| **Django** | `StreamingHttpResponse` | Django 4.2+ 支持 async generator |
+
+### 6.2 Nginx 配置
+
+```nginx
+# SSE 必须禁用缓冲，否则事件会被攒批发送
+location /api/events/ {
+    proxy_pass http://backend;
+    proxy_set_header Connection '';
+    proxy_http_version 1.1;
+    proxy_buffering off;           # 关键：禁用代理缓冲
+    proxy_cache off;
+    chunked_transfer_encoding off;
+    proxy_read_timeout 3600s;      # 长连接超时（1小时）
+    proxy_send_timeout 3600s;
+}
+```
+
+### 6.3 生产检查清单
+
+```
+□ Nginx proxy_buffering off（否则事件被缓冲，客户端收不到实时推送）
+□ 设置心跳（每 15-30 秒发送 :keepalive 注释行，防止代理/防火墙断连）
+□ 客户端 EventSource 自动重连（确认 Last-Event-ID 在服务端处理正确）
+□ 连接数监控：SSE 长连接会占用 worker 连接，评估最大并发数
+□ 超时设置：不要设置无限超时，建议 30 分钟内断开重连
+□ 内存管理：及时清理断开的订阅者（request.is_disconnected()）
+□ 异步生成器：使用 async def + yield，不要在 async 上下文中用 time.sleep()
+```
+
+***

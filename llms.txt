@@ -1,10 +1,10 @@
 # 小鱼知识库
 
-> 技术知识与学习路线This file contains links to all documentation sections.
+> 技术知识沉淀与参考文档This file contains links to all documentation sections.
 
 ## Table of Contents
 
-### 前端学习路线
+### 前端开发
 
 - [前端学习路线](/my_notes/notes/前端学习路线/index.md)
 - [第一阶段 · 网页基础](/my_notes/notes/前端学习路线/第一阶段-网页基础/index.md)
@@ -40,7 +40,7 @@
 - [响应式与动画](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/5-xiang-ying-shi-yu-dong-hua/index.md)
 - [常用样式](/my_notes/notes/前端学习路线/di-yi-jie-duan-wang-ye-ji-chu/6-css-chang-yong-yang-shi/index.md)
 
-### Java 学习路线
+### Java开发
 
 - [Java 学习路线](/my_notes/notes/JAVA学习路线/index.md)
 - [深度学习](/my_notes/notes/JAVA学习路线/深度学习/index.md)
@@ -55,6 +55,7 @@
 - [第四阶段 · 分布式与系统设计](/my_notes/notes/JAVA学习路线/第四阶段-分布式与系统设计/index.md)
 - [1-Spring全家桶](/my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/1-spring-quan-jia-tong/index.md)
 - [2-SpringBoot常用Starter配置](/my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/2-springboot-chang-yong-starter-pei-zhi/index.md)
+- [3-SSE实时推送-SseEmitter与WebFlux](/my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/3-sse-shi-shi-tui-song-sse-emitter-yu-web-flux/index.md)
 - [1-缓存](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/1-huan-cun/index.md)
 - [2-消息队列](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/2-xiao-xi-dui-lie/index.md)
 - [3-安全](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/3-an-quan/index.md)
@@ -85,54 +86,7 @@
 - [2-DDD领域驱动设计](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/05-she-ji-mo-shi-yu-jia-gou/2-ddd-ling-yu-qu-dong-she-ji/index.md)
 - [3-系统设计真题解析](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/05-she-ji-mo-shi-yu-jia-gou/3-xi-tong-she-ji-zhen-ti-jie-xi/index.md)
 
-### Linux 学习路线
-
-- [Linux 学习路线](/my_notes/notes/Linux学习路线/index.md)
-- [第一阶段 · Linux基础入门](/my_notes/notes/Linux学习路线/第一阶段-Linux基础入门/index.md)
-- [第三阶段 · 系统管理进阶](/my_notes/notes/Linux学习路线/第三阶段-系统管理进阶/index.md)
-- [第二阶段 · Shell与常用命令](/my_notes/notes/Linux学习路线/第二阶段-Shell与常用命令/index.md)
-- [第四阶段 · 运维实战与脚本](/my_notes/notes/Linux学习路线/第四阶段-运维实战与脚本/index.md)
-- [1-Shell基础与Bash](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/1-shell-ji-chu-yu-bash/index.md)
-- [2-文件与目录操作](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/2-wen-jian-yu-mu-lu-cao-zuo/index.md)
-- [3-文本处理命令](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/3-wen-ben-chu-li-ming-ling/index.md)
-- [4-进程管理与系统监控](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/4-jin-cheng-guan-li-yu-xi-tong-jian-kong/index.md)
-- [5-软件包管理](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/5-ruan-jian-bao-guan-li/index.md)
-- [6-文本查看与编辑](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/6-wen-ben-cha-kan-yu-bian-ji/index.md)
-- [7-文本操作命令进阶](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/7-wen-ben-cao-zuo-ming-ling-jin-jie/index.md)
-- [1-磁盘管理与文件系统](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/1-ci-pan-guan-li-yu-wen-jian-xi-tong/index.md)
-- [2-网络配置与诊断](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/2-wang-luo-pei-zhi-yu-zhen-duan/index.md)
-- [3-服务管理-systemd](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/3-fu-wu-guan-li-systemd/index.md)
-- [4-日志管理与分析](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/4-ri-zhi-guan-li-yu-fen-xi/index.md)
-- [5-定时任务与自动化](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/5-ding-shi-ren-wu-yu-zi-dong-hua/index.md)
-- [1-Shell脚本编程](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/1-shell-jiao-ben-bian-cheng/index.md)
-- [2-用户与安全加固](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/2-yong-hu-yu-an-quan-jia-gu/index.md)
-- [3-性能调优与故障排查](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/3-xing-neng-tiao-you-yu-gu-zhang-pai-cha/index.md)
-- [4-Docker与容器化基础](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/4-docker-yu-rong-qi-hua-ji-chu/index.md)
-- [1-Linux概述与发行版](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/1-linux-gai-shu-yu-fa-xing-ban/index.md)
-- [2-Ubuntu安装与环境配置](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/2-ubuntu-an-zhuang-yu-huan-jing-pei-zhi/index.md)
-- [3-文件系统与目录结构](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/3-wen-jian-xi-tong-yu-mu-lu-jie-gou/index.md)
-- [4-用户与权限管理](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/4-yong-hu-yu-quan-xian-guan-li/index.md)
-
-### LangChain 学习路线
-
-- [LangChain 学习路线](/my_notes/notes/LangChain学习路线/index.md)
-- [第一阶段 · LangChain基础](/my_notes/notes/LangChain学习路线/第一阶段-LangChain基础/index.md)
-- [第三阶段 · Deep-Agents深入](/my_notes/notes/LangChain学习路线/第三阶段-Deep-Agents深入/index.md)
-- [第二阶段 · LangGraph编排](/my_notes/notes/LangChain学习路线/第二阶段-LangGraph编排/index.md)
-- [第四阶段 · 工程化与实战](/my_notes/notes/LangChain学习路线/第四阶段-工程化与实战/index.md)
-- [1-LangGraph状态图入门](/my_notes/notes/LangChain学习路线/di-er-jie-duan-lang-graph-bian-pai/1-lang-graph-zhuang-tai-tu-ru-men/index.md)
-- [2-持久化与人类审批](/my_notes/notes/LangChain学习路线/di-er-jie-duan-lang-graph-bian-pai/2-chi-jiu-hua-yu-ren-lei-shen-pi/index.md)
-- [1-Deep-Agents核心概念](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/1-deep-agents-he-xin-gai-nian/index.md)
-- [2-文件系统与上下文管理](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/2-wen-jian-xi-tong-yu-shang-xia-wen-guan-li/index.md)
-- [3-子代理Skills与记忆](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/3-zi-dai-li-skills-yu-ji-yi/index.md)
-- [4-人类审批与安全实践](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/4-ren-lei-shen-pi-yu-an-quan-shi-jian/index.md)
-- [1-LangSmith可观测性与评估](/my_notes/notes/LangChain学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/1-lang-smith-ke-guan-ce-xing-yu-ping-gu/index.md)
-- [2-实战项目-构建个人AI助手](/my_notes/notes/LangChain学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/2-shi-zhan-xiang-mu-gou-jian-ge-ren-ai-zhu-shou/index.md)
-- [1-生态总览与三大库关系](/my_notes/notes/LangChain学习路线/di-yi-jie-duan-lang-chain-ji-chu/1-sheng-tai-zong-lan-yu-san-da-ku-guan-xi/index.md)
-- [2-LangChain核心抽象与RAG](/my_notes/notes/LangChain学习路线/di-yi-jie-duan-lang-chain-ji-chu/2-lang-chain-he-xin-chou-xiang-yu-rag/index.md)
-- [3-LangChain-Agent入门](/my_notes/notes/LangChain学习路线/di-yi-jie-duan-lang-chain-ji-chu/3-lang-chain-agent-ru-men/index.md)
-
-### Python 学习路线
+### Python开发
 
 - [Python 学习路线](/my_notes/notes/Python学习路线/index.md)
 - [深度学习](/my_notes/notes/Python学习路线/深度学习/index.md)
@@ -169,6 +123,7 @@
 - [1-事件循环底层与异步架构](/my_notes/notes/Python学习路线/shen-du-xue-xi/01-async-web/1-shi-jian-xun-huan-di-ceng-yu-yi-bu-jia-gou/index.md)
 - [2-WebSocket与实时通信](/my_notes/notes/Python学习路线/shen-du-xue-xi/01-async-web/2-web-socket-yu-shi-shi-tong-xin/index.md)
 - [3-高并发限流与性能压测](/my_notes/notes/Python学习路线/shen-du-xue-xi/01-async-web/3-gao-bing-fa-xian-liu-yu-xing-neng-ya-ce/index.md)
+- [4-SSE实时推送-StreamingResponse与EventSource](/my_notes/notes/Python学习路线/shen-du-xue-xi/01-async-web/4-sse-shi-shi-tui-song-streaming-response-yu-event-source/index.md)
 - [1-爬虫框架进阶](/my_notes/notes/Python学习路线/shen-du-xue-xi/02-data-scraping/1-pa-chong-kuang-jia-jin-jie/index.md)
 - [2-动态页面与反爬突破](/my_notes/notes/Python学习路线/shen-du-xue-xi/02-data-scraping/2-dong-tai-ye-mian-yu-fan-pa-tu-po/index.md)
 - [3-数据分析与可视化](/my_notes/notes/Python学习路线/shen-du-xue-xi/02-data-scraping/3-shu-ju-fen-xi-yu-ke-shi-hua/index.md)
@@ -182,6 +137,76 @@
 - [2-RAG检索增强实战](/my_notes/notes/Python学习路线/shen-du-xue-xi/05-ai-engineering/2-rag-jian-suo-zeng-qiang-shi-zhan/index.md)
 - [3-机器学习基础与模型部署](/my_notes/notes/Python学习路线/shen-du-xue-xi/05-ai-engineering/3-ji-qi-xue-xi-ji-chu-yu-mo-xing-bu-shu/index.md)
 
-### Others
+### LangChain框架
 
-- [小鱼知识库](/my_notes/index.md): 小鱼知识库 —— 技术知识、学习路线与参考文档，赛博朋克风格个人知识库站点
+- [LangChain 学习路线](/my_notes/notes/LangChain学习路线/index.md)
+- [第一阶段 · LangChain基础](/my_notes/notes/LangChain学习路线/第一阶段-LangChain基础/index.md)
+- [第三阶段 · Deep-Agents深入](/my_notes/notes/LangChain学习路线/第三阶段-Deep-Agents深入/index.md)
+- [第二阶段 · LangGraph编排](/my_notes/notes/LangChain学习路线/第二阶段-LangGraph编排/index.md)
+- [第四阶段 · 工程化与实战](/my_notes/notes/LangChain学习路线/第四阶段-工程化与实战/index.md)
+- [1-LangGraph状态图入门](/my_notes/notes/LangChain学习路线/di-er-jie-duan-lang-graph-bian-pai/1-lang-graph-zhuang-tai-tu-ru-men/index.md)
+- [2-持久化与人类审批](/my_notes/notes/LangChain学习路线/di-er-jie-duan-lang-graph-bian-pai/2-chi-jiu-hua-yu-ren-lei-shen-pi/index.md)
+- [1-Deep-Agents核心概念](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/1-deep-agents-he-xin-gai-nian/index.md)
+- [2-文件系统与上下文管理](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/2-wen-jian-xi-tong-yu-shang-xia-wen-guan-li/index.md)
+- [3-子代理Skills与记忆](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/3-zi-dai-li-skills-yu-ji-yi/index.md)
+- [4-人类审批与安全实践](/my_notes/notes/LangChain学习路线/di-san-jie-duan-deep-agents-shen-ru/4-ren-lei-shen-pi-yu-an-quan-shi-jian/index.md)
+- [1-LangSmith可观测性与评估](/my_notes/notes/LangChain学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/1-lang-smith-ke-guan-ce-xing-yu-ping-gu/index.md)
+- [2-实战项目-构建个人AI助手](/my_notes/notes/LangChain学习路线/di-si-jie-duan-gong-cheng-hua-yu-shi-zhan/2-shi-zhan-xiang-mu-gou-jian-ge-ren-ai-zhu-shou/index.md)
+- [1-生态总览与三大库关系](/my_notes/notes/LangChain学习路线/di-yi-jie-duan-lang-chain-ji-chu/1-sheng-tai-zong-lan-yu-san-da-ku-guan-xi/index.md)
+- [2-LangChain核心抽象与RAG](/my_notes/notes/LangChain学习路线/di-yi-jie-duan-lang-chain-ji-chu/2-lang-chain-he-xin-chou-xiang-yu-rag/index.md)
+- [3-LangChain-Agent入门](/my_notes/notes/LangChain学习路线/di-yi-jie-duan-lang-chain-ji-chu/3-lang-chain-agent-ru-men/index.md)
+
+### 数据库
+
+- [数据库知识库](/my_notes/notes/数据库知识库/index.md)
+- [第一阶段 · MySQL核心](/my_notes/notes/数据库知识库/第一阶段-MySQL核心/index.md)
+- [第三阶段 · 实战与对比](/my_notes/notes/数据库知识库/第三阶段-实战与对比/index.md)
+- [第二阶段 · PostgreSQL核心](/my_notes/notes/数据库知识库/第二阶段-PostgreSQL核心/index.md)
+- [1-PostgreSQL安装与配置](/my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/1-postgre-sql-an-zhuang-yu-pei-zhi/index.md)
+- [2-SQL进阶与PostgreSQL特性](/my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/2-sql-jin-jie-yu-postgre-sql-te-xing/index.md)
+- [3-索引与查询优化](/my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/3-suo-yin-yu-cha-xun-you-hua/index.md)
+- [4-事务与MVCC机制](/my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/4-shi-wu-yu-mvcc-ji-zhi/index.md)
+- [5-JSONB与NoSQL能力](/my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/5-jsonb-yu-no-sql-neng-li/index.md)
+- [6-扩展与插件生态](/my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/6-kuo-zhan-yu-cha-jian-sheng-tai/index.md)
+- [7-性能调优与连接管理](/my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/7-xing-neng-tiao-you-yu-lian-jie-guan-li/index.md)
+- [1-MySQL与PostgreSQL对比选型](/my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/1-my-sql-yu-postgre-sql-dui-bi-xuan-xing/index.md)
+- [2-备份恢复与高可用](/my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/2-bei-fen-hui-fu-yu-gao-ke-yong/index.md)
+- [3-慢查询排查实战](/my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/3-man-cha-xun-pai-cha-shi-zhan/index.md)
+- [4-连接池与中间件配置](/my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/4-lian-jie-chi-yu-zhong-jian-jian-pei-zhi/index.md)
+- [5-获取当前上下文信息-内置函数与常量](/my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/5-huo-qu-dang-qian-shang-xia-wen-xin-xi-nei-zhi-han-shu-yu-chang-liang/index.md)
+- [1-MySQL安装与配置](/my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/1-my-sql-an-zhuang-yu-pei-zhi/index.md)
+- [2-SQL基础与常用语法](/my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/2-sql-ji-chu-yu-chang-yong-yu-fa/index.md)
+- [3-索引与查询优化](/my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/3-suo-yin-yu-cha-xun-you-hua/index.md)
+- [4-事务与锁机制](/my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/4-shi-wu-yu-suo-ji-zhi/index.md)
+- [5-存储引擎](/my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/5-cun-chu-yin-qing/index.md)
+- [6-慢查询分析与性能调优](/my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/6-man-cha-xun-fen-xi-yu-xing-neng-tiao-you/index.md)
+- [7-用户权限与安全管理](/my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/7-yong-hu-quan-xian-yu-an-quan-guan-li/index.md)
+
+### Linux操作
+
+- [Linux 学习路线](/my_notes/notes/Linux学习路线/index.md)
+- [第一阶段 · Linux基础入门](/my_notes/notes/Linux学习路线/第一阶段-Linux基础入门/index.md)
+- [第三阶段 · 系统管理进阶](/my_notes/notes/Linux学习路线/第三阶段-系统管理进阶/index.md)
+- [第二阶段 · Shell与常用命令](/my_notes/notes/Linux学习路线/第二阶段-Shell与常用命令/index.md)
+- [第四阶段 · 运维实战与脚本](/my_notes/notes/Linux学习路线/第四阶段-运维实战与脚本/index.md)
+- [1-Shell基础与Bash](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/1-shell-ji-chu-yu-bash/index.md)
+- [2-文件与目录操作](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/2-wen-jian-yu-mu-lu-cao-zuo/index.md)
+- [3-文本处理命令](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/3-wen-ben-chu-li-ming-ling/index.md)
+- [4-进程管理与系统监控](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/4-jin-cheng-guan-li-yu-xi-tong-jian-kong/index.md)
+- [5-软件包管理](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/5-ruan-jian-bao-guan-li/index.md)
+- [6-文本查看与编辑](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/6-wen-ben-cha-kan-yu-bian-ji/index.md)
+- [7-文本操作命令进阶](/my_notes/notes/Linux学习路线/di-er-jie-duan-shell-yu-chang-yong-ming-ling/7-wen-ben-cao-zuo-ming-ling-jin-jie/index.md)
+- [1-磁盘管理与文件系统](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/1-ci-pan-guan-li-yu-wen-jian-xi-tong/index.md)
+- [2-网络配置与诊断](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/2-wang-luo-pei-zhi-yu-zhen-duan/index.md)
+- [3-服务管理-systemd](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/3-fu-wu-guan-li-systemd/index.md)
+- [4-日志管理与分析](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/4-ri-zhi-guan-li-yu-fen-xi/index.md)
+- [5-定时任务与自动化](/my_notes/notes/Linux学习路线/di-san-jie-duan-xi-tong-guan-li-jin-jie/5-ding-shi-ren-wu-yu-zi-dong-hua/index.md)
+- [1-Shell脚本编程](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/1-shell-jiao-ben-bian-cheng/index.md)
+- [2-用户与安全加固](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/2-yong-hu-yu-an-quan-jia-gu/index.md)
+- [3-性能调优与故障排查](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/3-xing-neng-tiao-you-yu-gu-zhang-pai-cha/index.md)
+- [4-Docker与容器化基础](/my_notes/notes/Linux学习路线/di-si-jie-duan-yun-wei-shi-zhan-yu-jiao-ben/4-docker-yu-rong-qi-hua-ji-chu/index.md)
+- [1-Linux概述与发行版](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/1-linux-gai-shu-yu-fa-xing-ban/index.md)
+- [2-Ubuntu安装与环境配置](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/2-ubuntu-an-zhuang-yu-huan-jing-pei-zhi/index.md)
+- [3-文件系统与目录结构](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/3-wen-jian-xi-tong-yu-mu-lu-jie-gou/index.md)
+- [4-用户与权限管理](/my_notes/notes/Linux学习路线/di-yi-jie-duan-linux-ji-chu-ru-men/4-yong-hu-yu-quan-xian-guan-li/index.md)
+

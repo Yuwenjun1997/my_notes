@@ -1,0 +1,284 @@
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/5-jsonb-yu-no-sql-neng-li/index.md
+---
+# JSONB 与 NoSQL 能力
+
+## 一、JSONB 概述
+
+PostgreSQL 的 JSONB 类型提供了关系型数据库中最强的 JSON 支持，使 PostgreSQL 成为"多模数据库"——既能做关系型存储，也能处理半结构化数据。
+
+| 类型 | 说明 | 推荐 |
+|:-----|:-----|:-----|
+| `JSON` | 存储原始文本，保留格式，重复键保留最后一个 | ❌ 不推荐 |
+| `JSONB` | 存储二进制格式，去重键，支持索引和高效查询 | ✅ 推荐 |
+
+***
+
+## 二、JSONB 基础操作
+
+### 2.1 插入与更新
+
+```sql
+CREATE TABLE events (
+  id SERIAL PRIMARY KEY,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 插入 JSONB
+INSERT INTO events (data) VALUES
+  ('{"type": "click", "page": "/home", "user": {"id": 1, "name": "Alice"}}'),
+  ('{"type": "purchase", "amount": 99.9, "items": ["apple", "banana"]}');
+
+-- 更新 JSONB 键值
+UPDATE events
+SET data = jsonb_set(data, '{type}', '"page_view"')  -- 修改 type 字段
+WHERE id = 1;
+
+-- 添加新键
+UPDATE events
+SET data = data || '{"source": "mobile"}'::jsonb
+WHERE id = 1;
+
+-- 删除键
+UPDATE events
+SET data = data - 'source'
+WHERE id = 1;
+```
+
+### 2.2 查询操作符
+
+```sql
+-- @> 包含查询（最常用，可使用 GIN 索引）
+SELECT * FROM events WHERE data @> '{"type": "click"}';
+SELECT * FROM events WHERE data @> '{"user": {"id": 1}}';
+
+-- ? 键存在查询
+SELECT * FROM events WHERE data ? 'type';
+SELECT * FROM events WHERE data ?| ARRAY['type', 'page'];  -- 任一键存在
+
+-- ?& 所有键存在
+SELECT * FROM events WHERE data ?& ARRAY['type', 'page'];
+
+-- -> 按键获取（返回 JSONB）
+SELECT data->'type' FROM events WHERE id = 1;
+SELECT data->'user'->'name' FROM events WHERE id = 1;  -- 嵌套访问
+
+-- ->> 按键获取（返回 TEXT）
+SELECT data->>'type' FROM events WHERE id = 1;
+
+-- #> 按路径获取（返回 JSONB）
+SELECT data #> '{user,name}' FROM events WHERE id = 1;
+
+-- #>> 按路径获取（返回 TEXT）
+SELECT data #>> '{user,name}' FROM events WHERE id = 1;
+
+-- jsonb_array_length 获取数组长度
+SELECT jsonb_array_length(data->'items') FROM events WHERE id = 2;
+
+-- jsonb_array_elements 展开数组为行
+SELECT jsonb_array_elements(data->'items') AS item
+FROM events
+WHERE id = 2;
+```
+
+***
+
+## 三、JSONB 高级查询
+
+### 3.1 路径查询与过滤
+
+```sql
+-- @? 路径表达式查询
+SELECT * FROM events WHERE data @? '$.type ? (@ == "click")';
+
+-- @@ 文本搜索路径
+SELECT * FROM events WHERE data @@ '$.type == "click" && $.amount > 50';
+
+-- jsonb_path_query 获取第一个匹配值
+SELECT jsonb_path_query(data, '$.items[0]') FROM events WHERE id = 2;
+
+-- jsonb_path_query_array 获取所有匹配值
+SELECT jsonb_path_query_array(data, '$.items[*]') FROM events WHERE id = 2;
+
+-- jsonb_path_exists 路径是否存在
+SELECT * FROM events WHERE jsonb_path_exists(data, '$.items[*] ? (@ == "apple")');
+```
+
+### 3.2 数组操作
+
+```sql
+-- 包含数组元素
+SELECT * FROM events WHERE data->'items' @> '"apple"';
+
+-- 数组包含查询
+SELECT * FROM events WHERE data->'items' @> '["apple", "banana"]';
+
+-- 展开 JSONB 数组为多行
+SELECT
+  id,
+  elem AS item
+FROM events,
+     jsonb_array_elements_text(data->'items') AS elem
+WHERE data ? 'items';
+
+-- 聚合回 JSONB 数组
+SELECT jsonb_agg(name) FROM users;
+SELECT jsonb_object_agg(id, name) FROM users;  -- 聚合为 JSONB 对象
+```
+
+### 3.3 聚合与统计
+
+```sql
+-- 按 JSONB 字段分组统计
+SELECT
+  data->>'type' AS event_type,
+  COUNT(*) AS cnt,
+  AVG((data->>'amount')::numeric) AS avg_amount
+FROM events
+GROUP BY data->>'type';
+
+-- JSONB 对象合并
+SELECT jsonb_object_agg(
+  data->>'type',
+  COUNT(*)
+)
+FROM events
+GROUP BY data->>'type';
+-- 结果：{"click": 5, "purchase": 3, "page_view": 2}
+```
+
+***
+
+## 四、JSONB 索引策略
+
+### 4.1 GIN 索引（通用）
+
+```sql
+-- GIN 索引支持 @>, ?, ?|, ?& 操作符
+CREATE INDEX idx_events_data ON events USING gin (data);
+
+-- 如果只关心特定键路径，可以限制索引操作符
+CREATE INDEX idx_events_data_path ON events USING gin (data jsonb_path_ops);
+-- jsonb_path_ops 只支持 @> 操作符，但更小更快
+```
+
+### 4.2 B-tree 索引（特定键）
+
+```sql
+-- 为特定键创建 B-tree 索引（等值和范围查询）
+CREATE INDEX idx_events_type ON events ((data->>'type'));
+CREATE INDEX idx_events_amount ON events (((data->>'amount')::numeric));
+
+-- 使用索引查询
+SELECT * FROM events WHERE data->>'type' = 'click';
+SELECT * FROM events WHERE (data->>'amount')::numeric > 100;
+```
+
+### 4.3 多键复合索引
+
+```sql
+-- 表达式索引覆盖多个常用查询键
+CREATE INDEX idx_events_composite ON events (
+  (data->>'type'),
+  ((data->>'amount')::numeric),
+  (data->>'user_id')
+);
+
+-- 联合查询时可以使用索引
+SELECT * FROM events
+WHERE data->>'type' = 'purchase'
+  AND (data->>'amount')::numeric > 50;
+```
+
+### 4.4 索引选择建议
+
+| 查询模式 | 推荐索引 |
+|:---------|:---------|
+| `@>` 包含查询 | GIN 索引（`jsonb_path_ops` 更高效） |
+| `?` 键存在查询 | GIN 索引 |
+| `->>'key' = 'value'` 等值查询 | B-tree 表达式索引 |
+| `(data->>'price')::numeric > 100` 范围查询 | B-tree 表达式索引 |
+| 多个不同键的混合查询 | GIN 索引（通用场景） |
+
+***
+
+## 五、JSONB 设计模式
+
+### 5.1 灵活扩展字段
+
+```sql
+-- 用 JSONB 存储扩展属性，避免频繁 ALTER TABLE
+CREATE TABLE products (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  attributes JSONB DEFAULT '{}'::jsonb  -- 扩展属性
+);
+
+-- 不同产品有不同的扩展字段
+INSERT INTO products (name, price, attributes) VALUES
+  ('iPhone 15', 7999, '{"color": "black", "storage": "256GB", "weight": "171g"}'),
+  ('MacBook Pro', 14999, '{"cpu": "M3 Pro", "ram": "18GB", "screen": "14 inch"}');
+```
+
+### 5.2 事件溯源（Event Sourcing）
+
+```sql
+CREATE TABLE audit_log (
+  id SERIAL PRIMARY KEY,
+  entity_type TEXT NOT NULL,
+  entity_id INT NOT NULL,
+  action TEXT NOT NULL,      -- 'create', 'update', 'delete'
+  changes JSONB,             -- 变更内容
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO audit_log (entity_type, entity_id, action, changes) VALUES
+  ('user', 1, 'update', '{"old": {"status": "active"}, "new": {"status": "inactive"}}');
+
+-- 查询某个实体的所有变更历史
+SELECT * FROM audit_log
+WHERE entity_type = 'user' AND entity_id = 1
+ORDER BY created_at DESC;
+```
+
+### 5.3 配置管理
+
+```sql
+CREATE TABLE app_config (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO app_config (key, value) VALUES
+  ('feature_flags', '{"dark_mode": true, "beta_features": false}'),
+  ('limits', '{"max_upload_mb": 10, "rate_limit_rpm": 100}');
+
+-- 读取配置
+SELECT value->>'dark_mode' FROM app_config WHERE key = 'feature_flags';
+
+-- 更新单个配置项
+UPDATE app_config
+SET value = jsonb_set(value, '{dark_mode}', 'false')
+WHERE key = 'feature_flags';
+```
+
+***
+
+## 六、JSONB vs MongoDB 场景对比
+
+| 场景 | 推荐 | 原因 |
+|:-----|:-----|:-----|
+| 关系型数据 + 少量扩展字段 | PostgreSQL JSONB | 兼顾关系查询和灵活字段 |
+| 纯文档存储（无关联查询） | MongoDB | 原生文档模型，横向扩展更好 |
+| 需要事务 + JSON | PostgreSQL JSONB | PostgreSQL 支持 ACID 事务 |
+| 复杂聚合分析 | PostgreSQL JSONB | SQL 聚合比 MongoDB Aggregation Pipeline 更强大 |
+| 需要全文搜索 | PostgreSQL JSONB | 集成 tsvector/tsquery，无需额外系统 |
+| 海量文档（TB级）+ 高并发读写 | MongoDB | 分片和水平扩展更成熟 |
+
+> **经验法则**：如果数据有明确的关系结构，且 JSONB 字段只是"扩展属性"，优先用 PostgreSQL JSONB；如果数据天然是无结构的文档流，MongoDB 可能更合适。
+
+***

@@ -40,6 +40,7 @@ url: /my_notes/notes/JAVA学习路线/index.md
 |:-----|:---------|:----:|
 | **2.1 Spring 全家桶** | IoC 容器 & DI、AOP 面向切面编程、Bean 生命周期；Spring MVC DispatcherServlet 流程、请求处理；Spring Boot 自动配置原理、Starter、Actuator；Spring Data JPA & MyBatis ORM 框架 | [📖 查看](./第二阶段-主流框架/2.1-Spring全家桶.md) |
 | **2.2 Starter 配置指南** | Web / JDBC / JPA / MyBatis / Security / Cache / Redis / RabbitMQ / Kafka 等常用 Starter 的 application.yml 配置教程，逐项解释每个配置项的作用 | [📖 查看](./第二阶段-主流框架/2.2-SpringBoot常用Starter配置.md) |
+| **2.3 SSE 实时推送** | SSE 协议原理与格式；Spring MVC SseEmitter 基础用法与广播；WebFlux Flux/ServerSentEvent 响应式实现；AI 流式输出实战 | [📖 查看](./第二阶段-主流框架/2.3-SSE实时推送-SseEmitter与WebFlux.md) |
 
 ***
 

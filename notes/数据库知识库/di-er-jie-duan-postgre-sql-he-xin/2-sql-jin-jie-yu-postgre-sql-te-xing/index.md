@@ -1,0 +1,340 @@
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/2-sql-jin-jie-yu-postgre-sql-te-xing/index.md
+---
+# SQL 进阶与 PostgreSQL 特性
+
+## 一、WITH / CTE（公用表表达式）
+
+### 1.1 基础 CTE
+
+```sql
+-- 定义一个临时结果集，在同一条 SQL 中多次引用
+WITH active_users AS (
+  SELECT id, username, email
+  FROM users
+  WHERE status = 'active' AND created_at > '2025-01-01'
+)
+SELECT au.username, COUNT(o.id) AS order_count
+FROM active_users au
+LEFT JOIN orders o ON au.id = o.user_id
+GROUP BY au.id, au.username;
+```
+
+### 1.2 递归 CTE
+
+递归 CTE 是 PostgreSQL 处理层级数据（如组织架构、分类树）的强大工具：
+
+```sql
+-- 生成数字序列（1 到 10）
+WITH RECURSIVE nums AS (
+  SELECT 1 AS n                -- 基础查询（锚点）
+  UNION ALL
+  SELECT n + 1 FROM nums WHERE n < 10  -- 递归查询
+)
+SELECT n FROM nums;
+
+-- 查询组织架构树（从根节点开始）
+WITH RECURSIVE org_tree AS (
+  -- 锚点：根节点
+  SELECT id, name, manager_id, 0 AS depth
+  FROM employees
+  WHERE manager_id IS NULL
+  UNION ALL
+  -- 递归：子节点
+  SELECT e.id, e.name, e.manager_id, t.depth + 1
+  FROM employees e
+  JOIN org_tree t ON e.manager_id = t.id
+)
+SELECT
+  REPEAT('  ', depth) || name AS tree_name,  -- 缩进显示
+  depth
+FROM org_tree
+ORDER BY depth, name;
+```
+
+***
+
+## 二、窗口函数
+
+窗口函数在不减少结果行数的情况下进行聚合计算：
+
+```sql
+-- 基础语法
+SELECT
+  column,
+  FUNCTION() OVER (
+    [PARTITION BY partition_column]  -- 分组（类似 GROUP BY 但不合并行）
+    [ORDER BY sort_column [ASC|DESC]]
+    [ROWS|RANGE frame_clause]       -- 窗口框架
+  ) AS alias
+FROM table;
+```
+
+### 2.1 排名函数
+
+```sql
+SELECT
+  username,
+  total_amount,
+  -- 排名（并列跳号）：1, 2, 2, 4
+  RANK() OVER (ORDER BY total_amount DESC) AS rank_num,
+  -- 密集排名（并列不跳号）：1, 2, 2, 3
+  DENSE_RANK() OVER (ORDER BY total_amount DESC) AS dense_rank_num,
+  -- 行号（无并列）：1, 2, 3, 4
+  ROW_NUMBER() OVER (ORDER BY total_amount DESC) AS row_num,
+  -- 分组排名：按用户分组，每个组内排名
+  ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS user_order_num
+FROM user_orders;
+```
+
+### 2.2 聚合窗口函数
+
+```sql
+SELECT
+  user_id,
+  order_date,
+  amount,
+  -- 累计求和
+  SUM(amount) OVER (
+    PARTITION BY user_id ORDER BY order_date
+  ) AS running_total,
+  -- 移动平均（当前行及前两行）
+  AVG(amount) OVER (
+    ORDER BY order_date
+    ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+  ) AS moving_avg,
+  -- 组内最大值
+  MAX(amount) OVER (PARTITION BY user_id) AS user_max_amount,
+  -- 占比
+  ROUND(amount * 100.0 / SUM(amount) OVER (PARTITION BY user_id), 2) AS pct_of_user_total
+FROM orders;
+```
+
+### 2.3 LAG / LEAD（偏移函数）
+
+```sql
+SELECT
+  user_id,
+  order_date,
+  amount,
+  -- 前一行的金额
+  LAG(amount, 1, 0) OVER (PARTITION BY user_id ORDER BY order_date) AS prev_amount,
+  -- 后一行的金额
+  LEAD(amount, 1, 0) OVER (PARTITION BY user_id ORDER BY order_date) AS next_amount,
+  -- 与上一单的差额
+  amount - LAG(amount, 1, 0) OVER (PARTITION BY user_id ORDER BY order_date) AS diff
+FROM orders;
+```
+
+***
+
+## 三、LATERAL JOIN
+
+`LATERAL JOIN` 允许右侧子查询引用左侧表的列，实现"每行一个子查询"：
+
+```sql
+-- 为每个用户查询最近 3 笔订单
+SELECT u.username, recent.*
+FROM users u
+CROSS JOIN LATERAL (
+  SELECT order_no, amount, created_at
+  FROM orders o
+  WHERE o.user_id = u.id
+  ORDER BY o.created_at DESC
+  LIMIT 3
+) recent;
+
+-- 等价于 MySQL 的关联子查询优化写法，但更灵活
+-- 普通 JOIN 无法在子查询中引用外层表的列
+```
+
+### 3.1 LATERAL vs 子查询
+
+```sql
+-- ❌ 普通 JOIN 中的子查询无法引用外层列
+SELECT u.username, sub.recent_orders
+FROM users u
+JOIN (
+  SELECT user_id, COUNT(*) AS recent_orders
+  FROM orders
+  WHERE created_at > NOW() - INTERVAL '30 days'
+  GROUP BY user_id
+) sub ON u.id = sub.user_id;
+
+-- ✅ LATERAL 可以直接引用外层列，更灵活
+SELECT u.username, o.*
+FROM users u
+CROSS JOIN LATERAL (
+  SELECT order_no, amount
+  FROM orders
+  WHERE user_id = u.id AND created_at > NOW() - INTERVAL '30 days'
+  ORDER BY created_at DESC
+  LIMIT 5
+) o;
+```
+
+***
+
+## 四、数组与范围类型
+
+### 4.1 数组类型
+
+```sql
+-- 创建含数组列的表
+CREATE TABLE articles (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  tags TEXT[]  -- 文本数组
+);
+
+-- 插入
+INSERT INTO articles (title, tags) VALUES
+  ('PostgreSQL 入门', ARRAY['database', 'tutorial']),
+  ('高级 SQL', '{database, advanced, sql}');  -- 花括号语法
+
+-- 查询
+SELECT * FROM articles WHERE 'database' = ANY(tags);   -- 包含 'database'
+SELECT * FROM articles WHERE tags @> ARRAY['tutorial']; -- 包含 'tutorial'
+SELECT * FROM articles WHERE tags && ARRAY['database', 'sql']; -- 交集非空
+
+-- 数组操作
+SELECT array_append(tags, 'new_tag') FROM articles WHERE id = 1;
+SELECT array_remove(tags, 'tutorial') FROM articles WHERE id = 1;
+SELECT array_length(tags, 1) FROM articles WHERE id = 1;  -- 数组长度
+
+-- 展开数组为行
+SELECT unnest(tags) AS tag FROM articles WHERE id = 1;
+```
+
+### 4.2 范围类型
+
+```sql
+-- 内置范围类型：int4range, int8range, numrange, tsrange, tstzrange, daterange
+CREATE TABLE reservations (
+  id SERIAL PRIMARY KEY,
+  room_id INT,
+  period TSTZRESRANGE,  -- 时间戳范围
+  EXCLUDE USING gist (room_id WITH =, period WITH &&)  -- 排他约束：同一房间时间不能重叠
+);
+
+INSERT INTO reservations (room_id, period) VALUES
+  (1, tstzrange('2026-08-18 09:00', '2026-08-18 11:00'));
+
+-- 查询
+SELECT * FROM reservations WHERE period @> '2026-08-18 10:00'::timestamptz;  -- 包含某时间点
+SELECT * FROM reservations WHERE period && tstzrange('2026-08-18 08:00', '2026-08-18 12:00'); -- 重叠
+```
+
+***
+
+## 五、RETURNING 子句
+
+`RETURNING` 可以在 INSERT/UPDATE/DELETE 后直接返回修改的行，无需额外查询：
+
+```sql
+-- INSERT 后返回自动生成的 id
+INSERT INTO users (username, email)
+VALUES ('new_user', 'new@example.com')
+RETURNING id, username, created_at;
+
+-- UPDATE 后返回修改前后的值
+UPDATE users SET status = 'inactive'
+WHERE last_login < '2024-01-01'
+RETURNING id, username, status;
+
+-- DELETE 后返回被删除的行
+DELETE FROM temp_data
+WHERE created_at < NOW() - INTERVAL '30 days'
+RETURNING id, created_at;
+
+-- CTE + RETURNING（批量操作非常有用）
+WITH to_delete AS (
+  SELECT id FROM logs WHERE created_at < '2025-01-01' LIMIT 1000
+)
+DELETE FROM logs WHERE id IN (SELECT id FROM to_delete)
+RETURNING id;
+```
+
+***
+
+## 六、EXPLAIN ANALYZE
+
+### 6.1 基础用法
+
+```sql
+-- EXPLAIN：显示执行计划（不执行）
+EXPLAIN SELECT * FROM users WHERE email = 'test@example.com';
+
+-- EXPLAIN ANALYZE：实际执行并显示真实耗时和行数
+EXPLAIN ANALYZE
+SELECT u.username, COUNT(o.id)
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.status = 'active'
+GROUP BY u.id;
+
+-- 详细模式（加上 BUFFERS 和 TIMING）
+EXPLAIN (ANALYZE, BUFFERS, TIMING, FORMAT TEXT)
+SELECT * FROM users WHERE status = 'active';
+```
+
+### 6.2 输出解读
+
+```
+HashAggregate  (cost=1250.00..1251.00 rows=100 width=16) (actual time=15.234..15.289 rows=100 loops=1)
+  Group Key: u.id
+  Batches: 1  Memory Usage: 24kB
+  ->  Hash Left Join  (cost=10.00..1200.00 rows=10000 width=12) (actual time=0.543..14.123 rows=10000 loops=1)
+        Hash Cond: (u.id = o.user_id)
+        ->  Seq Scan on users u  (cost=0.00..150.00 rows=1000 width=8) (actual time=0.012..0.345 rows=1000 loops=1)
+              Filter: (status = 'active')
+        ->  Hash  (cost=8.00..8.00 rows=500 width=8) (actual time=0.512..0.513 rows=500 loops=1)
+              Buckets: 1024  Batches: 1  Memory Usage: 16kB
+              ->  Seq Scan on orders o  (cost=0.00..8.00 rows=500 width=8) (actual time=0.008..0.234 rows=500 loops=1)
+Planning Time: 0.123 ms
+Execution Time: 15.567 ms
+```
+
+**关键字段**：
+
+* `cost`：估算开销（启动成本..总成本）
+* `actual time`：实际耗时（毫秒）
+* `rows`：实际返回行数（与估算对比可看出估算准确性）
+* `loops`：循环次数
+* `Buffers: shared hit/read`：缓冲区命中/磁盘读取
+
+***
+
+## 七、其他 PostgreSQL 特有功能
+
+### 7.1 ILIKE（不区分大小写的 LIKE）
+
+```sql
+SELECT * FROM users WHERE username ILIKE '%test%';  -- 匹配 Test, TEST, test 等
+```
+
+### 7.2 生成列（Generated Columns）
+
+```sql
+CREATE TABLE products (
+  id SERIAL PRIMARY KEY,
+  price DECIMAL(10, 2),
+  quantity INT,
+  total DECIMAL(10, 2) GENERATED ALWAYS AS (price * quantity) STORED
+);
+```
+
+### 7.3 UPSERT（INSERT ... ON CONFLICT）
+
+```sql
+INSERT INTO counters (name, value)
+VALUES ('page_views', 1)
+ON CONFLICT (name) DO UPDATE SET value = counters.value + 1;
+-- 或忽略冲突
+INSERT INTO counters (name, value)
+VALUES ('page_views', 1)
+ON CONFLICT (name) DO NOTHING;
+```
+
+***

@@ -1,34 +1,4 @@
 ---
-url: /my_notes/index.md
-description: 小鱼知识库 —— 技术知识、学习路线与参考文档，赛博朋克风格个人知识库站点
----
-# 小鱼知识库
-## 关于本站
-
-这里是「小鱼知识库」——一个沉淀技术知识、系统学习路线与开发参考的赛博朋克风格个人知识库站点。
-
-**本站技术栈**：VuePress 2 · vuepress-theme-plume · Vite · TypeScript
-
-### 快速导航
-
-* [前端学习路线](/notes/前端学习路线/)
-* [Java 学习路线](/notes/JAVA学习路线/)
-* [Python 学习路线](/notes/Python学习路线/)
-* [Linux 学习路线](/notes/Linux学习路线/)
-* [LangChain 学习路线](/notes/LangChain学习路线/)
-* [GitHub](https://github.com/Yuwenjun1997)
-
-### 更新记录
-
-* 2026-08-17：前端开发重构为「前端学习路线」，按四阶段系统化组织
-* 2026-08-17：站点更名为「小鱼知识库」，定位调整为个人知识库
-* 2026-08-16：首页 hero 特效由闪电背景改为交互点阵
-* 2026-08-15：首页升级为赛博朋克风格
-* 2026-08-15：迁移 Java / Linux / LangChain / Python 学习路线
-
----
-
----
 url: /my_notes/notes/前端学习路线/index.md
 ---
 # 🌐 前端开发学习路线
@@ -6468,6 +6438,5531 @@ url: >-
 ---
 
 ---
+url: /my_notes/notes/数据库知识库/index.md
+---
+# 🗄️ 数据库知识库
+
+> 一份面向后端开发者的 MySQL 与 PostgreSQL 系统化学习指南，涵盖**MySQL 核心 → PostgreSQL 核心 → 双库实战对比**三个阶段，聚焦实际开发中最常用的知识与调优技巧。
+
+***
+
+## 📋 目录索引
+
+* [第一阶段：MySQL 核心](#-第一阶段mysql-核心)
+* [第二阶段：PostgreSQL 核心](#-第二阶段postgresql-核心)
+* [第三阶段：实战与对比](#-第三阶段实战与对比)
+* [学习路线总览](#-学习路线总览)
+
+***
+
+## 📘 第一阶段：MySQL 核心
+
+> **学习周期**：2-3 周 | **每日建议**：2-3 小时
+> **目标**：掌握 MySQL 安装配置、SQL 基础语法、索引原理与优化、事务与锁机制、存储引擎，具备慢查询排查与用户权限管理能力。
+
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **1.1 MySQL安装与配置** | 安装方式（apt/yum/docker）、my.cnf 核心参数、字符集配置、启动与服务管理 | [📖 查看](./第一阶段-MySQL核心/1.1-MySQL安装与配置.md) |
+| **1.2 SQL基础与常用语法** | DDL/DML/DQL/DCL、JOIN、子查询、GROUP BY/HAVING、常用内置函数、EXPLAIN 用法 | [📖 查看](./第一阶段-MySQL核心/1.2-SQL基础与常用语法.md) |
+| **1.3 索引与查询优化** | B+树原理、聚簇/非聚簇索引、覆盖索引、最左前缀原则、索引失效场景、EXPLAIN 深入解读 | [📖 查看](./第一阶段-MySQL核心/1.3-索引与查询优化.md) |
+| **1.4 事务与锁机制** | ACID、隔离级别、MVCC、行锁/表锁/间隙锁、死锁排查与预防、锁等待查看 | [📖 查看](./第一阶段-MySQL核心/1.4-事务与锁机制.md) |
+| **1.5 存储引擎** | InnoDB vs MyISAM 对比、InnoDB 架构（Buffer Pool/Redo/Undo/DoubleWrite）、表空间管理 | [📖 查看](./第一阶段-MySQL核心/1.5-存储引擎.md) |
+| **1.6 慢查询分析与性能调优** | slow\_query\_log 配置、mysqldumpslow、pt-query-digest、全局参数调优、SQL 重写技巧 | [📖 查看](./第一阶段-MySQL核心/1.6-慢查询分析与性能调优.md) |
+| **1.7 用户权限与安全管理** | 用户创建与授权（GRANT）、角色、权限最小化原则、SQL 注入防护、SSL 连接 | [📖 查看](./第一阶段-MySQL核心/1.7-用户权限与安全管理.md) |
+
+***
+
+## 🚀 第二阶段：PostgreSQL 核心
+
+> **学习周期**：2-3 周 | **每日建议**：2-3 小时
+> **目标**：掌握 PostgreSQL 安装配置、SQL 进阶特性、多种索引类型、MVCC 与 VACUUM 机制、JSONB 操作、扩展生态，具备性能调优与连接管理能力。
+
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **2.1 PostgreSQL安装与配置** | apt/docker 安装、postgresql.conf 核心参数、pg\_hba.conf 认证、pg\_ctl 服务管理 | [📖 查看](./第二阶段-PostgreSQL核心/2.1-PostgreSQL安装与配置.md) |
+| **2.2 SQL进阶与PostgreSQL特性** | WITH/CTE、窗口函数、LATERAL JOIN、数组/范围类型、RETURNING 子句、EXPLAIN ANALYZE | [📖 查看](./第二阶段-PostgreSQL核心/2.2-SQL进阶与PostgreSQL特性.md) |
+| **2.3 索引与查询优化** | B-tree/GiST/GIN/BRIN 索引类型、部分索引、表达式索引、EXPLAIN(ANALYZE,BUFFERS) 解读 | [📖 查看](./第二阶段-PostgreSQL核心/2.3-索引与查询优化.md) |
+| **2.4 事务与MVCC机制** | PostgreSQL MVCC 实现（xmin/xmax）、VACUUM 机制、事务隔离级别、dead tuple 清理 | [📖 查看](./第二阶段-PostgreSQL核心/2.4-事务与MVCC机制.md) |
+| **2.5 JSONB与NoSQL能力** | JSONB 操作符、索引策略、@> 包含查询、jsonb\_path\_query、与 MongoDB 场景对比 | [📖 查看](./第二阶段-PostgreSQL核心/2.5-JSONB与NoSQL能力.md) |
+| **2.6 扩展与插件生态** | pg\_stat\_statements、PostGIS、pg\_trgm、pgvector、CREATE EXTENSION 用法、常用扩展一览 | [📖 查看](./第二阶段-PostgreSQL核心/2.6-扩展与插件生态.md) |
+| **2.7 性能调优与连接管理** | shared\_buffers/work\_mem/effective\_cache\_size 调优、PgBouncer 连接池、pgBadger 日志分析 | [📖 查看](./第二阶段-PostgreSQL核心/2.7-性能调优与连接管理.md) |
+
+***
+
+## ⚡ 第三阶段：实战与对比
+
+> **学习周期**：1-2 周 | **每日建议**：2-3 小时
+> **目标**：能够对比选型 MySQL 与 PostgreSQL，掌握备份恢复与高可用方案，具备慢查询排查与连接池配置实战能力。
+
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **3.1 MySQL与PostgreSQL对比选型** | 语法差异、功能差异、生态工具对比、适用场景与选型决策框架 | [📖 查看](./第三阶段-实战与对比/3.1-MySQL与PostgreSQL对比选型.md) |
+| **3.2 备份恢复与高可用** | mysqldump/xtrabackup/pg\_dump/pg\_basebackup、主从复制/流复制、高可用方案（MHA/Patroni） | [📖 查看](./第三阶段-实战与对比/3.2-备份恢复与高可用.md) |
+| **3.3 慢查询排查实战** | 慢查询定位流程、执行计划分析、索引优化案例、SQL 改写案例、锁等待排查案例 | [📖 查看](./第三阶段-实战与对比/3.3-慢查询排查实战.md) |
+| **3.4 连接池与中间件配置** | HikariCP/Druid（Java侧）、PgBouncer/pgbouncer、ProxySQL、读写分离中间件配置 | [📖 查看](./第三阶段-实战与对比/3.4-连接池与中间件配置.md) |
+| **3.5 获取当前上下文信息** | MySQL/PostgreSQL 内置函数与常量：当前用户、数据库、版本、时间戳、事务状态、会话变量速查 | [📖 查看](./第三阶段-实战与对比/3.5-获取当前上下文信息-内置函数与常量.md) |
+
+***
+
+## 📐 学习路线总览
+
+```
+第一阶段：MySQL 核心（2-3周）
+    │  安装配置 → SQL基础 → 索引优化 → 事务与锁 → 存储引擎 → 慢查询 → 用户权限
+    ▼
+第二阶段：PostgreSQL 核心（2-3周）
+    │  安装配置 → SQL进阶 → 索引优化 → MVCC → JSONB → 扩展生态 → 性能调优
+    ▼
+第三阶段：实战与对比（1-2周）
+    对比选型 → 备份恢复与高可用 → 慢查询实战 → 连接池与中间件 → 上下文函数速查
+```
+
+### 💡 学习建议
+
+1. **先 MySQL 后 PostgreSQL**：MySQL 在国内使用率更高，优先掌握；PostgreSQL 的特有功能（JSONB、扩展生态）在特定场景下优势明显。
+2. **动手实践**：每个 SQL 示例和配置项都要在实际数据库中跑一遍，建议用 Docker 快速搭建练习环境。
+3. **带着项目学**：结合实际项目需求学习（如设计一个电商数据库），比孤立背知识点有效得多。
+4. **重视 EXPLAIN**：无论是 MySQL 还是 PostgreSQL，EXPLAIN 是查询优化的核心工具，必须熟练掌握。
+5. **关注生产环境**：慢查询日志、锁等待、连接池配置是生产环境最常见的问题，要重点练习。
+
+### 🔧 推荐工具与资源
+
+| 类别 | 工具/资源 | 说明 |
+|:-----|:----------|:-----|
+| 图形化管理 | DBeaver / Navicat / DataGrip | 跨数据库通用客户端 |
+| MySQL 管理 | MySQL Workbench | 官方 GUI 工具 |
+| PostgreSQL 管理 | pgAdmin | 官方 GUI 工具 |
+| 慢查询分析 | pt-query-digest（MySQL）/ pgBadger（PostgreSQL） | 慢查询日志分析利器 |
+| 连接池 | PgBouncer / ProxySQL | PostgreSQL / MySQL 连接池与读写分离 |
+
+***
+
+---
+
+---
+url: /my_notes/notes/数据库知识库/第一阶段-MySQL核心/index.md
+---
+# 第一阶段 · MySQL核心
+
+* [MySQL安装与配置](./1.1-MySQL安装与配置.md)
+* [SQL基础与常用语法](./1.2-SQL基础与常用语法.md)
+* [索引与查询优化](./1.3-索引与查询优化.md)
+* [事务与锁机制](./1.4-事务与锁机制.md)
+* [存储引擎](./1.5-存储引擎.md)
+* [慢查询分析与性能调优](./1.6-慢查询分析与性能调优.md)
+* [用户权限与安全管理](./1.7-用户权限与安全管理.md)
+
+---
+
+---
+url: /my_notes/notes/数据库知识库/第三阶段-实战与对比/index.md
+---
+# 第三阶段 · 实战与对比
+
+* [MySQL与PostgreSQL对比选型](./3.1-MySQL与PostgreSQL对比选型.md)
+* [备份恢复与高可用](./3.2-备份恢复与高可用.md)
+* [慢查询排查实战](./3.3-慢查询排查实战.md)
+* [连接池与中间件配置](./3.4-连接池与中间件配置.md)
+* [获取当前上下文信息 — 内置函数与常量](./3.5-获取当前上下文信息-内置函数与常量.md)
+
+---
+
+---
+url: /my_notes/notes/数据库知识库/第二阶段-PostgreSQL核心/index.md
+---
+# 第二阶段 · PostgreSQL核心
+
+* [PostgreSQL安装与配置](./2.1-PostgreSQL安装与配置.md)
+* [SQL进阶与PostgreSQL特性](./2.2-SQL进阶与PostgreSQL特性.md)
+* [索引与查询优化](./2.3-索引与查询优化.md)
+* [事务与MVCC机制](./2.4-事务与MVCC机制.md)
+* [JSONB与NoSQL能力](./2.5-JSONB与NoSQL能力.md)
+* [扩展与插件生态](./2.6-扩展与插件生态.md)
+* [性能调优与连接管理](./2.7-性能调优与连接管理.md)
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/1-postgre-sql-an-zhuang-yu-pei-zhi/index.md
+---
+# PostgreSQL 安装与配置
+
+## 一、安装方式选择
+
+### 1.1 安装方式对比
+
+| 方式 | 适用场景 | 优点 | 缺点 |
+|:-----|:---------|:-----|:-----|
+| **apt 官方源** | Ubuntu 服务器生产部署 | 官方维护、版本更新及时 | 默认源版本可能偏旧 |
+| **apt PostgreSQL 源** | 需要最新版本 | 版本最新、扩展丰富 | 需添加第三方源 |
+| **Docker** | 本地开发/测试环境 | 隔离性好、多版本共存、即用即弃 | 需理解 Docker 卷管理 |
+| **源码编译** | 特定功能需求 | 完全定制 | 维护成本高 |
+
+### 1.2 Ubuntu apt 安装（推荐生产）
+
+```bash
+# 添加 PostgreSQL 官方 APT 源（以 PG 16 为例）
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+  > /etc/apt/sources.list.d/pgdg.list'
+
+# 导入 GPG 密钥
+curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+
+sudo apt update
+
+# 安装 PostgreSQL 16 及常用扩展
+sudo apt install -y postgresql-16 postgresql-client-16 postgresql-contrib
+
+# 安装后状态
+sudo systemctl status postgresql
+# PostgreSQL 安装后自动启动，默认创建 postgres 系统用户
+```
+
+### 1.3 Docker 安装（推荐本地开发）
+
+```bash
+# 拉取 PostgreSQL 16 镜像
+docker pull postgres:16
+
+# 启动容器
+docker run -d \
+  --name pg-dev \
+  -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=testdb \
+  -e POSTGRES_USER=postgres \
+  -v pgdata:/var/lib/postgresql/data \
+  postgres:16
+
+# 进入容器连接
+docker exec -it pg-dev psql -U postgres
+
+# 或从宿主机连接
+psql -h 127.0.0.1 -p 5432 -U postgres
+```
+
+### 1.4 CentOS/RHEL 安装
+
+```bash
+# 安装官方 YUM 源（以 PG 16 为例）
+sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# 禁用系统自带的 PostgreSQL 模块（CentOS 8+）
+sudo dnf -qy module disable postgresql
+
+sudo yum install -y postgresql16-server postgresql16
+
+# 初始化数据库
+sudo /usr/pgsql-16/bin/postgresql-16-setup initdb
+
+# 启动并设置开机自启
+sudo systemctl start postgresql-16
+sudo systemctl enable postgresql-16
+```
+
+***
+
+## 二、核心配置文件
+
+### 2.1 配置文件位置
+
+```
+/etc/postgresql/16/main/           # Debian/Ubuntu 配置目录
+├── postgresql.conf                # 主配置文件
+├── pg_hba.conf                    # 客户端认证配置
+└── pg_ident.conf                  # 用户名映射
+
+# CentOS/RHEL：/var/lib/pgsql/16/data/
+```
+
+### 2.2 postgresql.conf 核心参数
+
+```ini
+# ---- 连接配置 ----
+listen_addresses = '*'            # 监听所有接口（默认 localhost）
+port = 5432
+max_connections = 200             # 最大连接数
+
+# ---- 内存配置 ----
+shared_buffers = 1GB              # 共享缓冲区（建议物理内存的 25%）
+work_mem = 16MB                   # 每个操作的排序/哈希内存（每连接独立）
+maintenance_work_mem = 256MB      # 维护操作（VACUUM/CREATE INDEX）内存
+effective_cache_size = 4GB        # 告诉优化器系统可用缓存总量（物理内存的 50%-75%）
+
+# ---- WAL 配置（类似 MySQL binlog + redo log） ----
+wal_level = replica               # minimal/replica/logical（主从复制需要 replica）
+max_wal_size = 2GB                # WAL 大小触发 checkpoint
+min_wal_size = 1GB
+checkpoint_completion_target = 0.9  # checkpoint 平滑刷盘比例
+
+# ---- 日志配置 ----
+logging_collector = on            # 开启日志收集
+log_directory = 'log'             # 日志目录（相对于数据目录）
+log_filename = 'postgresql-%Y-%m-%d.log'
+log_min_duration_statement = 1000 # 慢查询阈值（毫秒），1000ms = 1s
+log_statement = 'ddl'             # 记录 DDL 语句（none/ddl/mod/all）
+log_duration = off                # 记录所有语句耗时（调试用）
+
+# ---- 复制配置 ----
+# max_wal_senders = 10            # 主从复制时需要
+# wal_keep_size = 1GB
+```
+
+### 2.3 pg\_hba.conf 认证配置
+
+```ini
+# TYPE  DATABASE  USER      ADDRESS         METHOD
+# 本地 Unix Socket 连接
+local   all       postgres                  peer        # postgres 用户用系统认证
+local   all       all                       scram-sha-256
+
+# 本地 TCP/IP 连接
+host    all       all       127.0.0.1/32    scram-sha-256
+host    all       all       ::1/128         scram-sha-256
+
+# 远程连接（允许所有 IP，生产环境应限制）
+host    all       all       0.0.0.0/0       scram-sha-256
+```
+
+**认证方式说明**：
+
+| METHOD | 说明 | 安全性 |
+|:-------|:-----|:-------|
+| `trust` | 无需密码（仅本地开发） | ⚠️ 不安全 |
+| `peer` | 使用操作系统用户名匹配（仅本地） | ✅ 安全 |
+| `md5` | MD5 密码认证 | ⚠️ 较弱 |
+| `scram-sha-256` | SCRAM 认证（PG 10+ 推荐） | ✅ 安全 |
+| `reject` | 拒绝连接 | - |
+
+修改 `pg_hba.conf` 后需要重新加载：
+
+```bash
+sudo systemctl reload postgresql
+# 或在 psql 中
+SELECT pg_reload_conf();
+```
+
+***
+
+## 三、服务管理
+
+### 3.1 systemctl 命令
+
+```bash
+# 启动/停止/重启
+sudo systemctl start postgresql
+sudo systemctl stop postgresql
+sudo systemctl restart postgresql
+
+# 查看状态
+sudo systemctl status postgresql
+
+# 开机自启/取消
+sudo systemctl enable postgresql
+sudo systemctl disable postgresql
+
+# 重新加载配置（不重启服务）
+sudo systemctl reload postgresql
+```
+
+### 3.2 pg\_ctl 命令
+
+```bash
+# 以 postgres 用户执行
+sudo -u postgres pg_ctl status -D /var/lib/postgresql/16/main
+sudo -u postgres pg_ctl restart -D /var/lib/postgresql/16/main
+sudo -u postgres pg_ctl reload -D /var/lib/postgresql/16/main
+
+# Docker 中查看状态
+docker exec -it pg-dev pg_isready -U postgres
+```
+
+### 3.3 psql 客户端常用命令
+
+```bash
+# 连接数据库
+psql -h 127.0.0.1 -p 5432 -U postgres -d testdb
+
+# 连接后常用元命令（在 psql 终端中执行）
+\l          # 列出所有数据库
+\c dbname   # 切换数据库
+\dt         # 列出当前 schema 的所有表
+\dt *.*     # 列出所有 schema 的所有表
+\d tablename  # 查看表结构
+\di         # 列出索引
+\df         # 列出函数
+\dv         # 列出视图
+\du         # 列出所有用户/角色
+\dp         # 列出表权限
+\x          # 切换扩展显示模式（宽表格式）
+\q          # 退出
+```
+
+***
+
+## 四、用户与权限管理
+
+### 4.1 创建用户和数据库
+
+```sql
+-- PostgreSQL 中 User 和 Role 本质相同，User = Role + LOGIN 权限
+
+-- 创建角色（无登录权限）
+CREATE ROLE app_readonly;
+
+-- 创建用户（有登录权限）
+CREATE USER app_user WITH PASSWORD 'strong_password';
+-- 等价于：CREATE ROLE app_user WITH LOGIN PASSWORD 'strong_password';
+
+-- 创建数据库并指定所有者
+CREATE DATABASE mydb OWNER app_user;
+
+-- 修改用户密码
+ALTER USER app_user WITH PASSWORD 'new_password';
+
+-- 删除用户
+DROP USER app_user;
+```
+
+### 4.2 权限管理
+
+```sql
+-- Schema 权限
+GRANT USAGE ON SCHEMA public TO app_user;
+GRANT CREATE ON SCHEMA public TO app_user;
+
+-- 表权限
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO app_readonly;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
+
+-- 默认权限（新建表自动授予权限）
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT ON TABLES TO app_readonly;
+
+-- 撤销权限
+REVOKE INSERT ON users FROM app_user;
+
+-- 查看权限
+\dp users   # psql 中查看表权限
+SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name = 'users';
+```
+
+***
+
+## 五、Docker 多版本共存
+
+```bash
+# 同时运行 PostgreSQL 14 和 16
+docker run -d --name pg14 -p 5433:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -v pg14-data:/var/lib/postgresql/data \
+  postgres:14
+
+docker run -d --name pg16 -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -v pg16-data:/var/lib/postgresql/data \
+  postgres:16
+
+# 连接
+psql -h 127.0.0.1 -p 5433 -U postgres  # PG 14
+psql -h 127.0.0.1 -p 5432 -U postgres  # PG 16
+```
+
+***
+
+## 六、常见安装问题
+
+| 问题 | 原因 | 解决方案 |
+|:-----|:-----|:---------|
+| `FATAL: password authentication failed` | 密码错误或 pg\_hba.conf 配置 | 检查密码、修改 pg\_hba.conf 认证方式 |
+| `FATAL: role "xxx" does not exist` | 用户不存在 | `CREATE USER xxx WITH LOGIN PASSWORD 'pwd';` |
+| `FATAL: database "xxx" does not exist` | 数据库不存在 | `CREATE DATABASE xxx;` |
+| `connection refused` | PostgreSQL 未启动或端口不对 | `systemctl status postgresql`、检查端口 |
+| `remaining connection slots are reserved` | 连接数已满 | 增大 `max_connections` 或使用 PgBouncer |
+| `FATAL: could not create lock file` | 权限问题 | `chown -R postgres:postgres /var/run/postgresql` |
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/2-sql-jin-jie-yu-postgre-sql-te-xing/index.md
+---
+# SQL 进阶与 PostgreSQL 特性
+
+## 一、WITH / CTE（公用表表达式）
+
+### 1.1 基础 CTE
+
+```sql
+-- 定义一个临时结果集，在同一条 SQL 中多次引用
+WITH active_users AS (
+  SELECT id, username, email
+  FROM users
+  WHERE status = 'active' AND created_at > '2025-01-01'
+)
+SELECT au.username, COUNT(o.id) AS order_count
+FROM active_users au
+LEFT JOIN orders o ON au.id = o.user_id
+GROUP BY au.id, au.username;
+```
+
+### 1.2 递归 CTE
+
+递归 CTE 是 PostgreSQL 处理层级数据（如组织架构、分类树）的强大工具：
+
+```sql
+-- 生成数字序列（1 到 10）
+WITH RECURSIVE nums AS (
+  SELECT 1 AS n                -- 基础查询（锚点）
+  UNION ALL
+  SELECT n + 1 FROM nums WHERE n < 10  -- 递归查询
+)
+SELECT n FROM nums;
+
+-- 查询组织架构树（从根节点开始）
+WITH RECURSIVE org_tree AS (
+  -- 锚点：根节点
+  SELECT id, name, manager_id, 0 AS depth
+  FROM employees
+  WHERE manager_id IS NULL
+  UNION ALL
+  -- 递归：子节点
+  SELECT e.id, e.name, e.manager_id, t.depth + 1
+  FROM employees e
+  JOIN org_tree t ON e.manager_id = t.id
+)
+SELECT
+  REPEAT('  ', depth) || name AS tree_name,  -- 缩进显示
+  depth
+FROM org_tree
+ORDER BY depth, name;
+```
+
+***
+
+## 二、窗口函数
+
+窗口函数在不减少结果行数的情况下进行聚合计算：
+
+```sql
+-- 基础语法
+SELECT
+  column,
+  FUNCTION() OVER (
+    [PARTITION BY partition_column]  -- 分组（类似 GROUP BY 但不合并行）
+    [ORDER BY sort_column [ASC|DESC]]
+    [ROWS|RANGE frame_clause]       -- 窗口框架
+  ) AS alias
+FROM table;
+```
+
+### 2.1 排名函数
+
+```sql
+SELECT
+  username,
+  total_amount,
+  -- 排名（并列跳号）：1, 2, 2, 4
+  RANK() OVER (ORDER BY total_amount DESC) AS rank_num,
+  -- 密集排名（并列不跳号）：1, 2, 2, 3
+  DENSE_RANK() OVER (ORDER BY total_amount DESC) AS dense_rank_num,
+  -- 行号（无并列）：1, 2, 3, 4
+  ROW_NUMBER() OVER (ORDER BY total_amount DESC) AS row_num,
+  -- 分组排名：按用户分组，每个组内排名
+  ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS user_order_num
+FROM user_orders;
+```
+
+### 2.2 聚合窗口函数
+
+```sql
+SELECT
+  user_id,
+  order_date,
+  amount,
+  -- 累计求和
+  SUM(amount) OVER (
+    PARTITION BY user_id ORDER BY order_date
+  ) AS running_total,
+  -- 移动平均（当前行及前两行）
+  AVG(amount) OVER (
+    ORDER BY order_date
+    ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+  ) AS moving_avg,
+  -- 组内最大值
+  MAX(amount) OVER (PARTITION BY user_id) AS user_max_amount,
+  -- 占比
+  ROUND(amount * 100.0 / SUM(amount) OVER (PARTITION BY user_id), 2) AS pct_of_user_total
+FROM orders;
+```
+
+### 2.3 LAG / LEAD（偏移函数）
+
+```sql
+SELECT
+  user_id,
+  order_date,
+  amount,
+  -- 前一行的金额
+  LAG(amount, 1, 0) OVER (PARTITION BY user_id ORDER BY order_date) AS prev_amount,
+  -- 后一行的金额
+  LEAD(amount, 1, 0) OVER (PARTITION BY user_id ORDER BY order_date) AS next_amount,
+  -- 与上一单的差额
+  amount - LAG(amount, 1, 0) OVER (PARTITION BY user_id ORDER BY order_date) AS diff
+FROM orders;
+```
+
+***
+
+## 三、LATERAL JOIN
+
+`LATERAL JOIN` 允许右侧子查询引用左侧表的列，实现"每行一个子查询"：
+
+```sql
+-- 为每个用户查询最近 3 笔订单
+SELECT u.username, recent.*
+FROM users u
+CROSS JOIN LATERAL (
+  SELECT order_no, amount, created_at
+  FROM orders o
+  WHERE o.user_id = u.id
+  ORDER BY o.created_at DESC
+  LIMIT 3
+) recent;
+
+-- 等价于 MySQL 的关联子查询优化写法，但更灵活
+-- 普通 JOIN 无法在子查询中引用外层表的列
+```
+
+### 3.1 LATERAL vs 子查询
+
+```sql
+-- ❌ 普通 JOIN 中的子查询无法引用外层列
+SELECT u.username, sub.recent_orders
+FROM users u
+JOIN (
+  SELECT user_id, COUNT(*) AS recent_orders
+  FROM orders
+  WHERE created_at > NOW() - INTERVAL '30 days'
+  GROUP BY user_id
+) sub ON u.id = sub.user_id;
+
+-- ✅ LATERAL 可以直接引用外层列，更灵活
+SELECT u.username, o.*
+FROM users u
+CROSS JOIN LATERAL (
+  SELECT order_no, amount
+  FROM orders
+  WHERE user_id = u.id AND created_at > NOW() - INTERVAL '30 days'
+  ORDER BY created_at DESC
+  LIMIT 5
+) o;
+```
+
+***
+
+## 四、数组与范围类型
+
+### 4.1 数组类型
+
+```sql
+-- 创建含数组列的表
+CREATE TABLE articles (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  tags TEXT[]  -- 文本数组
+);
+
+-- 插入
+INSERT INTO articles (title, tags) VALUES
+  ('PostgreSQL 入门', ARRAY['database', 'tutorial']),
+  ('高级 SQL', '{database, advanced, sql}');  -- 花括号语法
+
+-- 查询
+SELECT * FROM articles WHERE 'database' = ANY(tags);   -- 包含 'database'
+SELECT * FROM articles WHERE tags @> ARRAY['tutorial']; -- 包含 'tutorial'
+SELECT * FROM articles WHERE tags && ARRAY['database', 'sql']; -- 交集非空
+
+-- 数组操作
+SELECT array_append(tags, 'new_tag') FROM articles WHERE id = 1;
+SELECT array_remove(tags, 'tutorial') FROM articles WHERE id = 1;
+SELECT array_length(tags, 1) FROM articles WHERE id = 1;  -- 数组长度
+
+-- 展开数组为行
+SELECT unnest(tags) AS tag FROM articles WHERE id = 1;
+```
+
+### 4.2 范围类型
+
+```sql
+-- 内置范围类型：int4range, int8range, numrange, tsrange, tstzrange, daterange
+CREATE TABLE reservations (
+  id SERIAL PRIMARY KEY,
+  room_id INT,
+  period TSTZRESRANGE,  -- 时间戳范围
+  EXCLUDE USING gist (room_id WITH =, period WITH &&)  -- 排他约束：同一房间时间不能重叠
+);
+
+INSERT INTO reservations (room_id, period) VALUES
+  (1, tstzrange('2026-08-18 09:00', '2026-08-18 11:00'));
+
+-- 查询
+SELECT * FROM reservations WHERE period @> '2026-08-18 10:00'::timestamptz;  -- 包含某时间点
+SELECT * FROM reservations WHERE period && tstzrange('2026-08-18 08:00', '2026-08-18 12:00'); -- 重叠
+```
+
+***
+
+## 五、RETURNING 子句
+
+`RETURNING` 可以在 INSERT/UPDATE/DELETE 后直接返回修改的行，无需额外查询：
+
+```sql
+-- INSERT 后返回自动生成的 id
+INSERT INTO users (username, email)
+VALUES ('new_user', 'new@example.com')
+RETURNING id, username, created_at;
+
+-- UPDATE 后返回修改前后的值
+UPDATE users SET status = 'inactive'
+WHERE last_login < '2024-01-01'
+RETURNING id, username, status;
+
+-- DELETE 后返回被删除的行
+DELETE FROM temp_data
+WHERE created_at < NOW() - INTERVAL '30 days'
+RETURNING id, created_at;
+
+-- CTE + RETURNING（批量操作非常有用）
+WITH to_delete AS (
+  SELECT id FROM logs WHERE created_at < '2025-01-01' LIMIT 1000
+)
+DELETE FROM logs WHERE id IN (SELECT id FROM to_delete)
+RETURNING id;
+```
+
+***
+
+## 六、EXPLAIN ANALYZE
+
+### 6.1 基础用法
+
+```sql
+-- EXPLAIN：显示执行计划（不执行）
+EXPLAIN SELECT * FROM users WHERE email = 'test@example.com';
+
+-- EXPLAIN ANALYZE：实际执行并显示真实耗时和行数
+EXPLAIN ANALYZE
+SELECT u.username, COUNT(o.id)
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.status = 'active'
+GROUP BY u.id;
+
+-- 详细模式（加上 BUFFERS 和 TIMING）
+EXPLAIN (ANALYZE, BUFFERS, TIMING, FORMAT TEXT)
+SELECT * FROM users WHERE status = 'active';
+```
+
+### 6.2 输出解读
+
+```
+HashAggregate  (cost=1250.00..1251.00 rows=100 width=16) (actual time=15.234..15.289 rows=100 loops=1)
+  Group Key: u.id
+  Batches: 1  Memory Usage: 24kB
+  ->  Hash Left Join  (cost=10.00..1200.00 rows=10000 width=12) (actual time=0.543..14.123 rows=10000 loops=1)
+        Hash Cond: (u.id = o.user_id)
+        ->  Seq Scan on users u  (cost=0.00..150.00 rows=1000 width=8) (actual time=0.012..0.345 rows=1000 loops=1)
+              Filter: (status = 'active')
+        ->  Hash  (cost=8.00..8.00 rows=500 width=8) (actual time=0.512..0.513 rows=500 loops=1)
+              Buckets: 1024  Batches: 1  Memory Usage: 16kB
+              ->  Seq Scan on orders o  (cost=0.00..8.00 rows=500 width=8) (actual time=0.008..0.234 rows=500 loops=1)
+Planning Time: 0.123 ms
+Execution Time: 15.567 ms
+```
+
+**关键字段**：
+
+* `cost`：估算开销（启动成本..总成本）
+* `actual time`：实际耗时（毫秒）
+* `rows`：实际返回行数（与估算对比可看出估算准确性）
+* `loops`：循环次数
+* `Buffers: shared hit/read`：缓冲区命中/磁盘读取
+
+***
+
+## 七、其他 PostgreSQL 特有功能
+
+### 7.1 ILIKE（不区分大小写的 LIKE）
+
+```sql
+SELECT * FROM users WHERE username ILIKE '%test%';  -- 匹配 Test, TEST, test 等
+```
+
+### 7.2 生成列（Generated Columns）
+
+```sql
+CREATE TABLE products (
+  id SERIAL PRIMARY KEY,
+  price DECIMAL(10, 2),
+  quantity INT,
+  total DECIMAL(10, 2) GENERATED ALWAYS AS (price * quantity) STORED
+);
+```
+
+### 7.3 UPSERT（INSERT ... ON CONFLICT）
+
+```sql
+INSERT INTO counters (name, value)
+VALUES ('page_views', 1)
+ON CONFLICT (name) DO UPDATE SET value = counters.value + 1;
+-- 或忽略冲突
+INSERT INTO counters (name, value)
+VALUES ('page_views', 1)
+ON CONFLICT (name) DO NOTHING;
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/3-suo-yin-yu-cha-xun-you-hua/index.md
+---
+# 索引与查询优化
+
+## 一、PostgreSQL 索引类型概览
+
+PostgreSQL 支持多种索引类型，远比 MySQL 丰富，不同索引适用于不同查询场景：
+
+| 索引类型 | 适用场景 | 底层数据结构 |
+|:---------|:---------|:-------------|
+| **B-tree** | 等值查询、范围查询、排序（默认，最常用） | B+ 树 |
+| **Hash** | 仅等值查询（PG 10+ WAL 支持，可恢复） | 哈希表 |
+| **GiST** | 几何/地理数据、全文搜索、范围类型 | 平衡树 |
+| **GIN** | 数组、JSONB、全文搜索、模糊匹配 | 倒排索引 |
+| **BRIN** | 物理顺序与逻辑顺序相关的大表（如时间序列） | 块范围索引 |
+| **SP-GiST** | 不平衡数据（如电话号码前缀、IP 地址） | 空间分区 |
+| **bloom** | 多列等值查询的组合过滤 | 布隆过滤器 |
+
+***
+
+## 二、B-tree 索引
+
+### 2.1 创建与使用
+
+```sql
+-- 单列索引
+CREATE INDEX idx_users_email ON users (email);
+
+-- 唯一索引
+CREATE UNIQUE INDEX idx_users_username ON users (username);
+
+-- 联合索引
+CREATE INDEX idx_orders_status_date ON orders (status, created_at);
+
+-- 降序索引
+CREATE INDEX idx_orders_created ON orders (created_at DESC);
+
+-- 带 NULLS 的索引（NULL 值排最后）
+CREATE INDEX idx_users_phone ON users (phone) NULLS LAST;
+```
+
+### 2.2 B-tree 支持的操作符
+
+`=`, `<`, `>`, `<=`, `>=`, `<>`, `BETWEEN`, `IN`, `IS NULL`, `IS NOT NULL`, `LIKE 'prefix%'`, `||`（前缀拼接）
+
+***
+
+## 三、GIN 索引（广义倒排索引）
+
+GIN 是 PostgreSQL 最强大的索引类型之一，适合"包含"类查询：
+
+### 3.1 JSONB 索引
+
+```sql
+-- 为 JSONB 列创建 GIN 索引
+CREATE INDEX idx_events_data ON events USING gin (data);
+
+-- 查询：包含特定键值
+SELECT * FROM events WHERE data @> '{"type": "click"}';
+
+-- 查询：包含特定路径值
+SELECT * FROM events WHERE data @? '$.type == "click"';
+```
+
+### 3.2 数组索引
+
+```sql
+CREATE INDEX idx_articles_tags ON articles USING gin (tags);
+
+-- 查询包含特定标签的文章
+SELECT * FROM articles WHERE tags @> ARRAY['postgresql'];
+```
+
+### 3.3 全文搜索索引
+
+```sql
+-- 为全文搜索向量创建 GIN 索引
+CREATE INDEX idx_articles_search ON articles USING gin (
+  to_tsvector('english', title || ' ' || content)
+);
+
+-- 查询
+SELECT * FROM articles
+WHERE to_tsvector('english', title || ' ' || content) @@ to_tsquery('english', 'postgresql & tutorial');
+```
+
+***
+
+## 四、BRIN 索引（块范围索引）
+
+BRIN 索引非常小，适合物理有序的大表（如按时间插入的日志表）：
+
+```sql
+-- 创建 BRIN 索引（索引大小极小）
+CREATE INDEX idx_logs_created ON logs USING brin (created_at);
+
+-- BRIN 索引大小对比（1000 万行日志表）
+-- B-tree: ~300MB
+-- BRIN:   ~150KB（约 B-tree 的 1/2000）
+
+-- 适用条件：数据的物理存储顺序与索引列值基本一致
+-- 典型场景：时间序列数据（按时间顺序插入）
+-- 不适用：频繁 UPDATE 导致物理顺序混乱的表
+```
+
+***
+
+## 五、部分索引（Partial Index）
+
+只索引满足条件的行，减少索引大小：
+
+```sql
+-- 只为活跃用户建立索引
+CREATE INDEX idx_active_users ON users (email) WHERE status = 'active';
+-- 查询必须包含 WHERE status = 'active' 才能使用此索引
+
+-- 只为未处理的订单建索引
+CREATE INDEX idx_pending_orders ON orders (created_at)
+WHERE status = 'pending';
+
+-- 好处：
+-- 1. 索引更小，占用更少磁盘和内存
+-- 2. 维护成本更低（插入/更新时维护更少条目）
+-- 3. 查询更快（索引更紧凑）
+```
+
+***
+
+## 六、表达式索引（函数索引）
+
+```sql
+-- 为函数计算结果建索引
+CREATE INDEX idx_users_lower_email ON users (lower(email));
+-- 查询时必须用相同的表达式才能命中索引
+SELECT * FROM users WHERE lower(email) = 'test@example.com';
+
+-- 日期截断索引
+CREATE INDEX idx_orders_date ON orders (date_trunc('day', created_at));
+SELECT * FROM orders WHERE date_trunc('day', created_at) = '2026-08-18'::date;
+
+-- COALESCE 索引（处理 NULL）
+CREATE INDEX idx_users_nickname ON users (COALESCE(nickname, username));
+```
+
+***
+
+## 七、EXPLAIN (ANALYZE, BUFFERS) 深入解读
+
+### 7.1 输出格式
+
+```
+Hash Join  (cost=1250.00..2500.00 rows=10000 width=48) (actual time=15.234..30.123 rows=10000 loops=1)
+  Hash Cond: (u.id = o.user_id)
+  Buffers: shared hit=500 read=200
+  ->  Seq Scan on users u  (cost=0.00..150.00 rows=1000 width=24) (actual time=0.012..0.543 rows=1000 loops=1)
+        Filter: (status = 'active')
+        Rows Removed by Filter: 500
+        Buffers: shared hit=100
+  ->  Hash  (cost=800.00..800.00 rows=50000 width=24) (actual time=14.567..14.568 rows=50000 loops=1)
+        Buckets: 65536  Batches: 1  Memory Usage: 3072kB
+        Buffers: shared hit=400 read=200
+        ->  Seq Scan on orders o  (cost=0.00..800.00 rows=50000 width=24) (actual time=0.008..8.234 rows=50000 loops=1)
+              Buffers: shared hit=400 read=200
+Planning Time: 0.234 ms
+Execution Time: 32.456 ms
+```
+
+### 7.2 关键指标
+
+| 指标 | 含义 | 关注点 |
+|:-----|:-----|:-------|
+| `actual time` | 实际执行时间（毫秒） | 越小越好 |
+| `rows` | 实际返回行数 | 与 cost 中估算行数对比，偏差大说明统计信息不准 |
+| `Buffers: shared hit` | 缓冲区命中（内存读取） | 越多越好 |
+| `Buffers: shared read` | 磁盘读取 | 越少越好（可用 `shared_buffers` 或增大缓存） |
+| `Rows Removed by Filter` | 被过滤掉的行数 | 越少越好，说明索引过滤有效 |
+| `Memory Usage` | 操作符内存消耗 | work\_mem 不足会触发磁盘临时文件 |
+
+### 7.3 常见查询计划节点
+
+| 节点类型 | 说明 | 何时出现 |
+|:---------|:-----|:---------|
+| `Seq Scan` | 顺序扫描全表 | 无可用索引或小表 |
+| `Index Scan` | 索引扫描 + 回表 | 索引命中但需要额外列 |
+| `Index Only Scan` | 仅索引扫描 | 覆盖索引（所需列全在索引中） |
+| `Bitmap Index Scan` | 位图索引扫描 | 多条件过滤，先收集匹配行位置 |
+| `Bitmap Heap Scan` | 位图堆扫描 | 配合 Bitmap Index Scan 取数据 |
+| `Hash Join` | 哈希连接 | 两个表 JOIN，小表建哈希表 |
+| `Merge Join` | 合并连接 | 两个表已排序 |
+| `Nested Loop` | 嵌套循环 | 一个表很小（或有索引） |
+| `Sort` | 排序操作 | ORDER BY 无法利用索引 |
+| `HashAggregate` | 哈希聚合 | GROUP BY |
+
+***
+
+## 八、索引优化实践建议
+
+### 8.1 索引管理命令
+
+```sql
+-- 查看表的索引
+SELECT
+  indexname,
+  indexdef
+FROM pg_indexes
+WHERE tablename = 'users';
+
+-- 查看索引大小
+SELECT
+  indexname,
+  pg_size_pretty(pg_relation_size(indexname::regclass)) AS index_size
+FROM pg_indexes
+WHERE tablename = 'users';
+
+-- 查看未使用的索引（PG 12+）
+SELECT
+  indexrelname AS index_name,
+  idx_scan AS times_used,
+  pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
+FROM pg_stat_user_indexes
+WHERE idx_scan = 0 AND indexrelname NOT LIKE '%pkey%'
+ORDER BY pg_relation_size(indexrelid) DESC;
+
+-- 删除未使用的索引
+DROP INDEX idx_unused;
+```
+
+### 8.2 统计信息更新
+
+```sql
+-- 更新表的统计信息（优化器依赖这些信息选择执行计划）
+ANALYZE users;
+
+-- 更新全部表
+ANALYZE;
+
+-- 查看统计信息
+SELECT
+  attname,
+  n_distinct,    -- 不同值的数量（-1 表示唯一）
+  most_common_vals,  -- 最常见值
+  correlation    -- 物理相关性（接近 1 或 -1 说明有序）
+FROM pg_stats
+WHERE tablename = 'users';
+```
+
+### 8.3 EXPLAIN 检查清单
+
+```
+□ Seq Scan 是否合理（小表可接受，大表需检查）
+□ 索引是否被使用（Index Scan / Index Only Scan）
+□ 行数估算是否准确（actual rows vs cost rows）
+□ 是否有 Sort 节点（可以用索引避免排序）
+□ Buffers: shared read 大不大（增大 shared_buffers）
+□ HashAggregate 内存是否超出 work_mem（会用临时文件）
+□ JOIN 方式是否合理（小表应该用 Hash Join 或 Nested Loop）
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/4-shi-wu-yu-mvcc-ji-zhi/index.md
+---
+# 事务与 MVCC 机制
+
+## 一、PostgreSQL MVCC 实现原理
+
+PostgreSQL 与 MySQL 的 MVCC 实现方式有本质区别：
+
+| 特性 | MySQL InnoDB | PostgreSQL |
+|:-----|:-------------|:-----------|
+| 版本存储位置 | Undo Log（独立空间） | **行内**（与数据行同存） |
+| 版本清理 | 由 purge 线程异步清理 | 由 **VACUUM** 进程清理 |
+| 旧版本可见性 | 通过 Undo Log 读取 | 直接在表中读取（可能跳过不可见版本） |
+| 表膨胀 | 由 Undo Log 空间管理 | 由 dead tuple 堆积导致 |
+
+### 1.1 隐藏系统列
+
+PostgreSQL 每行数据都有两个隐藏列：
+
+```sql
+-- xmin：创建该行版本的事务 ID（INSERT 或 UPDATE 时设置）
+-- xmax：删除或更新该行版本的事务 ID（0 表示未删除/更新）
+
+-- 查看隐藏列
+SELECT xmin, xmax, * FROM users WHERE id = 1;
+```
+
+**写操作的 MVCC 行为**：
+
+```
+INSERT：
+  设置 xmin = 当前事务 ID，xmax = 0
+
+UPDATE（PostgreSQL 是"先标记删除 + 再插入新行"）：
+  1. 将旧行的 xmax = 当前事务 ID（标记为"已删除"）
+  2. 插入新行，xmin = 当前事务 ID，xmax = 0
+
+DELETE：
+  将行的 xmax = 当前事务 ID（标记为"已删除"，但不物理删除）
+```
+
+### 1.2 事务快照与可见性
+
+```sql
+-- 事务开始时获得一个快照（Snapshot），包含：
+-- 1. 当前活跃（未提交）的事务 ID 列表
+-- 2. 最小活跃事务 ID
+-- 3. 下一个将分配的事务 ID
+
+-- 可见性判断：
+-- 行的 xmin 已提交 且 < 快照的下一个事务 ID → 版本可见
+-- 行的 xmax 为 0 或未提交 → 该版本未被删除
+```
+
+**RC vs RR 的区别**：
+
+* **READ COMMITTED**：每条 SQL 语句开始时获取新快照
+* **REPEATABLE READ / SERIALIZABLE**：事务开始时获取快照，整个事务期间复用
+
+***
+
+## 二、VACUUM 机制
+
+### 2.1 为什么需要 VACUUM
+
+PostgreSQL 的 UPDATE/DELETE 不会物理删除旧行，而是标记为"dead tuple"。VACUUM 负责清理这些死元组并回收空间：
+
+```
+未清理的表：
+[活数据] [dead] [活数据] [dead] [dead] [活数据] [dead] ...
+
+VACUUM 后：
+[活数据] [活数据] [活数据] [空闲空间] [空闲空间] ...
+  ↑ 空闲空间被标记为可复用（但不归还操作系统）
+```
+
+### 2.2 VACUUM 类型
+
+| 类型 | 命令 | 说明 |
+|:-----|:-----|:-----|
+| **普通 VACUUM** | `VACUUM tablename;` | 回收 dead tuple 空间供表内复用，**不锁表** |
+| **VACUUM FULL** | `VACUUM FULL tablename;` | 重写整张表，空间归还操作系统，**会锁表** |
+| **ANALYZE** | `ANALYZE tablename;` | 更新统计信息供优化器使用 |
+| **VACUUM ANALYZE** | `VACUUM ANALYZE tablename;` | VACUUM + ANALYZE 组合 |
+
+### 2.3 Autovacuum（自动清理）
+
+PostgreSQL 默认开启 Autovacuum：
+
+```sql
+-- 查看 Autovacuum 配置
+SHOW autovacuum;
+SHOW autovacuum_vacuum_threshold;    -- dead tuple 数量阈值（默认 50）
+SHOW autovacuum_vacuum_scale_factor; -- dead tuple 比例阈值（默认 0.2）
+SHOW autovacuum_analyze_threshold;   -- 行变化阈值（默认 50）
+SHOW autovacuum_max_workers;         -- 最大并行清理数（默认 3）
+
+-- 调整（针对大表可以单独设置）
+ALTER TABLE big_logs SET (
+  autovacuum_vacuum_scale_factor = 0.01,  -- 1% 行变化就触发清理
+  autovacuum_analyze_scale_factor = 0.005
+);
+
+-- 查看表的统计信息
+SELECT
+  relname,
+  n_live_tup,       -- 活行数
+  n_dead_tup,       -- 死元组数
+  last_vacuum,      -- 上次手动 VACUUM 时间
+  last_autovacuum,  -- 上次自动 VACUUM 时间
+  last_analyze
+FROM pg_stat_user_tables
+WHERE relname = 'users';
+```
+
+### 2.4 事务 ID 回卷防护
+
+PostgreSQL 事务 ID（XID）是 32 位无符号整数，约 42 亿后会回卷。VACUUM 负责冻结旧事务 ID 防止回卷：
+
+```sql
+-- 查看数据库的事务 ID 消耗情况
+SELECT
+  datname,
+  age(datfrozenxid) AS xid_age,
+  2^31 - age(datfrozenxid) AS remaining_xids
+FROM pg_database
+WHERE datname = current_database();
+
+-- 如果 remaining_xids 很小（< 1 亿），需要紧急 VACUUM FREEZE
+VACUUM FREEZE tablename;
+```
+
+***
+
+## 三、事务隔离级别
+
+### 3.1 四种隔离级别
+
+| 隔离级别 | 脏读 | 不可重复读 | 幻读 | Serialization Anomaly |
+|:---------|:----:|:----------:|:----:|:---------------------|
+| **READ UNCOMMITTED** | ❌ 不可能 | ✅ 可能 | ✅ 可能 | ✅ 可能 |
+| **READ COMMITTED**（默认） | ❌ 不可能 | ✅ 可能 | ✅ 可能 | ✅ 可能 |
+| **REPEATABLE READ** | ❌ 不可能 | ❌ 不可能 | ✅ 可能 | ✅ 可能 |
+| **SERIALIZABLE** | ❌ 不可能 | ❌ 不可能 | ❌ 不可能 | ❌ 不可能 |
+
+> **关键区别**：PostgreSQL 的 REPEATABLE READ **不解决幻读**（与 MySQL 不同），需要 SERIALIZABLE 才能完全隔离。
+
+### 3.2 设置隔离级别
+
+```sql
+-- 设置当前事务的隔离级别
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+-- 或
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+-- 设置会话级别
+SET default_transaction_isolation = 'repeatable read';
+
+-- 设置全局默认
+ALTER SYSTEM SET default_transaction_isolation = 'read committed';
+SELECT pg_reload_conf();
+```
+
+### 3.3 可序列化事务（SSI）
+
+PostgreSQL 的 SERIALIZABLE 实现使用 **Serializable Snapshot Isolation（SSI）**，基于快照隔离检测读写冲突：
+
+```sql
+-- SSI 不使用锁来保证可序列化，而是检测危险结构：
+-- 1. 读-写依赖链（rw dependency）
+-- 2. 与读-写依赖链相关的写-读依赖链（ rw->wr conflict）
+
+-- 当检测到可能导致非序列化结果的依赖时，回滚其中一个事务
+-- 错误信息：ERROR: could not serialize access due to read/write dependencies
+
+-- 应用需要处理序列化失败
+BEGIN ISOLATION LEVEL SERIALIZABLE;
+-- 执行 SQL ...
+COMMIT;  -- 可能失败，需要重试
+```
+
+***
+
+## 四、锁机制
+
+### 4.1 锁类型
+
+| 锁类型 | 说明 |
+|:-------|:-----|
+| **表级锁** | `ACCESS SHARE`（SELECT）→ `ROW EXCLUSIVE`（UPDATE/DELETE）→ `ACCESS EXCLUSIVE`（DDL） |
+| **行级锁** | `FOR UPDATE`（排他）/ `FOR SHARE`（共享）/ `FOR NO KEY UPDATE` |
+| **咨询锁** | `pg_advisory_lock()`，应用层自定义锁，用于协调分布式任务 |
+
+### 4.2 行锁用法
+
+```sql
+-- SELECT ... FOR UPDATE（排他锁，其他事务不能修改/删除该行）
+SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+
+-- SELECT ... FOR SHARE（共享锁，其他事务可以读但不能修改）
+SELECT * FROM accounts WHERE id = 1 FOR SHARE;
+
+-- SELECT ... FOR NO KEY UPDATE（弱排他锁，不阻止获取 KEY 权限）
+-- 用于不需要完全锁定行的场景
+SELECT * FROM users WHERE id = 1 FOR NO KEY UPDATE;
+
+-- 超时设置（避免无限等待）
+BEGIN;
+SET lock_timeout = '5s';  -- 等待 5 秒后超时
+SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
+```
+
+### 4.3 查看锁信息
+
+```sql
+-- 查看当前锁
+SELECT
+  l.locktype,
+  l.relation::regclass AS table_name,
+  l.pid,
+  l.mode,
+  l.granted,
+  a.query
+FROM pg_locks l
+JOIN pg_stat_activity a ON l.pid = a.pid
+WHERE l.relation = 'users'::regclass;
+
+-- 查看锁等待
+SELECT
+  blocked.pid AS blocked_pid,
+  blocked.query AS blocked_query,
+  blocking.pid AS blocking_pid,
+  blocking.query AS blocking_query
+FROM pg_stat_activity blocked
+JOIN pg_locks bl ON bl.pid = blocked.pid AND NOT bl.granted
+JOIN pg_locks gl ON gl.locktype = bl.locktype
+  AND gl.database IS NOT DISTINCT FROM bl.database
+  AND gl.relation IS NOT DISTINCT FROM bl.relation
+  AND gl.page IS NOT DISTINCT FROM bl.page
+  AND gl.tuple IS NOT DISTINCT FROM bl.tuple
+  AND gl.transactionid IS NOT DISTINCT FROM bl.transactionid
+  AND gl.pid != bl.pid
+  AND gl.granted
+JOIN pg_stat_activity blocking ON gl.pid = blocking.pid;
+
+-- 取消阻塞查询
+SELECT pg_cancel_backend(<blocked_pid>);     -- 温和取消
+SELECT pg_terminate_backend(<blocked_pid>);  -- 强制终止
+```
+
+***
+
+## 五、dead tuple 与表膨胀
+
+### 5.1 表膨胀原因
+
+```sql
+-- 频繁 UPDATE 会产生大量 dead tuple
+-- 如果 VACUUM 不及时，表会膨胀：
+-- 1. 磁盘空间浪费
+-- 2. 顺序扫描变慢（需要扫描更多页）
+-- 3. 索引效率降低
+
+-- 监控表膨胀
+SELECT
+  relname,
+  pg_size_pretty(pg_relation_size(relid)) AS table_size,
+  n_live_tup,
+  n_dead_tup,
+  ROUND(n_dead_tup * 100.0 / NULLIF(n_live_tup + n_dead_tup, 0), 2) AS dead_pct
+FROM pg_stat_user_tables
+WHERE n_dead_tup > 1000
+ORDER BY n_dead_tup DESC;
+```
+
+### 5.2 处理表膨胀
+
+```sql
+-- 1. 普通 VACUUM（回收空间供表内复用）
+VACUUM VERBOSE users;
+
+-- 2. VACUUM FULL（需要排他锁，重写整张表）
+VACUUM FULL users;
+-- 注意：VACUUM FULL 会锁表，生产环境慎用
+
+-- 3. pg_repack（在线重建索引，不需要锁表）
+-- 需要安装 pg_repack 扩展
+pg_repack -d mydb -t users;
+
+-- 4. 预防：合理配置 Autovacuum
+ALTER TABLE users SET (
+  autovacuum_vacuum_scale_factor = 0.05,
+  autovacuum_vacuum_cost_delay = 2  -- 降低清理延迟，更积极清理
+);
+```
+
+***
+
+## 六、MySQL vs PostgreSQL 事务对比
+
+| 特性 | MySQL InnoDB | PostgreSQL |
+|:-----|:-------------|:-----------|
+| 默认隔离级别 | REPEATABLE READ | READ COMMITTED |
+| MVCC 实现 | Undo Log（独立存储） | 行内 xmin/xmax |
+| 清理机制 | purge 线程自动清理 Undo Log | VACUUM（手动/自动） |
+| RR 下幻读 | 通过 Next-Key Lock 部分解决 | 未解决（需 SERIALIZABLE） |
+| 锁粒度 | 行锁/间隙锁/临键锁 | 行锁/表锁（无间隙锁） |
+| 序列化隔离 | 未原生支持（需应用层处理） | SSI（原生支持，自动检测冲突） |
+| 咨询锁 | 不支持 | `pg_advisory_lock()` |
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/5-jsonb-yu-no-sql-neng-li/index.md
+---
+# JSONB 与 NoSQL 能力
+
+## 一、JSONB 概述
+
+PostgreSQL 的 JSONB 类型提供了关系型数据库中最强的 JSON 支持，使 PostgreSQL 成为"多模数据库"——既能做关系型存储，也能处理半结构化数据。
+
+| 类型 | 说明 | 推荐 |
+|:-----|:-----|:-----|
+| `JSON` | 存储原始文本，保留格式，重复键保留最后一个 | ❌ 不推荐 |
+| `JSONB` | 存储二进制格式，去重键，支持索引和高效查询 | ✅ 推荐 |
+
+***
+
+## 二、JSONB 基础操作
+
+### 2.1 插入与更新
+
+```sql
+CREATE TABLE events (
+  id SERIAL PRIMARY KEY,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 插入 JSONB
+INSERT INTO events (data) VALUES
+  ('{"type": "click", "page": "/home", "user": {"id": 1, "name": "Alice"}}'),
+  ('{"type": "purchase", "amount": 99.9, "items": ["apple", "banana"]}');
+
+-- 更新 JSONB 键值
+UPDATE events
+SET data = jsonb_set(data, '{type}', '"page_view"')  -- 修改 type 字段
+WHERE id = 1;
+
+-- 添加新键
+UPDATE events
+SET data = data || '{"source": "mobile"}'::jsonb
+WHERE id = 1;
+
+-- 删除键
+UPDATE events
+SET data = data - 'source'
+WHERE id = 1;
+```
+
+### 2.2 查询操作符
+
+```sql
+-- @> 包含查询（最常用，可使用 GIN 索引）
+SELECT * FROM events WHERE data @> '{"type": "click"}';
+SELECT * FROM events WHERE data @> '{"user": {"id": 1}}';
+
+-- ? 键存在查询
+SELECT * FROM events WHERE data ? 'type';
+SELECT * FROM events WHERE data ?| ARRAY['type', 'page'];  -- 任一键存在
+
+-- ?& 所有键存在
+SELECT * FROM events WHERE data ?& ARRAY['type', 'page'];
+
+-- -> 按键获取（返回 JSONB）
+SELECT data->'type' FROM events WHERE id = 1;
+SELECT data->'user'->'name' FROM events WHERE id = 1;  -- 嵌套访问
+
+-- ->> 按键获取（返回 TEXT）
+SELECT data->>'type' FROM events WHERE id = 1;
+
+-- #> 按路径获取（返回 JSONB）
+SELECT data #> '{user,name}' FROM events WHERE id = 1;
+
+-- #>> 按路径获取（返回 TEXT）
+SELECT data #>> '{user,name}' FROM events WHERE id = 1;
+
+-- jsonb_array_length 获取数组长度
+SELECT jsonb_array_length(data->'items') FROM events WHERE id = 2;
+
+-- jsonb_array_elements 展开数组为行
+SELECT jsonb_array_elements(data->'items') AS item
+FROM events
+WHERE id = 2;
+```
+
+***
+
+## 三、JSONB 高级查询
+
+### 3.1 路径查询与过滤
+
+```sql
+-- @? 路径表达式查询
+SELECT * FROM events WHERE data @? '$.type ? (@ == "click")';
+
+-- @@ 文本搜索路径
+SELECT * FROM events WHERE data @@ '$.type == "click" && $.amount > 50';
+
+-- jsonb_path_query 获取第一个匹配值
+SELECT jsonb_path_query(data, '$.items[0]') FROM events WHERE id = 2;
+
+-- jsonb_path_query_array 获取所有匹配值
+SELECT jsonb_path_query_array(data, '$.items[*]') FROM events WHERE id = 2;
+
+-- jsonb_path_exists 路径是否存在
+SELECT * FROM events WHERE jsonb_path_exists(data, '$.items[*] ? (@ == "apple")');
+```
+
+### 3.2 数组操作
+
+```sql
+-- 包含数组元素
+SELECT * FROM events WHERE data->'items' @> '"apple"';
+
+-- 数组包含查询
+SELECT * FROM events WHERE data->'items' @> '["apple", "banana"]';
+
+-- 展开 JSONB 数组为多行
+SELECT
+  id,
+  elem AS item
+FROM events,
+     jsonb_array_elements_text(data->'items') AS elem
+WHERE data ? 'items';
+
+-- 聚合回 JSONB 数组
+SELECT jsonb_agg(name) FROM users;
+SELECT jsonb_object_agg(id, name) FROM users;  -- 聚合为 JSONB 对象
+```
+
+### 3.3 聚合与统计
+
+```sql
+-- 按 JSONB 字段分组统计
+SELECT
+  data->>'type' AS event_type,
+  COUNT(*) AS cnt,
+  AVG((data->>'amount')::numeric) AS avg_amount
+FROM events
+GROUP BY data->>'type';
+
+-- JSONB 对象合并
+SELECT jsonb_object_agg(
+  data->>'type',
+  COUNT(*)
+)
+FROM events
+GROUP BY data->>'type';
+-- 结果：{"click": 5, "purchase": 3, "page_view": 2}
+```
+
+***
+
+## 四、JSONB 索引策略
+
+### 4.1 GIN 索引（通用）
+
+```sql
+-- GIN 索引支持 @>, ?, ?|, ?& 操作符
+CREATE INDEX idx_events_data ON events USING gin (data);
+
+-- 如果只关心特定键路径，可以限制索引操作符
+CREATE INDEX idx_events_data_path ON events USING gin (data jsonb_path_ops);
+-- jsonb_path_ops 只支持 @> 操作符，但更小更快
+```
+
+### 4.2 B-tree 索引（特定键）
+
+```sql
+-- 为特定键创建 B-tree 索引（等值和范围查询）
+CREATE INDEX idx_events_type ON events ((data->>'type'));
+CREATE INDEX idx_events_amount ON events (((data->>'amount')::numeric));
+
+-- 使用索引查询
+SELECT * FROM events WHERE data->>'type' = 'click';
+SELECT * FROM events WHERE (data->>'amount')::numeric > 100;
+```
+
+### 4.3 多键复合索引
+
+```sql
+-- 表达式索引覆盖多个常用查询键
+CREATE INDEX idx_events_composite ON events (
+  (data->>'type'),
+  ((data->>'amount')::numeric),
+  (data->>'user_id')
+);
+
+-- 联合查询时可以使用索引
+SELECT * FROM events
+WHERE data->>'type' = 'purchase'
+  AND (data->>'amount')::numeric > 50;
+```
+
+### 4.4 索引选择建议
+
+| 查询模式 | 推荐索引 |
+|:---------|:---------|
+| `@>` 包含查询 | GIN 索引（`jsonb_path_ops` 更高效） |
+| `?` 键存在查询 | GIN 索引 |
+| `->>'key' = 'value'` 等值查询 | B-tree 表达式索引 |
+| `(data->>'price')::numeric > 100` 范围查询 | B-tree 表达式索引 |
+| 多个不同键的混合查询 | GIN 索引（通用场景） |
+
+***
+
+## 五、JSONB 设计模式
+
+### 5.1 灵活扩展字段
+
+```sql
+-- 用 JSONB 存储扩展属性，避免频繁 ALTER TABLE
+CREATE TABLE products (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  attributes JSONB DEFAULT '{}'::jsonb  -- 扩展属性
+);
+
+-- 不同产品有不同的扩展字段
+INSERT INTO products (name, price, attributes) VALUES
+  ('iPhone 15', 7999, '{"color": "black", "storage": "256GB", "weight": "171g"}'),
+  ('MacBook Pro', 14999, '{"cpu": "M3 Pro", "ram": "18GB", "screen": "14 inch"}');
+```
+
+### 5.2 事件溯源（Event Sourcing）
+
+```sql
+CREATE TABLE audit_log (
+  id SERIAL PRIMARY KEY,
+  entity_type TEXT NOT NULL,
+  entity_id INT NOT NULL,
+  action TEXT NOT NULL,      -- 'create', 'update', 'delete'
+  changes JSONB,             -- 变更内容
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO audit_log (entity_type, entity_id, action, changes) VALUES
+  ('user', 1, 'update', '{"old": {"status": "active"}, "new": {"status": "inactive"}}');
+
+-- 查询某个实体的所有变更历史
+SELECT * FROM audit_log
+WHERE entity_type = 'user' AND entity_id = 1
+ORDER BY created_at DESC;
+```
+
+### 5.3 配置管理
+
+```sql
+CREATE TABLE app_config (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO app_config (key, value) VALUES
+  ('feature_flags', '{"dark_mode": true, "beta_features": false}'),
+  ('limits', '{"max_upload_mb": 10, "rate_limit_rpm": 100}');
+
+-- 读取配置
+SELECT value->>'dark_mode' FROM app_config WHERE key = 'feature_flags';
+
+-- 更新单个配置项
+UPDATE app_config
+SET value = jsonb_set(value, '{dark_mode}', 'false')
+WHERE key = 'feature_flags';
+```
+
+***
+
+## 六、JSONB vs MongoDB 场景对比
+
+| 场景 | 推荐 | 原因 |
+|:-----|:-----|:-----|
+| 关系型数据 + 少量扩展字段 | PostgreSQL JSONB | 兼顾关系查询和灵活字段 |
+| 纯文档存储（无关联查询） | MongoDB | 原生文档模型，横向扩展更好 |
+| 需要事务 + JSON | PostgreSQL JSONB | PostgreSQL 支持 ACID 事务 |
+| 复杂聚合分析 | PostgreSQL JSONB | SQL 聚合比 MongoDB Aggregation Pipeline 更强大 |
+| 需要全文搜索 | PostgreSQL JSONB | 集成 tsvector/tsquery，无需额外系统 |
+| 海量文档（TB级）+ 高并发读写 | MongoDB | 分片和水平扩展更成熟 |
+
+> **经验法则**：如果数据有明确的关系结构，且 JSONB 字段只是"扩展属性"，优先用 PostgreSQL JSONB；如果数据天然是无结构的文档流，MongoDB 可能更合适。
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/6-kuo-zhan-yu-cha-jian-sheng-tai/index.md
+---
+# 扩展与插件生态
+
+## 一、扩展系统概述
+
+PostgreSQL 的扩展系统是其最强大的特性之一，通过 `CREATE EXTENSION` 即可安装功能模块，无需重新编译数据库。
+
+***
+
+## 二、常用扩展详解
+
+### 2.1 pg\_stat\_statements — 查询性能分析
+
+最常用的性能分析扩展，记录所有 SQL 的执行统计信息：
+
+```sql
+-- 安装
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- 需要在 postgresql.conf 中预加载
+-- shared_preload_libraries = 'pg_stat_statements'
+-- 然后重启 PostgreSQL
+
+-- 查看最耗时的 SQL（按总时间排序）
+SELECT
+  queryid,
+  LEFT(query, 80) AS short_query,
+  calls,
+  ROUND(total_exec_time::numeric, 2) AS total_ms,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  rows
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 10;
+
+-- 查看调用次数最多的 SQL
+SELECT
+  LEFT(query, 80) AS short_query,
+  calls,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  rows
+FROM pg_stat_statements
+ORDER BY calls DESC
+LIMIT 10;
+
+-- 重置统计信息
+SELECT pg_stat_statements_reset();
+```
+
+### 2.2 pg\_trgm — 模糊匹配加速
+
+基于三元组（Trigram）的模糊匹配，大幅提升 `LIKE '%keyword%'` 和相似度查询性能：
+
+```sql
+-- 安装
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- 创建 GIN 索引（加速 LIKE 查询）
+CREATE INDEX idx_users_name_trgm ON users USING gin (name gin_trgm_ops);
+
+-- 模糊匹配查询（现在可以使用索引）
+SELECT * FROM users WHERE name LIKE '%张%';
+SELECT * FROM users WHERE name % '张三';  -- 相似度匹配
+
+-- 相似度计算
+SELECT name, similarity(name, '张三') AS sim
+FROM users
+WHERE name % '张三'
+ORDER BY sim DESC;
+
+-- 设置相似度阈值
+SET pg_trgm.similarity_threshold = 0.3;
+
+-- 快速相似度搜索（使用 GIST 索引）
+CREATE INDEX idx_users_name_gist ON users USING gist (name gist_trgm_ops);
+```
+
+### 2.3 PostGIS — 地理空间数据
+
+PostgreSQL 最著名的扩展，提供完整的地理空间支持：
+
+```sql
+-- 安装
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- 创建含空间列的表
+CREATE TABLE stores (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  location GEOMETRY(POINT, 4326)  -- WGS 84 坐标系
+);
+
+-- 插入空间数据
+INSERT INTO stores (name, location) VALUES
+  ('北京店', ST_SetSRID(ST_MakePoint(116.404, 39.915), 4326)),
+  ('上海店', ST_SetSRID(ST_MakePoint(121.474, 31.230), 4326));
+
+-- 创建空间索引
+CREATE INDEX idx_stores_location ON stores USING gist (location);
+
+-- 查询附近的店铺（5公里内）
+SELECT name,
+  ST_Distance(
+    location::geography,
+    ST_SetSRID(ST_MakePoint(116.400, 39.910), 4326)::geography
+  ) AS distance_meters
+FROM stores
+WHERE ST_DWithin(
+  location::geography,
+  ST_SetSRID(ST_MakePoint(116.400, 39.910), 4326)::geography,
+  5000  -- 5000 米
+)
+ORDER BY distance_meters;
+```
+
+### 2.4 pgvector — 向量相似度搜索
+
+AI 应用必备扩展，支持向量的余弦距离/欧氏距离搜索：
+
+```sql
+-- 安装（需要编译或使用预编译版本）
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 创建含向量列的表
+CREATE TABLE documents (
+  id SERIAL PRIMARY KEY,
+  content TEXT,
+  embedding VECTOR(1536)  -- OpenAI ada-002 输出维度
+);
+
+-- 插入向量数据
+INSERT INTO documents (content, embedding) VALUES
+  ('PostgreSQL is a powerful database', '[0.1, 0.2, ...]'::vector);
+
+-- 创建向量索引（IVFFlat 算法，适合中等数据量）
+CREATE INDEX idx_docs_embedding ON documents USING ivfflat (embedding vector_cosine_ops)
+  WITH (lists = 100);
+
+-- HNSW 索引（更高精度，适合大数据量）
+CREATE INDEX idx_docs_embedding_hnsw ON documents USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 200);
+
+-- 余弦相似度搜索（最相似的 10 条）
+SELECT content,
+  1 - (embedding <=> '[0.1, 0.2, ...]'::vector) AS cosine_similarity
+FROM documents
+ORDER BY embedding <=> '[0.1, 0.2, ...]'::vector
+LIMIT 10;
+
+-- 欧氏距离搜索
+SELECT content, embedding <-> '[0.1, 0.2, ...]'::vector AS l2_distance
+FROM documents
+ORDER BY embedding <-> '[0.1, 0.2, ...]'::vector
+LIMIT 10;
+```
+
+### 2.5 其他常用扩展
+
+| 扩展 | 用途 | 说明 |
+|:-----|:-----|:-----|
+| `uuid-ossp` | UUID 生成 | `uuid_generate_v4()` |
+| `pgcrypto` | 加密函数 | `pgp_sym_encrypt()`, `digest()` |
+| `hstore` | 键值存储（JSONB 之前的选择） | 已被 JSONB 取代 |
+| `tablefunc` | 交叉表等高级查询 | `crosstab()` |
+| `intarray` | 整数数组操作 | `idx()`, `uniq()` |
+| `btree_gist` | B-tree 上的 GiST 索引 | 排他约束需要 |
+| `btree_gin` | B-tree 上的 GIN 索引 | 多类型 GIN 查询 |
+| `pg_fuzzystrmatch` | 模糊字符串匹配 | `soundex()`, `levenshtein()` |
+
+***
+
+## 三、扩展管理
+
+### 3.1 查看已安装扩展
+
+```sql
+-- 查看当前数据库已安装的扩展
+SELECT
+  extname AS name,
+  extversion AS version,
+  nspname AS schema,
+  obj_description(oid) AS description
+FROM pg_extension
+ORDER BY extname;
+
+-- 查看可用扩展（文件系统）
+\dx       -- psql 元命令，列出已安装扩展
+SELECT * FROM pg_available_extensions WHERE name LIKE '%vector%';
+```
+
+### 3.2 安装与卸载
+
+```sql
+-- 安装扩展（默认安装到 public schema）
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- 安装到指定 schema
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;
+
+-- 更新扩展
+ALTER EXTENSION pg_trgm UPDATE;
+
+-- 卸载扩展（先删除依赖它的对象）
+DROP EXTENSION IF EXISTS pg_trgm;
+```
+
+### 3.3 预加载扩展
+
+某些扩展需要在启动时预加载到共享内存（修改后需要重启）：
+
+```ini
+# postgresql.conf
+shared_preload_libraries = 'pg_stat_statements, auto_explain'
+
+# auto_explain：自动记录慢查询执行计划
+auto_explain.log_min_duration = '1000'  -- 超过 1 秒自动记录执行计划
+auto_explain.log_analyze = true         -- 包含 ANALYZE 信息
+auto_explain.log_buffers = true         -- 包含 Buffers 信息
+```
+
+***
+
+## 四、扩展开发简介
+
+```sql
+-- 创建自定义函数（PL/pgSQL）
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 创建触发器
+CREATE TRIGGER trigger_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamp();
+
+-- 创建自定义聚合函数
+CREATE OR REPLACE FUNCTION array_append_unique(anyarray, anyelement)
+RETURNS anyarray AS $$
+BEGIN
+  IF $1 IS NULL THEN
+    RETURN ARRAY[$2];
+  ELSIF $2 = ANY($1) THEN
+    RETURN $1;
+  ELSE
+    RETURN array_append($1, $2);
+  END IF;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+```
+
+***
+
+## 五、扩展选型速查
+
+```
+你的需求是什么？
+│
+├─ 模糊搜索 / LIKE 加速 ──→ pg_trgm
+├─ 地理位置查询 ──────────→ PostGIS
+├─ AI 向量相似搜索 ───────→ pgvector
+├─ 查询性能分析 ──────────→ pg_stat_statements
+├─ 自动生成执行计划日志 ──→ auto_explain
+├─ UUID 生成 ─────────────→ uuid-ossp
+├─ 数据加密 ──────────────→ pgcrypto
+├─ JSONB 查询加速 ───────→ 内置 GIN 索引（无需额外扩展）
+└─ 其他 ──────────────────→ SELECT * FROM pg_available_extensions;
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/7-xing-neng-tiao-you-yu-lian-jie-guan-li/index.md
+---
+# 性能调优与连接管理
+
+## 一、核心参数调优
+
+### 1.1 内存参数
+
+```ini
+[postgresql.conf]
+# shared_buffers（最重要）
+# PostgreSQL 专用数据库服务器：物理内存的 25%
+# 共享缓冲区，所有连接共享，存放数据页
+shared_buffers = 4GB
+
+# effective_cache_size
+# 告诉查询优化器系统可用的总缓存（OS page cache + shared_buffers）
+# 一般设为物理内存的 50%-75%
+effective_cache_size = 12GB
+
+# work_mem
+# 每个操作（排序、哈希、合并）独立使用的内存
+# ⚠️ 每个连接的每个操作都会分配，高并发时注意
+# 复杂查询可能同时用多个 work_mem
+work_mem = 16MB
+
+# maintenance_work_mem
+# 维护操作（VACUUM、CREATE INDEX、ALTER TABLE）使用的内存
+# 设大些可以加速维护操作
+maintenance_work_mem = 1GB
+```
+
+### 1.2 WAL 与检查点
+
+```ini
+# WAL 级别
+wal_level = replica    # minimal/replica/logical
+
+# WAL 大小（触发 checkpoint）
+max_wal_size = 4GB
+min_wal_size = 1GB
+
+# checkpoint 平滑度（0-1，越大越平滑，对 IO 冲击越小）
+checkpoint_completion_target = 0.9
+
+# WAL 刷盘策略
+synchronous_commit = on  # on=最安全 off=可能丢少量已提交数据
+```
+
+### 1.3 查询优化器参数
+
+```ini
+# 默认统计采样目标（越大越精确，但 ANALYZE 越慢）
+default_statistics_target = 100
+
+# 并行查询（充分利用多核 CPU）
+max_parallel_workers_per_gather = 4
+max_parallel_workers = 8
+parallel_tuple_cost = 0.01
+parallel_setup_cost = 1000
+
+# JIT 编译（PG 11+，复杂查询加速）
+jit = on
+jit_above_cost = 100000
+```
+
+***
+
+## 二、连接管理
+
+### 2.1 连接数配置
+
+```ini
+# 最大连接数（根据业务并发量和 PgBouncer 是否使用来设置）
+max_connections = 200
+
+# 超级用户保留连接（防止连接耗尽时无法管理）
+superuser_reserved_connections = 3
+
+# 连接超时
+connect_timeout = 60        # 连接建立超时（秒）
+idle_in_transaction_session_timeout = 60  # 空闲事务超时（秒）
+statement_timeout = 0       # 单条 SQL 超时（0=不限）
+```
+
+### 2.2 连接数监控
+
+```sql
+-- 当前连接数
+SELECT count(*) FROM pg_stat_activity;
+
+-- 按数据库统计连接数
+SELECT
+  datname,
+  state,
+  COUNT(*) AS cnt
+FROM pg_stat_activity
+GROUP BY datname, state;
+
+-- 按状态统计
+SELECT state, COUNT(*) FROM pg_stat_activity GROUP BY state;
+-- active: 正在执行查询
+-- idle: 空闲连接
+-- idle in transaction: 事务中空闲（可能有问题）
+-- fastpath function: 快速路径函数调用
+
+-- 查看空闲事务（可能需要清理）
+SELECT pid, state, query_start, state_change, query
+FROM pg_stat_activity
+WHERE state = 'idle in transaction'
+  AND state_change < NOW() - INTERVAL '5 minutes';
+
+-- 取消空闲事务
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+WHERE state = 'idle in transaction'
+  AND state_change < NOW() - INTERVAL '5 minutes';
+```
+
+***
+
+## 三、PgBouncer 连接池
+
+### 3.1 为什么需要连接池
+
+PostgreSQL 每个连接对应一个后端进程（fork 模型），开销较大：
+
+| 连接方式 | 开销 | 适用场景 |
+|:---------|:-----|:---------|
+| 直连 PostgreSQL | 每连接约 5-10MB 内存 + fork 进程 | 连接数 < 100 |
+| PgBouncer 连接池 | 连接复用，大幅减少后端连接 | 连接数 > 100 |
+
+### 3.2 Docker 安装 PgBouncer
+
+```bash
+docker run -d \
+  --name pgbouncer \
+  -p 6432:6432 \
+  -v pgbouncer-config:/etc/pgbouncer \
+  edoburu/pgbouncer:latest
+```
+
+### 3.3 PgBouncer 配置（pgbouncer.ini）
+
+```ini
+[databases]
+mydb = host=postgres port=5432 dbname=mydb
+
+[pgbouncer]
+listen_addr = 0.0.0.0
+listen_port = 6432
+auth_type = scram-sha-256
+auth_file = /etc/pgbouncer/userlist.txt
+
+# 连接池模式
+pool_mode = transaction  # session/transaction/statement
+
+# 最小/最大连接数
+min_pool_size = 5
+default_pool_size = 20
+max_client_conn = 1000    # 最大客户端连接
+max_db_connections = 50   # 每个数据库最大后端连接
+
+# 连接超时
+server_idle_timeout = 300
+client_idle_timeout = 0
+```
+
+**三种池模式**：
+
+| 模式 | 说明 | 适用场景 |
+|:-----|:-----|:---------|
+| `session` | 客户端连接期间独占后端连接 | 需要 SET 会话变量、PREPARE |
+| `transaction` | 每个事务结束后释放连接 | 大多数应用（推荐） |
+| `statement` | 每条 SQL 结束后释放连接 | 最极端的连接复用（不支持多语句事务） |
+
+***
+
+## 四、慢查询监控
+
+### 4.1 pg\_stat\_statements（推荐）
+
+```sql
+-- 查看总耗时最高的 SQL
+SELECT
+  queryid,
+  LEFT(query, 100) AS short_query,
+  calls,
+  ROUND(total_exec_time::numeric, 2) AS total_ms,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  ROUND(stddev_exec_time::numeric, 2) AS stddev_ms,
+  rows
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 20;
+
+-- 查看平均耗时最高的 SQL（过滤调用次数少的）
+SELECT
+  LEFT(query, 100) AS short_query,
+  calls,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  rows
+FROM pg_stat_statements
+WHERE calls > 10
+ORDER BY mean_exec_time DESC
+LIMIT 20;
+
+-- 查看 IO 最高的 SQL（需要 pg_stat_statements 1.8+）
+SELECT
+  LEFT(query, 100) AS short_query,
+  calls,
+  shared_blks_read + shared_blks_written AS total_blks
+FROM pg_stat_statements
+ORDER BY shared_blks_read + shared_blks_written DESC
+LIMIT 20;
+```
+
+### 4.2 pgBadger 日志分析
+
+pgBadger 是 PostgreSQL 最强大的日志分析工具，生成 HTML 报告：
+
+```bash
+# 安装
+sudo apt install pgbadger
+
+# 分析日志
+pgbadger /var/log/postgresql/postgresql-*.log -o /var/www/html/pgbadger.html
+
+# 实时分析
+pgbadger --real-time /var/log/postgresql/postgresql-current.log
+
+# Docker 运行
+docker run --rm -v /var/log/postgresql:/logs \
+  dalibo/pgbadger /logs/postgresql-*.log > /tmp/pgbadger.html
+```
+
+**pgBadger 报告包含**：
+
+* QPS（每秒查询数）趋势图
+* 慢查询 Top N
+* 最频繁查询 Top N
+* 最大查询时间
+* 临时文件使用
+* 死锁统计
+* 数据库/用户/查询类型分布
+
+### 4.3 auto\_explain 自动执行计划
+
+```ini
+# postgresql.conf（需要重启）
+shared_preload_libraries = 'auto_explain'
+auto_explain.log_min_duration = '1000'  # 超过 1 秒自动记录执行计划
+auto_explain.log_analyze = true
+auto_explain.log_buffers = true
+auto_explain.log_timing = true
+auto_explain.log_triggers = true
+auto_explain.log_verbose = true
+```
+
+***
+
+## 五、日常维护检查清单
+
+```
+每日检查：
+□ pg_stat_activity 中 idle in transaction 超过 5 分钟的连接
+□ 磁盘空间使用率
+□ 慢查询日志 / pg_stat_statements 中的异常 SQL
+
+每周检查：
+□ 表膨胀率（n_dead_tup / (n_live_tup + n_dead_tup)）
+□ 索引使用率（未使用的索引可以考虑删除）
+□ 缓存命中率（shared hit / (shared hit + shared read)）
+□ 事务 ID 消耗（age(datfrozenxid)）
+
+每月检查：
+□ VACUUM 监控（是否有表需要手动 VACUUM）
+□ 参数调优（根据负载变化调整 shared_buffers, work_mem 等）
+□ 连接池效率（PgBouncer 连接利用率）
+□ pgBadger 报告分析
+```
+
+***
+
+## 六、MySQL vs PostgreSQL 连接管理对比
+
+| 特性 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| 连接模型 | 线程（每个连接一个线程） | 进程（每个连接一个后端进程） |
+| 连接开销 | 较小 | 较大（fork 进程） |
+| 连接池内置 | 无（用 ProxySQL/HikariCP） | 无（用 PgBouncer） |
+| 空闲连接超时 | `wait_timeout` | `idle_in_transaction_session_timeout` |
+| 连接数限制 | `max_connections` | `max_connections` + PgBouncer |
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/1-my-sql-yu-postgre-sql-dui-bi-xuan-xing/index.md
+---
+# MySQL 与 PostgreSQL 对比选型
+
+## 一、核心差异对比
+
+### 1.1 架构与模型
+
+| 维度 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **架构** | 单进程多线程 | 多进程（每连接一个进程） |
+| **默认存储** | InnoDB（行存储） | Heap（行存储） |
+| **扩展性** | 插件式存储引擎 | 插件式功能扩展（扩展系统） |
+| **开发语言** | C/C++ | C |
+| **协议** | MySQL 协议 | PostgreSQL 协议 |
+| **标准兼容** | 部分 SQL 标准 | 高度兼容 SQL 标准 |
+
+### 1.2 语法差异速查
+
+| 功能 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **字符串拼接** | `CONCAT(a, b)` | `a \|\| b` |
+| **限制行数** | `LIMIT 10 OFFSET 5` | `LIMIT 10 OFFSET 5`（相同） |
+| **UPSERT** | `INSERT ... ON DUPLICATE KEY UPDATE` | `INSERT ... ON CONFLICT DO UPDATE` |
+| **正则匹配** | `REGEXP` | `~`（区分大小写）/ `~*`（不区分） |
+| **LIKE（不区分大小写）** | 默认不区分 | `ILIKE` |
+| **AUTO\_INCREMENT** | `AUTO_INCREMENT` | `SERIAL` / `GENERATED ALWAYS AS IDENTITY` |
+| **布尔类型** | `TINYINT(1)`（无真正布尔） | `BOOLEAN`（真正的布尔） |
+| \*\* ENUM 类型\*\* | `ENUM('a','b','c')`（字符串） | `CREATE TYPE ... AS ENUM`（类型系统） |
+| **日期格式化** | `DATE_FORMAT(d, '%Y-%m-%d')` | `TO_CHAR(d, 'YYYY-MM-DD')` |
+| **当前时间** | `NOW()` / `CURRENT_TIMESTAMP` | `NOW()` / `CURRENT_TIMESTAMP`（相同） |
+| **IF 函数** | `IF(condition, true, false)` | `CASE WHEN ... THEN ... ELSE ... END` |
+| **SHOW 命令** | `SHOW VARIABLES LIKE 'x'` | `SHOW x` / 查询 `pg_settings` |
+| **元数据查询** | `information_schema` + `SHOW` | `information_schema` + `pg_*` 系统视图 |
+
+***
+
+## 二、功能差异
+
+### 2.1 SQL 特性支持
+
+| 特性 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **CTE（公用表表达式）** | ✅ MySQL 8.0+ | ✅ 原生支持 |
+| **递归 CTE** | ✅ MySQL 8.0+ | ✅ 原生支持 |
+| **窗口函数** | ✅ MySQL 8.0+ | ✅ 原生支持（更完善） |
+| **JSON 支持** | ✅ JSON 类型（功能有限） | ✅ JSONB（功能强大，可索引） |
+| **数组类型** | ❌ 不支持 | ✅ 原生数组 |
+| **范围类型** | ❌ 不支持 | ✅ int4range, tstzrange 等 |
+| **物化视图** | ❌ 不支持 | ✅ 支持 |
+| **表继承** | ❌ 不支持 | ✅ 支持（但不推荐） |
+| **LATERAL JOIN** | ✅ MySQL 8.0+ | ✅ 原生支持 |
+| \*\* RETURNING 子句\*\* | ❌ 不支持 | ✅ INSERT/UPDATE/DELETE 后返回 |
+| **可序列化隔离** | ❌ 未原生实现 | ✅ SSI（自动检测冲突） |
+| **多版本并发控制** | ✅ Undo Log | ✅ 行内 xmin/xmax |
+| **外键** | ✅ 支持 | ✅ 支持 |
+| **CHECK 约束** | ✅ MySQL 8.0.16+ 才真正检查 | ✅ 原生支持 |
+| **生成列** | ✅ MySQL 5.7+ | ✅ PostgreSQL 12+ |
+| **全文搜索** | ✅ 基础支持 | ✅ tsvector/tsquery（强大） |
+
+### 2.2 数据类型
+
+| 类型 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **自增主键** | `BIGINT AUTO_INCREMENT` | `BIGSERIAL` / `GENERATED ALWAYS AS IDENTITY` |
+| **UUID** | 存为 `CHAR(36)` 或 `BINARY(16)` | 原生 `UUID` 类型 |
+| **网络地址** | 存为 `VARCHAR` | `INET` / `CIDR` |
+| **几何类型** | 有限支持 | `POINT` / `LINE` / `POLYGON` 等 |
+| **XML** | 存为 `TEXT` | 原生 `XML` 类型 |
+| **大文本** | `TEXT`（最大 64KB）`MEDIUMTEXT` / `LONGTEXT` | `TEXT`（无限制，1GB） |
+| **二进制** | `BLOB` / `MEDIUMBLOB` | `BYTEA` |
+| **精确数值** | `DECIMAL(M,D)` | `NUMERIC(p,s)`（等价） |
+
+***
+
+## 三、生态工具对比
+
+| 工具类别 | MySQL | PostgreSQL |
+|:---------|:------|:-----------|
+| **GUI 客户端** | MySQL Workbench, DBeaver, Navicat | pgAdmin, DBeaver, DataGrip |
+| **命令行客户端** | `mysql` | `psql`（功能强大，元命令丰富） |
+| **备份工具** | mysqldump, xtrabackup, mydumper | pg\_dump, pg\_basebackup, Barman |
+| **复制** | 主从复制（binlog） | 流复制 / 逻辑复制 |
+| **连接池** | ProxySQL, HikariCP, Druid | PgBouncer, PgPool-II |
+| **监控** | Percona PMM, PMM | pg\_stat\_statements, pgBadger, pgWatch2 |
+| **负载均衡** | ProxySQL, MySQL Router | PgPool-II, HAProxy |
+| **ORM 支持** | SQLAlchemy, MyBatis, Sequelize | SQLAlchemy, MyBatis, Sequelize |
+
+***
+
+## 四、选型决策框架
+
+### 4.1 选 MySQL 的场景
+
+```
+✅ 适用场景：
+├─ 互联网应用（高并发读、简单查询为主）
+├─ 团队 MySQL 经验丰富
+├─ 需要成熟的主从复制方案
+├─ PHP/Java 生态项目（MySQL 生态更成熟）
+├─ 只需要基本的 JSON 支持
+├─ 需要 MyISAM 的快速 COUNT(*)（只读表场景）
+└─ 运维工具链更完善（xtrabackup、Percona Toolkit）
+
+✅ 选 MySQL 的理由：
+├─ 国内使用率更高，社区和招聘资源丰富
+├─ 学习成本较低（基础功能简单易上手）
+├─ 单线程连接模型，连接开销较小
+└─ InnoDB 性能经过多年优化，非常成熟
+```
+
+### 4.2 选 PostgreSQL 的场景
+
+```
+✅ 适用场景：
+├─ 复杂查询、复杂数据分析
+├─ 需要 JSONB 灵活存储（半结构化数据）
+├─ 地理空间应用（PostGIS）
+├─ AI/向量搜索应用（pgvector）
+├─ 需要严格事务隔离（SERIALIZABLE SSI）
+├─ 需要高级数据类型（数组、范围、网络地址）
+├─ 需要物化视图、递归查询
+├─ 需要全文搜索（内置 tsvector）
+└─ 需要扩展系统（按需安装功能）
+
+✅ 选 PostgreSQL 的理由：
+├─ SQL 标准兼容性更好
+├─ 功能更丰富（数据类型、索引类型、扩展）
+├─ MVCC 实现更干净（无 Undo Log 膨胀问题）
+├─ ACID 实现更严格（SERIALIZABLE 真正可序列化）
+├─ 开源社区活跃，功能迭代快
+└─ 不受 Oracle 控制（MySQL 被 Oracle 收购）
+```
+
+### 4.3 选型速查表
+
+| 问什么 | 答案偏向 |
+|:-------|:---------|
+| 项目是互联网高并发读？ | MySQL |
+| 需要复杂的 JSON 操作？ | PostgreSQL |
+| 需要地理空间查询？ | PostgreSQL |
+| 需要 AI 向量搜索？ | PostgreSQL |
+| 团队更熟悉 MySQL？ | MySQL |
+| 需要物化视图？ | PostgreSQL |
+| 需要严格的数据完整性？ | PostgreSQL |
+| 运维工具链更成熟？ | MySQL |
+| 需要真全文搜索？ | PostgreSQL |
+| 预算有限，需要开源+丰富扩展？ | PostgreSQL |
+| 微服务架构，各服务可能需要不同特性？ | **两者都用**（Polyglot Persistence） |
+
+***
+
+## 五、两者共存策略
+
+现代架构中，MySQL 和 PostgreSQL 可以共存：
+
+```yaml
+# 典型微服务数据架构
+services:
+  user-service:
+    database: PostgreSQL    # 利用 JSONB 存储用户扩展信息
+  order-service:
+    database: MySQL         # 成熟的事务支持，团队经验
+  search-service:
+    database: PostgreSQL    # pgvector 向量搜索
+  log-service:
+    database: MySQL         # 高并发写入，日志归档
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/2-bei-fen-hui-fu-yu-gao-ke-yong/index.md
+---
+# 备份恢复与高可用
+
+## 一、MySQL 备份恢复
+
+### 1.1 逻辑备份 — mysqldump
+
+```bash
+# 备份单个数据库
+mysqldump -u root -p mydb > mydb_backup.sql
+
+# 备份多个数据库
+mysqldump -u root -p --databases db1 db2 db3 > multi_db_backup.sql
+
+# 备份所有数据库
+mysqldump -u root -p --all-databases > all_backup.sql
+
+# 备份指定表
+mysqldump -u root -p mydb users orders > tables_backup.sql
+
+# 只备份表结构（不含数据）
+mysqldump -u root -p --no-data mydb > schema_only.sql
+
+# 只备份数据（不含结构）
+mysqldump -u root -p --no-create-info mydb > data_only.sql
+
+# 带一致性快照的备份（生产必用）
+mysqldump -u root -p --single-transaction --routines --triggers --events mydb > consistent.sql
+
+# 压缩备份
+mysqldump -u root -p mydb | gzip > mydb_$(date +%Y%m%d).sql.gz
+```
+
+### 1.2 物理备份 — Percona XtraBackup
+
+```bash
+# 安装
+sudo apt install percona-xtrabackup-80
+
+# 全量备份
+xtrabackup --backup --target-dir=/backup/full \
+  --user=root --password=xxx
+
+# 准备备份（应用 redo log）
+xtrabackup --prepare --target-dir=/backup/full
+
+# 恢复（需要停止 MySQL）
+systemctl stop mysql
+rm -rf /var/lib/mysql/*
+xtrabackup --copy-back --target-dir=/backup/full
+chown -R mysql:mysql /var/lib/mysql
+systemctl start mysql
+```
+
+### 1.3 增量备份与恢复
+
+```bash
+# 全量备份
+xtrabackup --backup --target-dir=/backup/full
+
+# 增量备份（基于全量）
+xtrabackup --backup --target-dir=/backup/inc1 \
+  --incremental-basedir=/backup/full
+
+# 恢复增量备份
+xtrabackup --prepare --apply-log-only --target-dir=/backup/full
+xtrabackup --prepare --apply-log-only --target-dir=/backup/full \
+  --incremental-dir=/backup/inc1
+xtrabackup --prepare --target-dir=/backup/full
+```
+
+### 1.4 基于 binlog 的时间点恢复
+
+```bash
+# 查看 binlog 列表
+SHOW BINARY LOGS;
+
+# 查看 binlog 内容
+mysqlbinlog --start-datetime='2026-08-18 10:00:00' \
+  --stop-datetime='2026-08-18 11:00:00' \
+  mysql-bin.000001
+
+# 恢复到指定时间点
+mysqlbinlog --stop-datetime='2026-08-18 10:30:00' \
+  mysql-bin.000001 | mysql -u root -p
+
+# 恢复到指定位置
+mysqlbinlog --start-position=154 --stop-position=1024 \
+  mysql-bin.000001 | mysql -u root -p
+```
+
+***
+
+## 二、PostgreSQL 备份恢复
+
+### 2.1 逻辑备份 — pg\_dump
+
+```bash
+# 备份单个数据库
+pg_dump -U postgres -d mydb > mydb_backup.sql
+
+# 自定义格式（推荐，支持并行恢复和选择性恢复）
+pg_dump -U postgres -d mydb -Fc > mydb_backup.dump
+
+# 备份为目录格式（支持并行备份，大数据库推荐）
+pg_dump -U postgres -d mydb -Fd -j 4 -f /backup/mydb_dir
+
+# 只备份结构
+pg_dump -U postgres -d mydb --schema-only > schema.sql
+
+# 只备份数据
+pg_dump -U postgres -d mydb --data-only > data.sql
+
+# 备份指定表
+pg_dump -U postgres -d mydb -t users -t orders > tables.sql
+
+# 备份所有数据库
+pg_dumpall -U postgres > all_backup.sql
+
+# 压缩备份
+pg_dump -U postgres -d mydb | gzip > mydb_$(date +%Y%m%d).sql.gz
+```
+
+### 2.2 恢复
+
+```bash
+# SQL 格式恢复
+psql -U postgres -d mydb < mydb_backup.sql
+
+# 自定义格式恢复（推荐）
+pg_restore -U postgres -d mydb -Fc mydb_backup.dump
+
+# 并行恢复（加速大数据库恢复）
+pg_restore -U postgres -d mydb -Fd -j 4 /backup/mydb_dir
+
+# 只恢复结构
+pg_restore -U postgres -d mydb --schema-only mydb_backup.dump
+
+# 只恢复指定表
+pg_restore -U postgres -d mydb -t users mydb_backup.dump
+
+# 清空数据库后恢复
+dropdb -U postgres mydb
+createdb -U postgres mydb
+pg_restore -U postgres -d mydb mydb_backup.dump
+```
+
+### 2.3 物理备份 — pg\_basebackup
+
+```bash
+# 基础物理备份
+pg_basebackup -U replicator -D /backup/base \
+  -Fp -Xs -P -R
+
+# 参数说明：
+# -Fp: plain 格式
+# -Xs: 通过 streaming 方式传输 WAL
+# -P: 显示进度
+# -R: 自动创建 standby.signal 文件（用于搭建从库）
+
+# 恢复
+systemctl stop postgresql
+rm -rf /var/lib/postgresql/16/main/*
+cp -r /backup/base/* /var/lib/postgresql/16/main/
+chown -R postgres:postgres /var/lib/postgresql/16/main
+systemctl start postgresql
+```
+
+***
+
+## 三、主从复制
+
+### 3.1 MySQL 主从复制
+
+```sql
+-- 主库配置（my.cnf）
+-- [mysqld]
+-- server-id = 1
+-- log-bin = mysql-bin
+-- binlog_format = ROW
+-- sync_binlog = 1
+
+-- 主库创建复制用户
+CREATE USER 'repl'@'%' IDENTIFIED BY 'password';
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+
+-- 查看主库状态
+SHOW MASTER STATUS;
+-- 记录 File 和 Position
+```
+
+```sql
+-- 从库配置
+CHANGE MASTER TO
+  MASTER_HOST = '192.168.1.100',
+  MASTER_USER = 'repl',
+  MASTER_PASSWORD = 'password',
+  MASTER_LOG_FILE = 'mysql-bin.000001',
+  MASTER_LOG_POS = 154;
+
+START SLAVE;
+SHOW SLAVE STATUS\G
+
+-- 关键检查项：
+-- Slave_IO_Running: Yes
+-- Slave_SQL_Running: Yes
+-- Seconds_Behind_Master: 0（复制延迟）
+```
+
+### 3.2 PostgreSQL 流复制
+
+```sql
+-- 主库配置（postgresql.conf）
+-- wal_level = replica
+-- max_wal_senders = 10
+-- wal_keep_size = 1GB
+
+-- 主库创建复制用户
+CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'password';
+
+-- pg_hba.conf 允许复制连接
+-- host  replication  replicator  192.168.1.0/24  scram-sha-256
+```
+
+```bash
+# 从库搭建
+# 1. 停止从库 PostgreSQL
+# 2. 清空数据目录
+# 3. 使用 pg_basebackup 拉取主库数据
+pg_basebackup -h 192.168.1.100 -U replicator -D /var/lib/postgresql/16/main -Fp -Xs -P -R
+# 4. 启动从库
+# -R 参数会自动创建 standby.signal 和配置连接信息
+```
+
+### 3.3 逻辑复制（PostgreSQL）
+
+逻辑复制允许选择性地复制特定表：
+
+```sql
+-- 主库
+-- postgresql.conf: wal_level = logical
+
+-- 创建发布（主库）
+CREATE PUBLICATION my_pub FOR TABLE users, orders;
+-- 或发布所有表
+CREATE PUBLICATION my_pub FOR ALL TABLES;
+
+-- 从库
+-- 创建与主库相同结构的表
+
+-- 创建订阅
+CREATE SUBSCRIPTION my_sub
+  CONNECTION 'host=192.168.1.100 dbname=mydb user=replicator password=xxx'
+  PUBLICATION my_pub;
+```
+
+***
+
+## 四、高可用方案
+
+### 4.1 MySQL 高可用
+
+| 方案 | 原理 | 适用场景 |
+|:-----|:-----|:---------|
+| **主从复制** | 异步/半同步复制 | 读写分离，容灾 |
+| **MHA** | 自动故障切换，保证数据一致性 | 中小规模 |
+| **Orchestrator** | 自动拓扑管理和故障切换 | 大规模集群 |
+| **MySQL Group Replication** | 多主/单主复制组 | 高可用集群 |
+| **InnoDB Cluster** | MySQL Shell + Router + Group Replication | 官方推荐方案 |
+| **Galera Cluster** | 同步多主复制 | 多主写入 |
+
+### 4.2 PostgreSQL 高可用
+
+| 方案 | 原理 | 适用场景 |
+|:-----|:-----|:---------|
+| **流复制** | 异步/同步流复制 | 基础高可用 |
+| **Patroni** | 基于 DCS（etcd/ZooKeeper）的自动故障切换 | 生产推荐 |
+| **repmgr** | 复制管理和自动故障切换 | 中小规模 |
+| **PgBouncer + HAProxy** | 连接池 + 负载均衡 | 读写分离 |
+| **Citus** | 分布式 PostgreSQL | 大规模水平扩展 |
+
+### 4.3 Patroni 快速部署
+
+```yaml
+# patroni.yml
+scope: pg-cluster
+namespace: /db/
+name: node1
+
+etcd3:
+  hosts: 192.168.1.10:2379,192.168.1.11:2379,192.168.1.12:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        max_connections: 200
+        shared_buffers: 4GB
+
+postgresql:
+  listen: 0.0.0.0:5432
+  data_dir: /var/lib/postgresql/16/main
+  authentication:
+    replication:
+      username: replicator
+      password: password
+    superuser:
+      username: postgres
+      password: password
+```
+
+***
+
+## 五、备份策略建议
+
+```
+备份策略（3-2-1 原则）：
+├─ 3 份数据副本
+├─ 2 种不同存储介质
+└─ 1 份异地备份
+
+MySQL 推荐：
+├─ 日常：mysqldump 逻辑备份（每日）
+├─ 大库：XtraBackup 物理备份 + binlog 增量（每日）
+└─ 保留：最近 7 天日备份 + 每月 1 次全量（保留 3 个月）
+
+PostgreSQL 推荐：
+├─ 日常：pg_dump -Fc 自定义格式备份（每日）
+├─ 大库：pg_basebackup 物理备份 + WAL 归档（持续）
+└─ 保留：同上
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/3-man-cha-xun-pai-cha-shi-zhan/index.md
+---
+# 慢查询排查实战
+
+## 一、MySQL 慢查询排查流程
+
+### 1.1 排查流程图
+
+```
+慢查询发现
+├── 慢查询日志（slow_query_log）
+├── 监控系统告警（PMM / Prometheus）
+└── 应用层响应超时
+        ↓
+EXPLAIN 分析执行计划
+├── type = ALL（全表扫描）？
+├── key = NULL（未使用索引）？
+├── rows 很大（扫描行数过多）？
+├── Extra 有 Using filesort / Using temporary？
+└── 预估行数与实际行数偏差大？
+        ↓
+确定优化方向
+├── 添加合适索引
+├── SQL 改写
+├── 优化表结构（反范式/冗余）
+└── 调整 MySQL 参数
+        ↓
+验证优化效果
+├── EXPLAIN 重新分析
+├── 对比优化前后 Query_time
+└── 压力测试验证
+```
+
+### 1.2 实战案例一：全表扫描优化
+
+**问题 SQL**：
+
+```sql
+-- 慢查询日志显示耗时 3.2 秒
+SELECT * FROM orders
+WHERE user_id = 10086 AND status = 'paid'
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+**EXPLAIN 分析**：
+
+```
++----+-------------+--------+------+---------------+------+---------+------+--------+-----------------------+
+| id | select_type | table  | type | possible_keys | key  | key_len | rows | filtered | Extra               |
++----+-------------+--------+------+---------------+------+---------+------+--------+-----------------------+
+|  1 | SIMPLE      | orders | ALL  | NULL          | NULL | NULL    | 1000000 | 10.00 | Using where; Using filesort |
++----+-------------+--------+------+---------------+------+---------+------+--------+-----------------------+
+```
+
+**诊断**：`type=ALL` 全表扫描 100 万行，`key=NULL` 没有使用索引。
+
+**解决方案**：
+
+```sql
+-- 创建联合索引（等值条件在前，排序列在后）
+CREATE INDEX idx_orders_user_status_date ON orders (user_id, status, created_at DESC);
+
+-- 优化后 EXPLAIN
+-- type: ref, key: idx_orders_user_status_date, rows: 20
+-- 执行时间：3.2s → 0.01s
+```
+
+### 1.3 实战案例二：子查询优化
+
+**问题 SQL**：
+
+```sql
+SELECT * FROM users
+WHERE id IN (SELECT user_id FROM orders WHERE total > 500)
+AND status = 'active';
+```
+
+**EXPLAIN 分析**：子查询执行了全表扫描 orders，外层每个结果还要回查 users。
+
+**解决方案**：
+
+```sql
+-- 改写为 JOIN（利用索引）
+SELECT DISTINCT u.*
+FROM users u
+INNER JOIN orders o ON u.id = o.user_id
+WHERE o.total > 500 AND u.status = 'active';
+
+-- 或使用 EXISTS
+SELECT * FROM users u
+WHERE u.status = 'active'
+AND EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.total > 500);
+```
+
+### 1.4 实战案例三：大偏移分页优化
+
+**问题 SQL**：
+
+```sql
+-- 第 100001-100020 条（OFFSET 越大越慢）
+SELECT * FROM orders ORDER BY id LIMIT 20 OFFSET 1000000;
+-- 耗时 1.5 秒
+```
+
+**解决方案**：
+
+```sql
+-- 方案一：书签法（需记录上次最大 id）
+SELECT * FROM orders WHERE id > 1000000 ORDER BY id LIMIT 20;
+
+-- 方案二：延迟关联
+SELECT o.* FROM orders o
+INNER JOIN (SELECT id FROM orders ORDER BY id LIMIT 20 OFFSET 1000000) t
+ON o.id = t.id;
+-- 耗时：1.5s → 0.05s
+```
+
+***
+
+## 二、PostgreSQL 慢查询排查流程
+
+### 2.1 排查流程
+
+```
+慢查询发现
+├── log_min_duration_statement（自动记录）
+├── pg_stat_statements（统计分析）
+├── pgBadger（日志分析报告）
+└── 应用层响应超时
+        ↓
+EXPLAIN (ANALYZE, BUFFERS) 分析
+├── Seq Scan（顺序扫描）？是否合理？
+├── 估算行数 vs 实际行数偏差大？（统计信息过期）
+├── Buffers: shared read 多不多？
+├── 有 Sort 节点？能否用索引消除？
+└── 内存使用是否超出 work_mem？
+        ↓
+确定优化方向
+├── 添加合适索引
+├── ANALYZE 更新统计信息
+├── 调整 work_mem / effective_cache_size
+└── SQL 改写
+```
+
+### 2.2 实战案例一：统计信息过期
+
+**问题**：查询很慢，EXPLAIN 显示估算行数与实际行数偏差很大。
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM logs WHERE created_at > '2026-08-01';
+-- 估算 rows: 1000，实际 rows: 5000000（偏差 5000 倍）
+```
+
+**原因**：表经过大量数据变更后，统计信息过期，优化器选择了错误的执行计划。
+
+**解决方案**：
+
+```sql
+-- 更新统计信息
+ANALYZE logs;
+
+-- 重新 EXPLAIN，估算行数更准确
+EXPLAIN ANALYZE SELECT * FROM logs WHERE created_at > '2026-08-01';
+-- 估算 rows: 4800000，实际 rows: 5000000（偏差 < 5%）
+```
+
+### 2.3 实战案例二：缺少 GIN 索引
+
+**问题 SQL**：
+
+```sql
+-- 查询 JSONB 字段，全表扫描
+SELECT * FROM events WHERE data @> '{"type": "click"}';
+-- 耗时 8 秒（表有 2000 万行）
+```
+
+**解决方案**：
+
+```sql
+-- 添加 GIN 索引
+CREATE INDEX idx_events_data ON events USING gin (data jsonb_path_ops);
+
+-- 重新查询
+-- 耗时：8s → 0.05s
+```
+
+### 2.4 实战案例三：连接数耗尽
+
+**问题**：应用报错 `remaining connection slots are reserved`
+
+```sql
+-- 查看当前连接数
+SELECT count(*) FROM pg_stat_activity;  -- 结果：198（max_connections=200）
+
+-- 查看连接状态分布
+SELECT state, COUNT(*) FROM pg_stat_activity GROUP BY state;
+-- active: 5
+-- idle: 180
+-- idle in transaction: 13
+```
+
+**解决方案**：
+
+```sql
+-- 1. 清理长时间空闲事务
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE state = 'idle in transaction'
+  AND state_change < NOW() - INTERVAL '10 minutes';
+
+-- 2. 部署 PgBouncer 连接池（根本解决）
+-- 3. 设置 idle_in_transaction_session_timeout
+ALTER SYSTEM SET idle_in_transaction_session_timeout = '5min';
+SELECT pg_reload_conf();
+```
+
+***
+
+## 三、锁等待排查实战
+
+### 3.1 MySQL 锁等待
+
+```sql
+-- 查看当前锁等待
+SELECT
+  r.trx_id AS waiting_trx,
+  r.trx_query AS waiting_query,
+  b.trx_id AS blocking_trx,
+  b.trx_query AS blocking_query,
+  TIMESTAMPDIFF(SECOND, b.trx_wait_started, NOW()) AS wait_seconds
+FROM information_schema.INNODB_LOCK_WAITS w
+JOIN information_schema.INNODB_TRX b ON b.trx_id = w.blocking_trx_id
+JOIN information_schema.INNODB_TRX r ON r.trx_id = w.requesting_trx_id;
+
+-- 解决方案
+-- 1. Kill 阻塞事务
+KILL <blocking_trx_id>;
+-- 2. 优化事务范围，减少锁持有时间
+-- 3. 统一加锁顺序（避免死锁）
+```
+
+### 3.2 PostgreSQL 锁等待
+
+```sql
+-- 查看锁等待
+SELECT
+  blocked.pid AS blocked_pid,
+  blocked.query AS blocked_query,
+  blocking.pid AS blocking_pid,
+  blocking.query AS blocking_query,
+  AGE(NOW(), blocked.query_start) AS waiting_duration
+FROM pg_stat_activity blocked
+JOIN pg_locks bl ON bl.pid = blocked.pid AND NOT bl.granted
+JOIN pg_locks gl ON gl.locktype = bl.locktype
+  AND gl.relation IS NOT DISTINCT FROM bl.relation
+  AND gl.pid != bl.pid AND gl.granted
+JOIN pg_stat_activity blocking ON gl.pid = blocking.pid;
+
+-- 解决方案
+SELECT pg_cancel_backend(<blocked_pid>);      -- 温和取消
+SELECT pg_terminate_backend(<blocking_pid>);   -- 强制终止阻塞源
+```
+
+***
+
+## 四、排查工具速查
+
+| 工具 | 用途 | 适用数据库 |
+|:-----|:-----|:-----------|
+| `EXPLAIN` | 查看执行计划 | MySQL + PostgreSQL |
+| `EXPLAIN ANALYZE` | 实际执行并显示耗时 | PostgreSQL |
+| `pt-query-digest` | 慢查询日志分析 | MySQL |
+| `pgBadger` | 慢查询日志分析 | PostgreSQL |
+| `pg_stat_statements` | SQL 统计信息 | PostgreSQL |
+| `SHOW ENGINE INNODB STATUS` | InnoDB 锁和事务信息 | MySQL |
+| `performance_schema.data_locks` | 锁信息 | MySQL 8.0+ |
+| `pg_locks` | 锁信息 | PostgreSQL |
+| `SHOW PROCESSLIST` / `pg_stat_activity` | 当前连接和查询 | MySQL / PostgreSQL |
+
+***
+
+## 五、优化前后对比模板
+
+| 指标 | 优化前 | 优化后 |
+|:-----|:-------|:-------|
+| SQL 语句 | `SELECT ...` | `SELECT ...`（改写后） |
+| EXPLAIN type | ALL | ref |
+| EXPLAIN rows | 1000000 | 20 |
+| 执行时间 | 3.2s | 0.01s |
+| 磁盘读取 | 15000 pages | 20 pages |
+| 优化措施 | - | 添加 idx\_xxx 联合索引 |
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/4-lian-jie-chi-yu-zhong-jian-jian-pei-zhi/index.md
+---
+# 连接池与中间件配置
+
+## 一、Java 连接池 — HikariCP
+
+HikariCP 是 Spring Boot 默认连接池，以高性能著称。
+
+### 1.1 基础配置
+
+```yaml
+# application.yml（MySQL）
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: app_user
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: MySQL-Pool
+      maximum-pool-size: 20          # 最大连接数
+      minimum-idle: 5                # 最小空闲连接数
+      idle-timeout: 300000           # 空闲连接超时（5分钟）
+      max-lifetime: 1800000          # 连接最大存活时间（30分钟）
+      connection-timeout: 30000      # 获取连接超时（30秒）
+      leak-detection-threshold: 60000 # 连接泄漏检测（60秒）
+```
+
+```yaml
+# application.yml（PostgreSQL）
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    username: app_user
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: PG-Pool
+      maximum-pool-size: 20
+      minimum-idle: 5
+```
+
+### 1.2 HikariCP 监控
+
+```java
+// 获取连接池指标
+HikariPoolMXBean poolMXBean = dataSource.getHikariPoolMXBean();
+log.info("活跃连接数: {}", poolMXBean.getActiveConnections());
+log.info("空闲连接数: {}", poolMXBean.getIdleConnections());
+log.info("等待线程数: {}", poolMXBean.getThreadsAwaitingConnection());
+log.info("总连接数: {}", poolMXBean.getTotalConnections());
+```
+
+### 1.3 连接池大小计算建议
+
+```
+# HikariCP 作者推荐公式
+connections = ((core_count * 2) + effective_spindle_count)
+
+# 例如：4核 CPU + SSD
+connections = (4 * 2) + 1 = 9
+
+# 经验公式（更实用）：
+connections = CPU核心数 * 2 + 磁盘数
+# 8核 SSD 服务器：connections ≈ 17-20
+
+# 注意：PostgreSQL 连接池应更小（每连接是进程，开销更大）
+# PostgreSQL：建议 connections = CPU核心数 * 2 + 1（不超过 50）
+```
+
+***
+
+## 二、Druid 连接池（阿里巴巴）
+
+Druid 不仅是连接池，还提供 SQL 监控和防 SQL 注入功能。
+
+### 2.1 基础配置
+
+```yaml
+# application.yml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb
+    username: app_user
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initial-size: 5                 # 初始化连接数
+      min-idle: 5                     # 最小空闲连接数
+      max-active: 20                  # 最大连接数
+      max-wait: 30000                 # 获取连接超时（毫秒）
+      time-between-eviction-runs-millis: 60000  # 检测间隔
+      min-evictable-idle-time-millis: 300000    # 空闲最小存活时间
+      validation-query: SELECT 1      # 连接验证 SQL
+      test-while-idle: true           # 空闲时验证
+      test-on-borrow: false           # 借出时验证（影响性能）
+      pool-prepared-statements: true  # 开启 PSCache
+      max-pool-prepared-statement-per-connection-size: 20
+
+      # 监控配置
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-username: admin
+        login-password: ${DRUID_PASSWORD}
+      filter:
+        stat:
+          enabled: true
+          slow-sql-millis: 1000       # 慢 SQL 阈值（毫秒）
+          log-slow-sql: true
+        wall:
+          enabled: true               # 防火墙（防 SQL 注入）
+          config:
+            multi-statement-allow: false
+```
+
+***
+
+## 三、PgBouncer 连接池
+
+PgBouncer 是 PostgreSQL 最常用的连接池，轻量级，性能极好。
+
+### 3.1 安装与配置
+
+```bash
+# Ubuntu 安装
+sudo apt install pgbouncer
+
+# Docker 部署
+docker run -d --name pgbouncer \
+  -p 6432:6432 \
+  -v pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini \
+  -v userlist.txt:/etc/pgbouncer/userlist.txt \
+  edoburu/pgbouncer
+```
+
+### 3.2 配置详解
+
+```ini
+# /etc/pgbouncer/pgbouncer.ini
+
+[databases]
+# 数据库别名映射
+mydb = host=127.0.0.1 port=5432 dbname=mydb
+mydb_slave = host=192.168.1.101 port=5432 dbname=mydb
+
+[pgbouncer]
+# 监听配置
+listen_addr = 0.0.0.0
+listen_port = 6432
+
+# 认证
+auth_type = scram-sha-256
+auth_file = /etc/pgbouncer/userlist.txt
+
+# 连接池配置
+pool_mode = transaction            # 推荐 transaction 模式
+default_pool_size = 20             # 每个数据库+用户的默认池大小
+min_pool_size = 5                  # 最小池大小
+reserve_pool_size = 5              # 突发流量预留池
+reserve_pool_timeout = 3           # 预留池等待超时（秒）
+max_client_conn = 1000             # 最大客户端连接
+max_db_connections = 50            # 每个数据库最大后端连接
+
+# 超时配置
+server_idle_timeout = 300          # 后端空闲超时（秒）
+client_idle_timeout = 0            # 客户端空闲超时（0=不限）
+query_timeout = 0                  # 查询超时（0=不限）
+query_wait_timeout = 120           # 查询等待超时（等待连接池）
+```
+
+### 3.3 userlist.txt 格式
+
+```
+"username" "password_hash"
+```
+
+```bash
+# 生成密码哈希（SCRAM-SHA-256）
+# 方式一：使用 PostgreSQL 生成
+psql -U postgres -c "SELECT rolpassword FROM pg_authid WHERE rolname = 'app_user';"
+
+# 方式二：使用 PgBouncer 工具
+python3 -c "import hashlib; print('\"app_user\" \"SCRAM-SHA-256$...\"')"
+```
+
+***
+
+## 四、ProxySQL（MySQL 中间件）
+
+ProxySQL 是 MySQL 的高性能代理，支持读写分离、查询缓存、连接池。
+
+### 4.1 Docker 部署
+
+```bash
+docker run -d --name proxysql \
+  -p 6033:6033 \      # MySQL 协议端口（应用连接）
+  -p 6032:6032 \      # 管理端口
+  proxysql/proxysql
+```
+
+### 4.2 配置读写分离
+
+```sql
+-- 连接管理端口（6032）
+mysql -u admin -padmin -h 127.0.0.1 -P 6032
+
+-- 添加后端 MySQL 服务器
+INSERT INTO mysql_servers (hostgroup_id, hostname, port, weight)
+VALUES
+  (10, '192.168.1.100', 3306, 1000),  -- 写组（主库）
+  (20, '192.168.1.101', 3306, 1000),  -- 读组（从库1）
+  (20, '192.168.1.102', 3306, 1000);  -- 读组（从库2）
+
+-- 配置读写分离规则
+INSERT INTO mysql_query_rules (rule_id, active, match_pattern, destination_hostgroup, apply)
+VALUES
+  (1, 1, '^SELECT .* FOR UPDATE$', 10, 1),    -- SELECT FOR UPDATE 走写组
+  (2, 1, '^SELECT', 20, 1);                     -- 普通 SELECT 走读组
+
+-- 添加监控用户
+INSERT INTO mysql_users (username, password, default_hostgroup)
+VALUES ('monitor', 'password', 10);
+
+-- 加载配置
+LOAD MYSQL SERVERS TO RUNTIME;
+LOAD MYSQL QUERY RULES TO RUNTIME;
+LOAD MYSQL USERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+SAVE MYSQL QUERY RULES TO DISK;
+SAVE MYSQL USERS TO DISK;
+```
+
+***
+
+## 五、连接池参数对比
+
+| 参数 | HikariCP | Druid | PgBouncer |
+|:-----|:---------|:------|:----------|
+| **最大连接数** | `maximum-pool-size` | `max-active` | `max_client_conn` |
+| **最小空闲** | `minimum-idle` | `min-idle` | `min_pool_size` |
+| **获取连接超时** | `connection-timeout` | `max-wait` | `query_wait_timeout` |
+| **连接空闲超时** | `idle-timeout` | `min-evictable-idle-time-millis` | `server_idle_timeout` |
+| **连接最大存活** | `max-lifetime` | `maxEvictableIdleTimeMillis` | 无直接配置 |
+| **连接验证** | `connection-test-query` | `validation-query` | 自动检查 |
+| **泄漏检测** | `leak-detection-threshold` | `removeAbandoned` | 无（简单架构） |
+
+***
+
+## 六、选型建议
+
+```
+Java 项目（MySQL）：
+├─ 小中型项目 → HikariCP（Spring Boot 默认，性能好，配置简单）
+└─ 需要 SQL 监控 → Druid（自带监控面板，防 SQL 注入）
+
+Java 项目（PostgreSQL）：
+└─ HikariCP（通用推荐）
+
+非 Java 项目（PostgreSQL）：
+└─ PgBouncer（C 语言编写，极致轻量，推荐）
+
+读写分离需求（MySQL）：
+└─ ProxySQL（功能丰富，社区活跃）
+
+读写分离需求（PostgreSQL）：
+├─ PgBouncer + HAProxy（基础方案）
+└─ PgPool-II（功能更完整）
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/5-huo-qu-dang-qian-shang-xia-wen-xin-xi-nei-zhi-han-shu-yu-chang-liang/index.md
+---
+# 获取当前上下文信息 — 内置函数与常量
+
+## 一、MySQL 上下文信息函数
+
+### 1.1 当前用户与会话
+
+```sql
+-- 当前登录用户名
+SELECT CURRENT_USER();      -- 'app_user'@'%'（含来源主机）
+SELECT USER();              -- 同 CURRENT_USER()，MySQL 别名
+SELECT SESSION_USER();      -- 同 CURRENT_USER()
+
+-- 当前会话用户名（不含主机）
+SELECT CURRENT_USER();
+
+-- 连接 ID（每个连接唯一，用于 KILL 终止）
+SELECT CONNECTION_ID();      -- 12345
+
+-- 当前数据库
+SELECT DATABASE();           -- 'mydb'（未选择则返回 NULL）
+SELECT SCHEMA();             -- 同 DATABASE()
+
+-- 服务器版本
+SELECT VERSION();            -- '8.0.39-0ubuntu0.22.04.1'
+```
+
+### 1.2 服务器状态与配置
+
+```sql
+-- 查看服务器状态变量（运行时计数器）
+SHOW STATUS LIKE 'Threads_connected';   -- 当前连接数
+SHOW STATUS LIKE 'Questions';           -- 已执行查询总数
+SHOW STATUS LIKE 'Uptime';             -- 运行时长（秒）
+SHOW STATUS LIKE 'Slow_queries';       -- 慢查询总数
+SHOW STATUS LIKE 'Innodb_rows_read';   -- InnoDB 行读取数
+
+-- 查看系统变量（配置参数）
+SHOW VARIABLES LIKE 'max_connections';  -- 最大连接数
+SHOW VARIABLES LIKE 'innodb_buffer_pool_size';  -- Buffer Pool 大小
+SHOW VARIABLES LIKE 'tx_isolation';    -- 当前事务隔离级别
+
+-- 查看指定变量的当前值
+SELECT @@GLOBAL.max_connections;        -- 全局值
+SELECT @@SESSION.tx_isolation;          -- 会话值
+SELECT @@GLOBAL.max_connections = @@SESSION.max_connections;  -- 是否一致
+```
+
+### 1.3 时间与日期
+
+```sql
+-- 当前时间
+SELECT NOW();                -- 2026-08-18 14:30:00
+SELECT CURRENT_TIMESTAMP();  -- 同 NOW()
+SELECT SYSDATE();            -- 实时时间（函数执行时刻，非语句开始时刻）
+SELECT UTC_TIMESTAMP();      -- UTC 时间
+
+-- 当前日期 / 时间
+SELECT CURDATE();            -- 2026-08-18
+SELECT CURTIME();            -- 14:30:00
+
+-- Unix 时间戳
+SELECT UNIX_TIMESTAMP();             -- 当前时间戳（秒）
+SELECT UNIX_TIMESTAMP('2026-08-18'); -- 指定日期的时间戳
+SELECT FROM_UNIXTIME(1723977000);    -- 时间戳转日期
+```
+
+### 1.4 事务信息
+
+```sql
+-- 当前事务是否活跃
+SELECT IF(@@in_transaction = 1, '活跃', '无事务');  -- 0=无 1=有
+
+-- 最后一次自增 ID（当前会话）
+SELECT LAST_INSERT_ID();    -- 返回当前会话最近一次 INSERT 的自增值
+
+-- 受影响的行数（上一条 DML）
+SELECT ROW_COUNT();         -- 上一条 UPDATE/DELETE/INSERT 影响的行数
+```
+
+### 1.5 权限相关
+
+```sql
+-- 查看当前用户权限
+SHOW GRANTS;
+SHOW GRANTS FOR 'app_user'@'%';  -- 查看指定用户
+
+-- 检查是否有某权限
+SELECT HAS_DATABASE_PRIVILEGE('app_user', 'mydb', 'SELECT');  -- 1/0
+SELECT HAS_TABLE_PRIVILEGE('app_user', 'mydb.users', 'INSERT');
+```
+
+***
+
+## 二、PostgreSQL 上下文信息函数
+
+### 2.1 当前用户与会话
+
+```sql
+-- 当前用户名
+SELECT current_user;            -- 'app_user'（角色名）
+SELECT session_user;            -- 会话用户（通常与 current_user 相同）
+
+-- 当前数据库
+SELECT current_database();      -- 'mydb'
+
+-- 当前 schema
+SELECT current_schema();        -- 'public'
+SELECT current_schemas(true);   -- 搜索路径中所有 schema：{public, "$user"}
+
+-- 服务器版本
+SELECT version();
+-- PostgreSQL 16.4 on x86_64-pc-linux-gnu, compiled by gcc...
+
+-- 连接 PID（用于 pg_cancel_backend / pg_terminate_backend）
+SELECT pg_backend_pid();        -- 12345
+
+-- 当前连接的客户端地址和端口
+SELECT inet_client_addr();      -- 127.0.0.1（远程IP）
+SELECT inet_client_port();      -- 54321
+SELECT inet_server_addr();      -- 服务端监听 IP
+SELECT inet_server_port();      -- 5432
+```
+
+### 1.2 服务器配置与状态
+
+```sql
+-- 查看当前会话配置值
+SHOW work_mem;                 -- 16MB
+SHOW shared_buffers;
+SHOW max_connections;
+
+-- 查看全局配置
+SELECT setting, unit, short_desc
+FROM pg_settings
+WHERE name = 'shared_buffers';
+
+-- 查看所有配置（当前连接生效值 vs 默认值）
+SELECT name, setting, unit, boot_val, reset_val
+FROM pg_settings
+WHERE name LIKE '%work_mem%';
+
+-- 查看服务器运行状态
+SELECT
+  datname,
+  numbackends AS connections,
+  xact_commit AS commits,
+  xact_rollback AS rollbacks,
+  blks_read,
+  blks_hit,
+  ROUND(blks_hit * 100.0 / NULLIF(blks_hit + blks_read, 0), 2) AS cache_hit_pct
+FROM pg_stat_database
+WHERE datname = current_database();
+
+-- 查看当前连接统计
+SELECT state, COUNT(*)
+FROM pg_stat_activity
+GROUP BY state;
+```
+
+### 1.3 时间与日期
+
+```sql
+-- 当前时间
+SELECT NOW();                      -- 2026-08-18 14:30:00+08
+SELECT CURRENT_TIMESTAMP;          -- 同 NOW()
+SELECT CURRENT_TIMESTAMP AT TIME ZONE 'UTC';  -- 转为 UTC
+SELECT LOCALTIMESTAMP;             -- 无时区信息
+SELECT clock_timestamp();          -- 实时时间（函数执行时刻）
+
+-- 当前日期 / 时间
+SELECT CURRENT_DATE;               -- 2026-08-18
+SELECT CURRENT_TIME;               -- 14:30:00+08
+SELECT LOCALTIME;                  -- 14:30:00（无时区）
+
+-- Unix 时间戳
+SELECT EXTRACT(EPOCH FROM NOW());                    -- 当前时间戳（秒，numeric）
+SELECT TO_TIMESTAMP(1723977000);                     -- 时间戳转日期
+SELECT EXTRACT(EPOCH FROM NOW())::bigint;            -- 转为 bigint
+
+-- 日期截断与提取
+SELECT date_trunc('hour', NOW());          -- 截断到小时
+SELECT EXTRACT(dow FROM NOW());            -- 星期几（0=周日）
+SELECT EXTRACT(isoyear FROM NOW());        -- ISO 年
+```
+
+### 1.4 事务信息
+
+```sql
+-- 当前事务 ID
+SELECT txid_current();                    -- 当前事务 ID（未开启则自动开启事务）
+SELECT txid_current_snapshot();           -- 当前快照：'100:105:100,102,103'
+-- 格式：xmin:xmax:xip_list
+-- xmin: 该快照中所有 xmin < xmin 的事务已提交
+-- xmax: 该快照中所有 xmax > xmax 的事务未开始
+-- xip_list: 该快照中正在活跃的事务 ID 列表
+
+-- 当前事务是否只读
+SELECT current_setting('transaction_read_only');  -- 'on' / 'off'
+```
+
+### 1.5 权限相关
+
+```sql
+-- 当前用户是否具有某角色
+SELECT current_setting('role');  -- 当前角色
+
+-- 查看用户权限
+SELECT
+  grantee,
+  privilege_type,
+  table_name
+FROM information_schema.role_table_grants
+WHERE grantee = current_user;
+
+-- 检查当前用户是否是超级用户
+SELECT current_setting('is_superuser');  -- 'on' / 'off'
+
+-- 查看表权限
+\dp users  -- psql 元命令
+```
+
+### 1.6 数据库对象信息
+
+```sql
+-- 查看当前 schema 下所有表
+SELECT tablename FROM pg_tables WHERE schemaname = current_schema();
+
+-- 查看表的列信息
+SELECT
+  column_name,
+  data_type,
+  is_nullable,
+  column_default
+FROM information_schema.columns
+WHERE table_name = 'users' AND table_schema = current_schema();
+
+-- 查看索引
+SELECT
+  indexname,
+  indexdef
+FROM pg_indexes
+WHERE tablename = 'users' AND schemaname = current_schema();
+
+-- 查看视图
+SELECT viewname FROM pg_views WHERE schemaname = current_schema();
+
+-- 查看函数
+SELECT
+  p.proname AS function_name,
+  pg_catalog.pg_get_function_result(p.oid) AS return_type,
+  pg_catalog.pg_get_function_arguments(p.oid) AS arguments
+FROM pg_proc p
+JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE n.nspname = current_schema();
+```
+
+***
+
+## 三、MySQL vs PostgreSQL 上下文函数对比
+
+| 功能 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **当前用户** | `CURRENT_USER()` | `current_user`（常量，无括号） |
+| **会话用户** | `SESSION_USER()` | `session_user` |
+| **当前数据库** | `DATABASE()` | `current_database()` |
+| **当前 schema** | 无内置（`DATABASE()` 近似） | `current_schema()` |
+| **服务器版本** | `VERSION()` | `version()` |
+| **连接 ID** | `CONNECTION_ID()` | `pg_backend_pid()` |
+| **客户端 IP** | 无内置 | `inet_client_addr()` / `inet_client_port()` |
+| **当前时间** | `NOW()` / `SYSDATE()` | `NOW()` / `clock_timestamp()` |
+| **当前日期** | `CURDATE()` | `CURRENT_DATE`（常量） |
+| **当前时间** | `CURTIME()` | `CURRENT_TIME`（常量） |
+| **Unix 时间戳** | `UNIX_TIMESTAMP()` | `EXTRACT(EPOCH FROM NOW())` |
+| **自增 ID** | `LAST_INSERT_ID()` | `currval('seq_name')` 或 `RETURNING id` |
+| **受影响行数** | `ROW_COUNT()` | `RETURNING` 子句（DML 时直接返回） |
+| **事务状态** | `@@in_transaction` | `txid_current()` |
+| **快照信息** | 无内置 | `txid_current_snapshot()` |
+| **权限检查** | `HAS_TABLE_PRIVILEGE()` | `information_schema.role_table_grants` |
+| **系统变量** | `SHOW VARIABLES` / `@@GLOBAL.xxx` | `SHOW` / `pg_settings` |
+| **运行状态** | `SHOW STATUS` | `pg_stat_database` / `pg_stat_activity` |
+
+***
+
+## 四、实用查询速查
+
+### 4.1 快速了解当前连接环境
+
+**MySQL**：
+
+```sql
+SELECT
+  CONNECTION_ID()       AS conn_id,
+  USER()                AS user,
+  DATABASE()            AS `database`,
+  VERSION()             AS mysql_version,
+  @@tx_isolation        AS isolation,
+  @@character_set_client AS charset,
+  NOW()                 AS current_time;
+```
+
+**PostgreSQL**：
+
+```sql
+SELECT
+  pg_backend_pid()      AS conn_pid,
+  current_user          AS username,
+  current_database()    AS database_name,
+  version()             AS pg_version,
+  current_schema()      AS schema_name,
+  current_setting('transaction_isolation') AS isolation,
+  inet_client_addr()    AS client_ip,
+  NOW()                 AS current_time;
+```
+
+### 4.2 监控慢会话
+
+**MySQL**：
+
+```sql
+SELECT id, user, host, db, command, time, state, info
+FROM information_schema.PROCESSLIST
+WHERE command != 'Sleep' AND time > 60
+ORDER BY time DESC;
+```
+
+**PostgreSQL**：
+
+```sql
+SELECT
+  pid,
+  usename,
+  datname,
+  client_addr,
+  state,
+  AGE(NOW(), query_start) AS duration,
+  LEFT(query, 80) AS query
+FROM pg_stat_activity
+WHERE state = 'active'
+  AND query_start < NOW() - INTERVAL '60 seconds'
+ORDER BY query_start;
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/1-my-sql-an-zhuang-yu-pei-zhi/index.md
+---
+# MySQL 安装与配置
+
+## 一、安装方式选择
+
+### 1.1 三种安装方式对比
+
+| 方式 | 适用场景 | 优点 | 缺点 |
+|:-----|:---------|:-----|:-----|
+| **apt/yum 包管理** | Linux 服务器生产部署 | 自动处理依赖、方便升级 | 版本可能偏旧 |
+| **Docker** | 本地开发/测试环境 | 隔离性好、快速部署、多版本共存 | 需要理解 Docker 网络/卷 |
+| **二进制包/源码编译** | 特定版本需求、定制化编译选项 | 灵活控制版本与功能 | 手动维护依赖、升级麻烦 |
+
+### 1.2 Ubuntu apt 安装
+
+```bash
+# 更新软件源
+sudo apt update
+
+# 安装 MySQL Server（Ubuntu 22.04 默认 MySQL 8.0）
+sudo apt install -y mysql-server
+
+# 安装完成后，安全初始化（设置 root 密码、删除匿名用户等）
+sudo mysql_secure_installation
+
+# 启动并设置开机自启
+sudo systemctl start mysql
+sudo systemctl enable mysql
+
+# 检查运行状态
+sudo systemctl status mysql
+```
+
+### 1.3 CentOS/RHEL yum 安装
+
+```bash
+# 添加 MySQL 官方 yum 源（以 MySQL 8.0 为例）
+sudo rpm -i https://dev.mysql.com/get/mysql80-community-release-el8-9.noarch.rpm
+
+# 安装 MySQL Server
+sudo yum install -y mysql-community-server
+
+# 启动并设置开机自启
+sudo systemctl start mysqld
+sudo systemctl enable mysqld
+
+# 获取临时 root 密码
+sudo grep 'temporary password' /var/log/mysqld.log
+
+# 安全初始化
+mysql_secure_installation
+```
+
+### 1.4 Docker 安装（推荐本地开发）
+
+```bash
+# 拉取 MySQL 8.0 镜像
+docker pull mysql:8.0
+
+# 启动容器
+docker run -d \
+  --name mysql-dev \
+  -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -e MYSQL_DATABASE=testdb \
+  -v mysql-data:/var/lib/mysql \
+  mysql:8.0
+
+# 进入容器连接 MySQL
+docker exec -it mysql-dev mysql -uroot -proot123
+
+# 查看日志
+docker logs -f mysql-dev
+```
+
+> **注意**：生产环境**不要**使用 `-e MYSQL_ROOT_PASSWORD` 明文传递密码，应使用 Docker Secrets 或 `.env` 文件。
+
+***
+
+## 二、核心配置文件（my.cnf）
+
+### 2.1 配置文件位置与加载顺序
+
+| 位置 | 说明 |
+|:-----|:-----|
+| `/etc/my.cnf` | 全局配置（所有用户共用） |
+| `/etc/mysql/my.cnf` | Debian/Ubuntu 系默认全局配置 |
+| `~/.my.cnf` | 用户级配置（覆盖全局） |
+| `/etc/mysql/conf.d/*.cnf` | 额外配置片段（Debian/Ubuntu） |
+| `/etc/mysql/mysql.conf.d/mysqld.cnf` | mysqld 专用配置（Debian/Ubuntu） |
+
+**加载顺序**：`/etc/my.cnf` → `/etc/mysql/my.cnf` → `/etc/mysql/conf.d/` → 用户目录 `.my.cnf`，后者覆盖前者。
+
+### 2.2 常用 my.cnf 参数
+
+```ini
+[mysqld]
+# ---- 基础配置 ----
+port = 3306
+socket = /var/run/mysqld/mysqld.sock
+datadir = /var/lib/mysql
+pid-file = /var/run/mysqld/mysqld.pid
+
+# ---- 字符集（推荐 UTF-8） ----
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+init_connect = 'SET NAMES utf8mb4'
+
+# ---- 连接相关 ----
+max_connections = 200          # 最大连接数
+max_connect_errors = 100       # 最大连接错误次数（超过后封禁 IP）
+wait_timeout = 28800           # 非交互连接超时时间（秒）
+interactive_timeout = 28800    # 交互连接超时时间（秒）
+
+# ---- InnoDB 核心参数 ----
+innodb_buffer_pool_size = 1G   # Buffer Pool 大小（建议物理内存的 50%-70%）
+innodb_log_file_size = 256M    # Redo Log 文件大小
+innodb_flush_log_at_trx_commit = 1  # 1=每次提交刷盘（最安全）
+sync_binlog = 1                # 每次提交同步 binlog（最安全）
+innodb_file_per_table = ON     # 每表一个独立表空间
+
+# ---- 日志配置 ----
+log_error = /var/log/mysql/error.log
+slow_query_log = ON
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 1            # 慢查询阈值（秒）
+
+# ---- binlog（用于主从复制和数据恢复） ----
+server-id = 1
+log-bin = mysql-bin
+binlog_format = ROW            # 推荐 ROW 格式
+expire_logs_days = 7           # binlog 保留天数
+```
+
+### 2.3 字符集配置要点
+
+```sql
+-- 查看当前字符集配置
+SHOW VARIABLES LIKE 'character_set%';
+SHOW VARIABLES LIKE 'collation%';
+
+-- 推荐配置：utf8mb4（支持 emoji 和所有 Unicode 字符）
+-- 注意：MySQL 中 utf8 只支持 3 字节，不能存储 emoji，必须用 utf8mb4
+```
+
+**最佳实践**：在 `my.cnf` 中统一配置字符集，建库建表时无需单独指定，避免字符集混乱。
+
+***
+
+## 三、启动与服务管理
+
+### 3.1 systemctl 命令
+
+```bash
+# 启动/停止/重启
+sudo systemctl start mysql
+sudo systemctl stop mysql
+sudo systemctl restart mysql
+
+# 查看状态
+sudo systemctl status mysql
+
+# 开机自启/取消
+sudo systemctl enable mysql
+sudo systemctl disable mysql
+
+# 重新加载配置（不重启服务）
+sudo systemctl reload mysql
+```
+
+### 3.2 MySQL 命令行管理
+
+```bash
+# 连接 MySQL
+mysql -u root -p
+mysql -u root -p -h 127.0.0.1 -P 3306    # 指定主机和端口
+mysql -u root -p -D testdb                # 指定默认数据库
+
+# 执行 SQL 文件
+mysql -u root -p testdb < /path/to/init.sql
+
+# 查看服务状态（MySQL 内部）
+SHOW STATUS LIKE 'Threads_connected';  # 当前连接数
+SHOW PROCESSLIST;                      # 查看当前所有连接
+SHOW VARIABLES LIKE 'max_connections'; # 查看最大连接数
+```
+
+### 3.3 远程访问配置
+
+MySQL 8.0 默认只允许 root 本地访问，远程访问需要创建专用用户：
+
+```sql
+-- 创建远程访问用户（MySQL 8.0+）
+CREATE USER 'appuser'@'%' IDENTIFIED BY 'strong_password';
+GRANT ALL PRIVILEGES ON testdb.* TO 'appuser'@'%';
+FLUSH PRIVILEGES;
+
+-- 更安全：只允许特定 IP 段
+CREATE USER 'appuser'@'192.168.1.%' IDENTIFIED BY 'strong_password';
+GRANT ALL PRIVILEGES ON testdb.* TO 'appuser'@'192.168.1.%';
+FLUSH PRIVILEGES;
+```
+
+***
+
+## 四、Docker 多版本共存技巧
+
+```bash
+# 同时运行 MySQL 5.7 和 8.0
+docker run -d --name mysql57 -p 3307:3306 \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -v mysql57-data:/var/lib/mysql \
+  mysql:5.7
+
+docker run -d --name mysql80 -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -v mysql80-data:/var/lib/mysql \
+  mysql:8.0
+
+# 分别连接
+mysql -h 127.0.0.1 -P 3307 -uroot -proot123   # MySQL 5.7
+mysql -h 127.0.0.1 -P 3306 -uroot -proot123   # MySQL 8.0
+```
+
+***
+
+## 五、常见安装问题排查
+
+| 问题 | 原因 | 解决方案 |
+|:-----|:-----|:---------|
+| `Can't connect to local MySQL server` | MySQL 未启动或 socket 文件不存在 | `sudo systemctl start mysql` |
+| `Access denied for user 'root'@'localhost'` | 密码错误或用户被锁 | `sudo systemctl stop mysql` → `mysqld --skip-grant-tables` → 重置密码 |
+| `Too many connections` | 连接数超限 | 临时：`SET GLOBAL max_connections=500;`；永久：修改 `my.cnf` |
+| `Table doesn't exist`（Docker） | 数据卷权限问题 | `sudo chown -R 1000:1000 /var/lib/mysql` 或重建容器 |
+| `Authentication plugin 'caching_sha2_password'` | 旧客户端不兼容 | `ALTER USER 'user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';` |
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/2-sql-ji-chu-yu-chang-yong-yu-fa/index.md
+---
+# SQL 基础与常用语法
+
+## 一、SQL 分类
+
+| 分类 | 全称 | 作用 | 常见语句 |
+|:-----|:-----|:-----|:---------|
+| **DDL** | Data Definition Language | 定义数据库对象（库、表、索引） | `CREATE`, `ALTER`, `DROP`, `TRUNCATE` |
+| **DML** | Data Manipulation Language | 数据增删改 | `INSERT`, `UPDATE`, `DELETE` |
+| **DQL** | Data Query Language | 数据查询 | `SELECT`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY` |
+| **DCL** | Data Control Language | 权限与事务控制 | `GRANT`, `REVOKE`, `COMMIT`, `ROLLBACK` |
+
+***
+
+## 二、DDL — 数据定义
+
+### 2.1 数据库操作
+
+```sql
+-- 创建数据库（指定字符集）
+CREATE DATABASE IF NOT EXISTS mydb
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_unicode_ci;
+
+-- 查看所有数据库
+SHOW DATABASES;
+
+-- 切换数据库
+USE mydb;
+
+-- 删除数据库
+DROP DATABASE IF EXISTS mydb;
+```
+
+### 2.2 表操作
+
+```sql
+-- 创建表
+CREATE TABLE IF NOT EXISTS users (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  username    VARCHAR(50)     NOT NULL UNIQUE,
+  email       VARCHAR(100)    NOT NULL,
+  password    VARCHAR(255)    NOT NULL,
+  status      TINYINT         NOT NULL DEFAULT 1 COMMENT '1=启用 0=禁用',
+  created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+
+-- 查看表结构
+DESC users;
+SHOW CREATE TABLE users;
+
+-- 修改表
+ALTER TABLE users ADD COLUMN phone VARCHAR(20) AFTER email;     -- 添加列
+ALTER TABLE users MODIFY COLUMN phone VARCHAR(30);              -- 修改列定义
+ALTER TABLE users DROP COLUMN phone;                            -- 删除列
+ALTER TABLE users ADD INDEX idx_status (status);                -- 添加索引
+ALTER TABLE users RENAME TO members;                            -- 重命名表
+
+-- 删除表
+DROP TABLE IF EXISTS users;
+TRUNCATE TABLE users;  -- 清空表数据（不保留自增计数）
+```
+
+***
+
+## 三、DML — 数据增删改
+
+### 3.1 INSERT
+
+```sql
+-- 单行插入
+INSERT INTO users (username, email, password)
+VALUES ('zhangsan', 'zhangsan@example.com', 'hashed_pwd');
+
+-- 多行插入（推荐，性能更好）
+INSERT INTO users (username, email, password) VALUES
+  ('lisi',    'lisi@example.com',    'hashed_pwd'),
+  ('wangwu',  'wangwu@example.com',  'hashed_pwd');
+
+-- INSERT ... ON DUPLICATE KEY UPDATE（存在则更新，不存在则插入）
+INSERT INTO users (username, email, password)
+VALUES ('zhangsan', 'new_email@example.com', 'new_pwd')
+ON DUPLICATE KEY UPDATE email = VALUES(email), password = VALUES(password);
+
+-- REPLACE INTO（存在则删除再插入，会触发 DELETE + INSERT）
+REPLACE INTO users (id, username, email, password)
+VALUES (1, 'zhangsan', 'fixed@example.com', 'pwd');
+```
+
+### 3.2 UPDATE
+
+```sql
+-- 基本更新
+UPDATE users SET status = 0 WHERE id = 1;
+
+-- 多列更新
+UPDATE users
+SET status = 0, updated_at = NOW()
+WHERE id = 1;
+
+-- 关联更新（用 JOIN）
+UPDATE users u
+JOIN orders o ON u.id = o.user_id
+SET u.status = 0
+WHERE o.created_at < '2025-01-01';
+
+-- 限制更新行数（防止误更新）
+UPDATE users SET status = 0 WHERE created_at < '2025-01-01' LIMIT 100;
+```
+
+### 3.3 DELETE
+
+```sql
+-- 基本删除
+DELETE FROM users WHERE id = 1;
+
+-- 关联删除
+DELETE u FROM users u
+JOIN orders o ON u.id = o.user_id
+WHERE o.status = 'cancelled';
+
+-- 限制删除行数
+DELETE FROM users WHERE status = 0 LIMIT 50;
+
+-- 注意：DELETE 不会重置 AUTO_INCREMENT，TRUNCATE 会
+```
+
+> **安全提醒**：执行 `UPDATE`/`DELETE` 前，先用相同的 `WHERE` 条件跑一次 `SELECT` 确认影响范围，避免误操作。
+
+***
+
+## 四、DQL — 数据查询
+
+### 4.1 基础查询
+
+```sql
+-- 选择指定列
+SELECT id, username, email FROM users;
+
+-- 去重
+SELECT DISTINCT status FROM users;
+
+-- 别名
+SELECT id AS user_id, username AS name FROM users;
+
+-- 条件过滤
+SELECT * FROM users WHERE status = 1 AND created_at >= '2025-01-01';
+
+-- IN / NOT IN
+SELECT * FROM users WHERE id IN (1, 2, 3);
+
+-- BETWEEN
+SELECT * FROM users WHERE created_at BETWEEN '2025-01-01' AND '2025-12-31';
+
+-- LIKE（模糊查询）
+SELECT * FROM users WHERE username LIKE 'zhang%';    -- 以 zhang 开头
+SELECT * FROM users WHERE email LIKE '%example.com'; -- 以 example.com 结尾
+
+-- IS NULL / IS NOT NULL
+SELECT * FROM users WHERE phone IS NULL;
+```
+
+### 4.2 ORDER BY 与 LIMIT
+
+```sql
+-- 排序（ASC 升序，DESC 降序）
+SELECT * FROM users ORDER BY created_at DESC;
+
+-- 多字段排序
+SELECT * FROM users ORDER BY status ASC, created_at DESC;
+
+-- 分页（offset 从 0 开始）
+SELECT * FROM users ORDER BY id LIMIT 10 OFFSET 20;  -- 第 21-30 条
+SELECT * FROM users ORDER BY id LIMIT 20, 10;          -- 同上（MySQL 方言）
+```
+
+### 4.3 JOIN 连接查询
+
+```sql
+-- INNER JOIN（内连接，只返回匹配行）
+SELECT u.username, o.order_no, o.total
+FROM users u
+INNER JOIN orders o ON u.id = o.user_id;
+
+-- LEFT JOIN（左连接，保留左表全部行）
+SELECT u.username, COUNT(o.id) AS order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+GROUP BY u.id;
+
+-- RIGHT JOIN（右连接，保留右表全部行）
+SELECT u.username, o.order_no
+FROM users u
+RIGHT JOIN orders o ON u.id = o.user_id;
+
+-- CROSS JOIN（笛卡尔积）
+SELECT u.username, p.product_name
+FROM users u
+CROSS JOIN products p;
+
+-- 自连接（同一表连接自身）
+SELECT e.name AS employee, m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;
+```
+
+### 4.4 GROUP BY 与 HAVING
+
+```sql
+-- 分组统计
+SELECT user_id, COUNT(*) AS order_count, SUM(total) AS total_amount
+FROM orders
+GROUP BY user_id;
+
+-- HAVING 过滤分组结果（WHERE 过滤行，HAVING 过滤组）
+SELECT user_id, SUM(total) AS total_amount
+FROM orders
+WHERE status = 'paid'
+GROUP BY user_id
+HAVING total_amount > 1000;
+
+-- 常见错误：SELECT 中包含非聚合列且不在 GROUP BY 中
+-- MySQL 默认允许（非标准），严格模式下会报错
+-- 正确做法：所有非聚合列都应出现在 GROUP BY 中
+```
+
+### 4.5 子查询
+
+```sql
+-- 标量子查询（返回单值）
+SELECT * FROM users WHERE id = (SELECT user_id FROM orders ORDER BY total DESC LIMIT 1);
+
+-- IN 子查询
+SELECT * FROM users WHERE id IN (SELECT DISTINCT user_id FROM orders WHERE total > 500);
+
+-- EXISTS 子查询（推荐：大表关联时性能优于 IN）
+SELECT * FROM users u WHERE EXISTS (
+  SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.status = 'paid'
+);
+
+-- 派生表（FROM 子查询）
+SELECT t.user_id, t.order_count
+FROM (
+  SELECT user_id, COUNT(*) AS order_count
+  FROM orders
+  GROUP BY user_id
+) t
+WHERE t.order_count > 5;
+```
+
+***
+
+## 五、常用内置函数
+
+### 5.1 字符串函数
+
+```sql
+SELECT CONCAT('Hello', ' ', 'World');        -- 'Hello World'
+SELECT CONCAT_WS(',', 'a', 'b', 'c');        -- 'a,b,c'
+SELECT LENGTH('hello');                        -- 5（字节数）
+SELECT CHAR_LENGTH('你好');                     -- 2（字符数）
+SELECT UPPER('hello');                         -- 'HELLO'
+SELECT LOWER('HELLO');                         -- 'hello'
+SELECT SUBSTRING('Hello World', 1, 5);        -- 'Hello'
+SELECT REPLACE('Hello World', 'World', 'MySQL'); -- 'Hello MySQL'
+SELECT TRIM('  hello  ');                      -- 'hello'
+SELECT LPAD('42', 5, '0');                    -- '00042'
+SELECT RPAD('hi', 5, '.');                    -- 'hi...'
+```
+
+### 5.2 日期函数
+
+```sql
+SELECT NOW();                                  -- 当前日期时间
+SELECT CURDATE();                              -- 当前日期
+SELECT CURTIME();                              -- 当前时间
+SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'); -- 格式化
+SELECT DATEDIFF('2025-12-31', '2025-01-01');   -- 364（天数差）
+SELECT DATE_ADD(NOW(), INTERVAL 7 DAY);        -- 加 7 天
+SELECT DATE_SUB(NOW(), INTERVAL 1 MONTH);      -- 减 1 个月
+SELECT YEAR(NOW());                            -- 2026
+SELECT MONTH(NOW());                           -- 8
+```
+
+### 5.3 聚合函数
+
+```sql
+SELECT
+  COUNT(*)          AS total,
+  COUNT(DISTINCT user_id) AS unique_users,
+  SUM(total)        AS total_amount,
+  AVG(total)        AS avg_amount,
+  MAX(total)        AS max_amount,
+  MIN(total)        AS min_amount
+FROM orders;
+```
+
+***
+
+## 六、EXPLAIN — 查询执行计划
+
+`EXPLAIN` 是分析慢查询最重要的工具，下一章会深入讲解，这里先介绍基本用法：
+
+```sql
+EXPLAIN SELECT * FROM users WHERE email = 'test@example.com';
+```
+
+| 字段 | 含义 | 关注点 |
+|:-----|:-----|:-------|
+| `type` | 访问类型 | `ALL`（全表扫描）最差，`const`/`eq_ref` 最优 |
+| `key` | 实际使用的索引 | `NULL` 表示没有使用索引 |
+| `rows` | 预估扫描行数 | 越小越好 |
+| `Extra` | 额外信息 | `Using filesort`/`Using temporary` 需要优化 |
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/3-suo-yin-yu-cha-xun-you-hua/index.md
+---
+# 索引与查询优化
+
+## 一、索引基础原理
+
+### 1.1 B+ 树索引结构
+
+MySQL InnoDB 使用 **B+ 树**作为索引数据结构：
+
+```
+          [30 | 60]                    ← 根节点（存储键值，指向子节点）
+         /     |     \
+   [10|20]  [40|50]  [70|80]          ← 内部节点（索引页，只存键值）
+   / | \     / | \     / | \
+ [数据页] [数据页] [数据页] ...        ← 叶子节点（存储完整数据/主键值）
+ ←——————————————→  ←——————————————→
+   叶子节点通过双向链表相连，支持范围查询
+```
+
+**B+ 树的核心优势**：
+
+* **非叶子节点只存键值**：一个页能存更多索引项，树更矮（3层可存约 2000 万行）
+* **叶子节点双向链表**：范围查询只需从起始节点沿链表扫描，无需回溯
+* **所有数据都在叶子节点**：查询任何记录的 IO 次数相同（树高恒定）
+
+### 1.2 聚簇索引 vs 非聚簇索引
+
+| 特性 | 聚簇索引（Clustered） | 非聚簇索引（Secondary） |
+|:-----|:-----|:-----|
+| 另一个名字 | 主键索引 | 二级索引、辅助索引 |
+| 叶子节点存储 | **完整行数据** | **主键值**（而非行数据） |
+| 数量 | 每张表**只有一个** | 可以有**多个** |
+| 默认创建 | 主键自动创建 | 手动 `CREATE INDEX` |
+| 查询是否需要回表 | 否（直接取数据） | 需要（先查主键，再回表） |
+
+**回表过程示例**：
+
+```sql
+-- idx_email 是二级索引
+SELECT * FROM users WHERE email = 'test@example.com';
+-- 1. 在 idx_email 索引树中找到 email='test@...' → 获得主键 id=42
+-- 2. 用 id=42 在聚簇索引树中查找完整行数据 → 回表（额外一次 IO）
+```
+
+### 1.3 覆盖索引（Covering Index）
+
+**覆盖索引**是指查询所需的所有列都包含在索引中，无需回表：
+
+```sql
+-- 如果有联合索引 idx_email_name(email, username)
+-- 以下查询只需要扫描二级索引，无需回表
+SELECT username FROM users WHERE email = 'test@example.com';
+-- EXPLAIN Extra 显示：Using index
+```
+
+***
+
+## 二、索引设计原则
+
+### 2.1 最左前缀原则
+
+联合索引 `idx(a, b, c)` 的使用规则：
+
+| 查询条件 | 是否使用索引 | 说明 |
+|:---------|:------------|:-----|
+| `WHERE a = 1` | ✅ 使用 | 最左列命中 |
+| `WHERE a = 1 AND b = 2` | ✅ 使用 | 使用 a、b 两列 |
+| `WHERE a = 1 AND b = 2 AND c = 3` | ✅ 使用 | 全部三列命中 |
+| `WHERE b = 2` | ❌ 不使用 | 缺少最左列 a |
+| `WHERE a = 1 AND c = 3` | ⚠️ 部分使用 | 只用到 a（跳过 b，c 无法用索引） |
+| `WHERE a = 1 AND b > 2 AND c = 3` | ⚠️ 部分使用 | a、b 用索引，c 无法用（范围查询后的列） |
+
+**范围查询中断索引**：`>`、`<`、`BETWEEN`、`LIKE 'abc%'`（前缀匹配）会导致该列之后的索引列无法使用。
+
+### 2.2 索引失效的常见场景
+
+```sql
+-- 1. 对索引列使用函数或运算
+SELECT * FROM users WHERE YEAR(created_at) = 2025;    -- ❌ 失效
+SELECT * FROM users WHERE created_at >= '2025-01-01'
+  AND created_at < '2026-01-01';                       -- ✅ 使用索引
+
+-- 2. LIKE 以通配符开头
+SELECT * FROM users WHERE email LIKE '%example.com';   -- ❌ 失效
+SELECT * FROM users WHERE email LIKE 'test%';          -- ✅ 使用索引
+
+-- 3. OR 条件（两边字段都需有索引）
+SELECT * FROM users WHERE id = 1 OR username = 'test'; -- 如果 username 无索引则失效
+-- 改写为 UNION ALL：
+SELECT * FROM users WHERE id = 1
+UNION ALL
+SELECT * FROM users WHERE username = 'test' AND id != 1;
+
+-- 4. 隐式类型转换
+-- phone 字段是 VARCHAR，传入数字会触发隐式转换导致索引失效
+SELECT * FROM users WHERE phone = 13800138000;        -- ❌ 失效
+SELECT * FROM users WHERE phone = '13800138000';      -- ✅ 使用索引
+
+-- 5. IS NULL / IS NOT NULL（取决于数据分布）
+-- 当 NULL 值占比很高时，IS NOT NULL 可能走全表扫描
+
+-- 6. NOT IN / NOT EXISTS（通常不走索引，具体看优化器判断）
+```
+
+### 2.3 索引设计实践建议
+
+| 场景 | 建议 |
+|:-----|:-----|
+| 主键选择 | 使用自增 BIGINT（避免 UUID，避免页分裂） |
+| 单列索引 | 选择区分度高的列（`COUNT(DISTINCT col) / COUNT(*)` > 0.1） |
+| 联合索引 | 把等值查询列放前面，范围查询列放后面 |
+| 覆盖索引 | 高频查询尽量用覆盖索引避免回表 |
+| 索引数量 | 单表索引建议不超过 5-6 个（写入时维护索引有开销） |
+| 前缀索引 | 长字符串列用前缀索引：`INDEX idx_name (name(20))` |
+
+***
+
+## 三、EXPLAIN 深入解读
+
+### 3.1 EXPLAIN 输出字段详解
+
+```sql
+EXPLAIN SELECT u.username, o.total
+FROM users u
+JOIN orders o ON u.id = o.user_id
+WHERE u.status = 1 AND o.total > 100;
+```
+
+**核心字段说明**：
+
+| 字段 | 含义 | 说明 |
+|:-----|:-----|:-----|
+| `id` | 查询编号 | 相同 id 从上到下执行，不同 id 大的先执行 |
+| `select_type` | 查询类型 | `SIMPLE`（简单查询）/ `PRIMARY`（外层）/ `SUBQUERY`（子查询）/ `DERIVED`（派生表） |
+| `table` | 访问的表 | 可能是表名或 `<derivedN>`（派生表别名） |
+| `type` | **访问类型**（最重要） | 从好到差：`system` > `const` > `eq_ref` > `ref` > `range` > `index` > `ALL` |
+| `possible_keys` | 可能使用的索引 | 优化器认为可能用到的索引 |
+| `key` | **实际使用的索引** | `NULL` 表示全表扫描 |
+| `key_len` | 索引使用长度（字节） | 越短越好，反映联合索引使用了几列 |
+| `rows` | 预估扫描行数 | 越小越好 |
+| `filtered` | 过滤比例（%） | 越高越好（100% 最优） |
+| `Extra` | 额外信息 | 重要见下表 |
+
+### 3.2 Extra 常见值与优化方向
+
+| Extra 值 | 含义 | 优化方向 |
+|:---------|:-----|:---------|
+| `Using index` | **覆盖索引**，无需回表 | ✅ 最优 |
+| `Using where` | 在存储引擎层过滤后，Server 层再过滤 | 可以尝试加索引减少 Server 层过滤 |
+| `Using index condition` | **索引下推（ICP）**，在引擎层完成部分 WHERE 条件 | ✅ 良好 |
+| `Using temporary` | 使用临时表（常见于 GROUP BY / DISTINCT） | 优化 GROUP BY，考虑加索引 |
+| `Using filesort` | 额外排序（无法利用索引排序） | 为 ORDER BY 列加索引 |
+| `Select tables optimized away` | 聚合函数直接从索引获取 | ✅ 最优 |
+
+### 3.3 type 访问类型详解
+
+| type | 含义 | 示例 |
+|:-----|:-----|:-----|
+| `system` | 表只有一行（系统表） | 极少见 |
+| `const` | 主键或唯一索引等值查询 | `WHERE id = 1` |
+| `eq_ref` | JOIN 时用主键/唯一索引关联 | `JOIN ON a.id = b.id`（a.id 是主键） |
+| `ref` | 非唯一索引等值查询 | `WHERE email = 'x'`（email 有普通索引） |
+| `range` | 索引范围扫描 | `WHERE id > 10`、`WHERE id IN (1,2,3)` |
+| `index` | 全索引扫描（遍历整个索引树） | `SELECT id FROM users`（只查索引列） |
+| `ALL` | **全表扫描**（最差） | 无可用索引 |
+
+***
+
+## 四、查询优化实战技巧
+
+### 4.1 分页查询优化
+
+```sql
+-- 问题：OFFSET 越大越慢（需要跳过前面所有行）
+SELECT * FROM orders ORDER BY id LIMIT 10 OFFSET 1000000;  -- 慢
+
+-- 优化：使用书签法（需要记住上次最后的 id）
+SELECT * FROM orders WHERE id > 1000000 ORDER BY id LIMIT 10;  -- 快
+
+-- 延迟关联（先查主键，再回表取数据）
+SELECT o.* FROM orders o
+INNER JOIN (
+  SELECT id FROM orders ORDER BY id LIMIT 10 OFFSET 1000000
+) t ON o.id = t.id;
+```
+
+### 4.2 COUNT 优化
+
+```sql
+-- COUNT(*) 会统计所有行（包括 NULL），COUNT(col) 不统计 NULL
+SELECT COUNT(*) FROM users;        -- 推荐（InnoDB 会优化为最小索引树扫描）
+SELECT COUNT(id) FROM users;       -- 等价于 COUNT(*)
+SELECT COUNT(email) FROM users;    -- 只统计 email 非 NULL 的行
+
+-- 大表 COUNT 优化方案：
+-- 1. 维护计数表（实时性要求高）
+-- 2. 使用 SHOW TABLE STATUS 中的 Rows（近似值，不准确）
+-- 3. 使用聚簇索引扫描（MySQL 会自动选择最小索引）
+```
+
+### 4.3 JOIN 优化
+
+```sql
+-- 小表驱动大表（MySQL 优化器通常会自动选择，但显式写更清晰）
+-- 被驱动表的 JOIN 列必须有索引
+SELECT u.username, o.order_no
+FROM users u  -- 小表（驱动表）
+INNER JOIN orders o ON u.id = o.user_id;  -- o.user_id 必须有索引
+
+-- 避免 JOIN 多表（超过 3 张表时考虑反范式设计或冗余字段）
+```
+
+### 4.4 ORDER BY 优化
+
+```sql
+-- 利用索引排序（避免 filesort）
+-- 如果有联合索引 idx_status_created(status, created_at)
+SELECT * FROM orders WHERE status = 1 ORDER BY created_at DESC;  -- ✅ 索引已排序
+
+-- 注意：ORDER BY 方向不一致时无法使用索引排序
+-- idx(a ASC, b ASC) 不能用于 ORDER BY a ASC, b DESC
+-- MySQL 8.0 支持降序索引：CREATE INDEX idx ON t(a ASC, b DESC);
+```
+
+***
+
+## 五、索引优化检查清单
+
+```
+□ EXPLAIN 分析慢查询，确认 type 不是 ALL
+□ 确认 key 字段是否使用了预期索引
+□ 检查 key_len 确认联合索引使用了几列
+□ 检查 Extra 是否有 Using filesort / Using temporary
+□ 确认 WHERE 条件没有导致索引失效（函数/运算/类型转换）
+□ 分页查询使用书签法或延迟关联
+□ 高频查询尽量使用覆盖索引（Using index）
+□ 单表索引数量不超过 6 个
+□ 区分度低的列（如 status, gender）不单独建索引
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/4-shi-wu-yu-suo-ji-zhi/index.md
+---
+# 事务与锁机制
+
+## 一、事务基础
+
+### 1.1 ACID 特性
+
+| 特性 | 含义 | InnoDB 实现方式 |
+|:-----|:-----|:----------------|
+| **Atomicity**（原子性） | 事务要么全部成功，要么全部回滚 | Undo Log 实现回滚 |
+| **Consistency**（一致性） | 事务前后数据库从一个一致状态到另一个一致状态 | 由其他三个特性共同保证 |
+| **Isolation**（隔离性） | 并发事务之间互不干扰 | 锁 + MVCC 实现 |
+| **Durability**（持久性） | 事务提交后数据永久保存 | Redo Log + DoubleWrite 实现 |
+
+### 1.2 事务语法
+
+```sql
+-- 显式开启事务
+START TRANSACTION;  -- 或 BEGIN;
+-- 执行 SQL ...
+COMMIT;             -- 提交
+-- 或
+ROLLBACK;           -- 回滚
+
+-- 隐式提交的语句（执行后自动提交之前的事务）：
+-- DDL（CREATE/ALTER/DROP）、LOCK TABLES、TRUNCATE 等
+
+-- 查看当前事务状态
+SELECT * FROM information_schema.INNODB_TRX;
+```
+
+***
+
+## 二、事务隔离级别
+
+### 2.1 四种隔离级别
+
+| 隔离级别 | 脏读 | 不可重复读 | 幻读 | 说明 |
+|:---------|:----:|:----------:|:----:|:-----|
+| **READ UNCOMMITTED** | ✅ 可能 | ✅ 可能 | ✅ 可能 | 几乎不用，可读到未提交数据 |
+| **READ COMMITTED**（RC） | ❌ 不可能 | ✅ 可能 | ✅ 可能 | Oracle 默认级别 |
+| **REPEATABLE READ**（RR） | ❌ 不可能 | ❌ 不可能 | ⚠️ 部分解决 | **MySQL InnoDB 默认级别** |
+| **SERIALIZABLE** | ❌ 不可能 | ❌ 不可能 | ❌ 不可能 | 串行执行，性能最差 |
+
+### 2.2 各级别问题详解
+
+**脏读**：读到其他事务未提交的数据
+
+```sql
+-- 事务 A：UPDATE users SET balance = 0 WHERE id = 1;（未 COMMIT）
+-- 事务 B：SELECT balance FROM users WHERE id = 1; → 读到 0（脏数据）
+-- 事务 A：ROLLBACK;  ← B 读到的是无效数据
+```
+
+**不可重复读**：同一事务内两次读取同一行，结果不同（被其他事务 UPDATE 了）
+
+```sql
+-- 事务 A：SELECT balance FROM users WHERE id = 1; → 100
+-- 事务 B：UPDATE users SET balance = 200 WHERE id = 1; COMMIT;
+-- 事务 A：SELECT balance FROM users WHERE id = 1; → 200（不可重复读）
+```
+
+**幻读**：同一事务内两次范围查询，结果行数不同（被其他事务 INSERT 了）
+
+```sql
+-- 事务 A：SELECT COUNT(*) FROM users WHERE age > 20; → 5
+-- 事务 B：INSERT INTO users (age) VALUES (25); COMMIT;
+-- 事务 A：SELECT COUNT(*) FROM users WHERE age > 20; → 6（幻读）
+```
+
+### 2.3 InnoDB 如何解决幻读（RR 级别）
+
+InnoDB 在 RR 级别下通过 **MVCC** + **Next-Key Lock** 两种机制解决幻读：
+
+* **快照读**（普通 `SELECT`）：通过 MVCC 读取事务开始时的快照，不受其他事务影响
+* **当前读**（`SELECT ... FOR UPDATE` / `INSERT` / `UPDATE`）：通过 **Next-Key Lock**（行锁 + 间隙锁）锁住扫描范围，阻止其他事务插入
+
+```sql
+-- 当前读示例
+SELECT * FROM users WHERE age > 20 FOR UPDATE;  -- 锁住 age > 20 的范围
+-- 此时其他事务无法在该范围内 INSERT，避免幻读
+```
+
+***
+
+## 三、MVCC 多版本并发控制
+
+### 3.1 实现原理
+
+InnoDB 为每行数据添加两个隐藏列：
+
+* **DB\_TRX\_ID**：最后修改该行的事务 ID
+* **DB\_ROLL\_PTR**：指向 Undo Log 中该行的上一个版本
+
+```
+当前行 ←→ Undo Log 版本1 ←→ Undo Log 版本2 ←→ ...
+（版本链，链表结构）
+```
+
+**Read View（读视图）**：事务执行快照读时生成，包含：
+
+* `m_ids`：当前活跃（未提交）的事务 ID 列表
+* `min_trx_id`：最小活跃事务 ID
+* `max_trx_id`：下一个将分配的事务 ID
+* `creator_trx_id`：创建该 Read View 的事务 ID
+
+**可见性判断规则**：
+
+1. 如果行的 `DB_TRX_ID` == `creator_trx_id` → 可见（自己修改的）
+2. 如果 `DB_TRX_ID` < `min_trx_id` → 可见（事务已提交）
+3. 如果 `DB_TRX_ID` >= `max_trx_id` → 不可见（事务在 Read View 之后开启）
+4. 如果 `DB_TRX_ID` 在 `m_ids` 中 → 不可见（事务未提交）
+5. 否则 → 可见
+
+### 3.2 RC 与 RR 的 Read View 差异
+
+| 隔离级别 | Read View 生成时机 |
+|:---------|:-------------------|
+| **RC** | 每次 `SELECT` 都生成新的 Read View |
+| **RR** | 只在事务第一次 `SELECT` 时生成，后续复用同一个 Read View |
+
+这就是为什么 RR 能实现可重复读：始终读取同一个快照，不受其他已提交事务的影响。
+
+***
+
+## 四、锁机制详解
+
+### 4.1 锁的粒度
+
+| 锁类型 | 粒度 | 说明 |
+|:-------|:-----|:-----|
+| **表锁** | 整张表 | `LOCK TABLES t READ/WRITE`，MyISAM 只支持表锁 |
+| **行锁** | 单行记录 | InnoDB 特有，锁定索引记录 |
+| **间隙锁**（Gap Lock） | 索引记录之间的间隙 | 防止其他事务在间隙中插入（解决幻读） |
+| **临键锁**（Next-Key Lock） | 行锁 + 间隙锁 | InnoDB 在 RR 级别下的默认锁类型 |
+| **意向锁**（Intention Lock） | 表级 | `IS`（意向共享锁）/ `IX`（意向排他锁），用于表锁与行锁共存 |
+
+### 4.2 行锁的加锁规则（RR 级别）
+
+```sql
+-- 等值查询，命中唯一索引 → 退化为 Record Lock（行锁）
+SELECT * FROM users WHERE id = 1 FOR UPDATE;  -- 锁住 id=1 这一行
+
+-- 等值查询，未命中唯一索引 → 退化为 Gap Lock（间隙锁）
+SELECT * FROM users WHERE id = 5 FOR UPDATE;
+-- 假设 id 有 1, 3, 7, 10，则锁住 (3, 7) 间隙，阻止 id=4,5,6 的插入
+
+-- 范围查询 → Next-Key Lock
+SELECT * FROM users WHERE id >= 3 AND id < 7 FOR UPDATE;
+-- 锁住 [1,3], (3,7) 范围（取决于实际数据）
+
+-- 无索引查询 → 锁住全表（升级为表锁）
+SELECT * FROM users WHERE name = 'test' FOR UPDATE;
+-- 如果 name 没有索引，InnoDB 会锁住所有行（等效表锁）
+```
+
+### 4.3 查看当前锁信息
+
+```sql
+-- MySQL 8.0+：performance_schema
+SELECT * FROM performance_schema.data_locks;
+SELECT * FROM performance_schema.data_lock_waits;
+
+-- MySQL 5.7：information_schema
+SELECT * FROM information_schema.INNODB_LOCKS;
+SELECT * FROM information_schema.INNODB_LOCK_WAITS;
+
+-- 查看当前运行的事务
+SELECT * FROM information_schema.INNODB_TRX;
+
+-- 查看正在等待锁的事务
+SELECT
+  r.trx_id AS waiting_trx,
+  r.trx_query AS waiting_query,
+  b.trx_id AS blocking_trx,
+  b.trx_query AS blocking_query
+FROM information_schema.INNODB_LOCK_WAITS w
+JOIN information_schema.INNODB_TRX b ON b.trx_id = w.blocking_trx_id
+JOIN information_schema.INNODB_TRX r ON r.trx_id = w.requesting_trx_id;
+```
+
+***
+
+## 五、死锁
+
+### 5.1 死锁产生条件
+
+两个或多个事务互相等待对方持有的锁，形成循环依赖：
+
+```sql
+-- 事务 A：
+BEGIN;
+UPDATE users SET balance = balance - 100 WHERE id = 1;  -- 锁住 id=1
+-- 等待 id=2 的锁...
+
+-- 事务 B（同时执行）：
+BEGIN;
+UPDATE users SET balance = balance - 50 WHERE id = 2;   -- 锁住 id=2
+UPDATE users SET balance = balance + 50 WHERE id = 1;   -- 等待 id=1 的锁（被 A 持有）
+```
+
+### 5.2 InnoDB 死锁检测与处理
+
+InnoDB 默认开启 **死锁检测**（`innodb_deadlock_detect = ON`），会主动回滚代价较小的事务：
+
+```sql
+-- 查看死锁日志
+SHOW ENGINE INNODB STATUS;  -- 在 LATEST DETECTED DEADLOCK 部分查看
+
+-- 死锁检测开关（高并发时可关闭以减少 CPU 开销，改用锁等待超时）
+SET GLOBAL innodb_deadlock_detect = ON;
+SET GLOBAL innodb_lock_wait_timeout = 50;  -- 锁等待超时（秒）
+```
+
+### 5.3 死锁预防与排查
+
+**预防策略**：
+
+1. **固定加锁顺序**：多个事务按相同顺序访问表和行
+2. **减小事务范围**：事务尽量短，不要在事务中做 RPC/HTTP 调用
+3. **合理使用索引**：避免无索引查询导致锁升级为表锁
+4. **降低隔离级别**：RC 级别下没有间隙锁，死锁概率更低
+
+**排查流程**：
+
+```sql
+-- 1. 查看最近一次死锁日志
+SHOW ENGINE INNODB STATUS;
+
+-- 2. 查看当前锁等待
+SELECT * FROM performance_schema.data_lock_waits;
+
+-- 3. 找到阻塞源和被阻塞方，分析加锁顺序
+
+-- 4. Kill 阻塞事务（谨慎操作）
+KILL <blocking_trx_id>;
+```
+
+***
+
+## 六、MVCC 与锁的实践总结
+
+| 场景 | 建议 |
+|:-----|:-----|
+| 读多写少 | 使用默认 RR 级别 + MVCC，读不加锁，性能好 |
+| 写多、死锁频繁 | 考虑降级为 RC 级别（无间隙锁，死锁大幅减少） |
+| 需要严格一致性 | 使用 `SELECT ... FOR UPDATE` 或 `SERIALIZABLE` |
+| 大批量更新 | 分批提交（每 500-1000 行提交一次），减少锁持有时间 |
+| 事务中的查询 | 尽量在事务末尾做查询，避免过早获取 Read View |
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/5-cun-chu-yin-qing/index.md
+---
+# 存储引擎
+
+## 一、存储引擎概述
+
+MySQL 的存储引擎是插件式的，不同引擎适用于不同场景。InnoDB 是 MySQL 5.5+ 的默认引擎。
+
+### 1.1 InnoDB vs MyISAM 对比
+
+| 特性 | InnoDB（默认） | MyISAM |
+|:-----|:--------------|:-------|
+| **事务支持** | ✅ 支持 ACID | ❌ 不支持 |
+| **行级锁** | ✅ 支持 | ❌ 只有表锁 |
+| **外键** | ✅ 支持 | ❌ 不支持 |
+| **崩溃恢复** | ✅ Redo Log 保证 | ❌ 需要手动修复 |
+| **MVCC** | ✅ 支持 | ❌ 不支持 |
+| **全文索引** | ✅ MySQL 5.6+ 支持 | ✅ 原生支持 |
+| **聚簇索引** | ✅ 有（主键索引即数据） | ❌ 没有（索引与数据分离） |
+| **存储文件** | `.ibd`（数据+索引） | `.MYD`（数据）+ `.MYI`（索引） |
+| **AUTO\_INCREMENT** | 必须有索引 | 可以没有索引 |
+| **COUNT(\*)** | 需遍历（无缓存） | 有内部计数器，很快 |
+
+> **结论**：除非有非常明确的理由（如只读表、旧系统兼容），否则始终使用 InnoDB。
+
+### 1.2 其他存储引擎简介
+
+| 引擎 | 特点 | 适用场景 |
+|:-----|:-----|:---------|
+| **Memory** | 数据存内存，重启丢失，支持 Hash 索引 | 临时表、缓存表 |
+| **CSV** | 数据以 CSV 格式存储 | 数据导入导出中间层 |
+| **Archive** | 只支持 INSERT/SELECT，高压缩 | 日志、历史归档数据 |
+| **Federated** | 访问远程 MySQL 表 | 跨库查询（不推荐） |
+
+***
+
+## 二、InnoDB 架构详解
+
+### 2.1 内存结构
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    InnoDB 内存结构                     │
+├──────────────────────┬──────────────────────────────┤
+│   Buffer Pool 缓冲池  │   Change Buffer 修改缓冲      │
+│   - 数据页和索引页     │   - 非唯一二级索引的延迟写入    │
+│   - 自适应 Hash 索引  │   - 减少随机 IO              │
+│   - 锁信息            │                              │
+├──────────────────────┴──────────────────────────────┤
+│               Log Buffer 日志缓冲（Redo Log）          │
+│         - 事务提交前先写 Log Buffer，再按策略刷盘      │
+└─────────────────────────────────────────────────────┘
+```
+
+### 2.2 Buffer Pool 详解
+
+Buffer Pool 是 InnoDB 最重要的内存区域，缓存数据页和索引页：
+
+```sql
+-- 查看 Buffer Pool 状态
+SHOW STATUS LIKE 'Innodb_buffer_pool%';
+
+-- 关键指标
+-- Innodb_buffer_pool_read_requests  逻辑读取次数
+-- Innodb_buffer_pool_reads          物理读取次数（从磁盘读取）
+-- 命中率 = 1 - (reads / read_requests)  理想值 > 99%
+```
+
+**Buffer Pool 工作原理**：
+
+1. 查询数据时，先在 Buffer Pool 中查找
+2. 命中 → 直接返回（无磁盘 IO）
+3. 未命中 → 从磁盘读取数据页到 Buffer Pool，再返回
+4. Buffer Pool 满时，使用 **LRU（最近最少使用）** 算法淘汰旧页
+
+**改进的 LRU 算法**：InnoDB 将 LRU 列表分为两部分：
+
+* **young 区**（热数据，约 5/8）：经常访问的页
+* **old 区**（冷数据，约 3/8）：新读入的页先放这里，再次被访问后才移到 young 区
+
+这样避免了全表扫描等操作污染 Buffer Pool（大量冷数据被读入后直接把热数据挤出）。
+
+### 2.3 Redo Log（重做日志）
+
+**作用**：保证事务的**持久性**，记录数据页的物理修改，用于崩溃恢复。
+
+```
+事务执行流程：
+BEGIN → 修改内存（Buffer Pool）→ 写 Redo Log（prepare 状态）→ COMMIT → Redo Log 刷盘（commit 状态）
+                                                                      ↑
+                                                     如果此时崩溃，重启后根据 Redo Log 恢复
+```
+
+```sql
+-- Redo Log 相关参数
+SHOW VARIABLES LIKE 'innodb_log%';
+
+-- innodb_log_file_size      Redo Log 文件大小（建议 256MB-1GB）
+-- innodb_log_files_in_group Redo Log 文件数量（默认 2）
+-- innodb_log_buffer_size    Redo Log 缓冲区大小（默认 16MB）
+
+-- innodb_flush_log_at_trx_commit 控制刷盘策略：
+-- 0：每秒写入磁盘（可能丢失 1 秒数据）
+-- 1：每次提交都刷盘（最安全，默认） ← 生产推荐
+-- 2：每次提交写 OS Cache，每秒刷盘
+```
+
+### 2.4 Undo Log（回滚日志）
+
+**作用**：
+
+1. 保证事务的**原子性**（支持回滚）
+2. 实现 **MVCC**（提供数据的历史版本）
+
+```
+执行 UPDATE 时：
+1. 将修改前的数据写入 Undo Log（用于回滚和 MVCC）
+2. 修改 Buffer Pool 中的数据页
+3. 将修改后的数据写入 Redo Log（用于崩溃恢复）
+
+回滚时：
+根据 Undo Log 中的旧值，将数据恢复到修改前的状态
+```
+
+### 2.5 DoubleWrite（双写）
+
+**解决问题**：防止数据页写入过程中操作系统崩溃（部分写入，partial write）。
+
+```
+刷盘过程：
+1. 先将脏页写入 DoubleWrite Buffer（连续磁盘空间，顺序 IO）
+2. 再将脏页写入实际数据文件（随机 IO）
+3. 如果步骤 2 崩溃，重启后从 DoubleWrite Buffer 恢复该页
+```
+
+### 2.6 InnoDB 后台线程
+
+| 线程 | 作用 |
+|:-----|:-----|
+| **Master Thread** | 协调各后台线程，处理刷脏、合并插入缓冲、刷新日志 |
+| **Page Cleaner Thread** | 负责脏页刷新（从 Buffer Pool 刷到磁盘） |
+| **IO Read Thread** | 数据页读取（多个线程并行读） |
+| **IO Write Thread** | 数据页写入（多个线程并行写） |
+| **Log Thread** | Redo Log 刷盘 |
+
+***
+
+## 三、表空间管理
+
+### 3.1 表空间类型
+
+| 表空间类型 | 说明 |
+|:-----------|:-----|
+| **系统表空间**（ibdata1） | 存放 InnoDB 数据字典、Change Buffer、DoubleWrite 等 |
+| **独立表空间**（.ibd） | 每个表一个文件（`innodb_file_per_table=ON`，默认开启） |
+| **通用表空间** | 自定义表空间，多个表共享 |
+| **Undo 表空间** | 存放 Undo Log |
+| **临时表空间** | 存放临时表数据 |
+
+### 3.2 独立表空间管理
+
+```sql
+-- 查看表空间文件
+SHOW VARIABLES LIKE 'innodb_file_per_table';  -- ON（默认开启）
+
+-- 表空间文件位置
+-- /var/lib/mysql/<database>/<table>.ibd
+
+-- 回收表空间（删除数据后不会自动释放磁盘空间）
+ALTER TABLE users ENGINE=InnoDB;  -- 重建表，回收空间
+
+-- MySQL 8.0+：在线回收
+OPTIMIZE TABLE users;  -- 等价于 ALTER TABLE ... ENGINE=InnoDB
+
+-- 查看表空间大小
+SELECT
+  table_name,
+  ROUND(data_length / 1024 / 1024, 2) AS data_mb,
+  ROUND(index_length / 1024 / 1024, 2) AS index_mb
+FROM information_schema.TABLES
+WHERE table_schema = 'mydb';
+```
+
+***
+
+## 四、存储引擎选择决策
+
+```
+你的场景是什么？
+│
+├─ 需要事务支持？ ──── Yes ──→ InnoDB
+├─ 需要行级锁？ ───── Yes ──→ InnoDB
+├─ 需要外键？ ─────── Yes ──→ InnoDB
+├─ 只读历史日志表？ ── Yes ──→ Archive
+├─ 临时数据（可丢失）？ Yes ──→ Memory
+├─ 旧系统必须用 MyISAM？ Yes ──→ MyISAM（建议迁移）
+└─ 其他 ──────────────→ InnoDB（默认选择）
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/6-man-cha-xun-fen-xi-yu-xing-neng-tiao-you/index.md
+---
+# 慢查询分析与性能调优
+
+## 一、慢查询日志
+
+### 1.1 配置慢查询日志
+
+```sql
+-- 查看慢查询配置
+SHOW VARIABLES LIKE 'slow_query%';
+SHOW VARIABLES LIKE 'long_query_time';
+
+-- 开启慢查询日志（临时，重启失效）
+SET GLOBAL slow_query_log = ON;
+SET GLOBAL slow_query_log_file = '/var/log/mysql/slow.log';
+SET GLOBAL long_query_time = 1;  -- 超过 1 秒记录为慢查询
+
+-- 开启所有查询记录（用于调试，生产慎用）
+SET GLOBAL log_queries_not_using_indexes = ON;
+```
+
+**永久配置（my.cnf）**：
+
+```ini
+[mysqld]
+slow_query_log = ON
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 1
+log_queries_not_using_indexes = ON
+min_examined_row_limit = 100  # 扫描超过 100 行才记录（避免记录小表全表扫描）
+```
+
+### 1.2 慢查询日志格式
+
+```sql
+# Time: 2026-08-18T10:30:00.000000Z
+# User@Host: root[root] @ localhost []  Id:   123
+# Query_time: 2.500123  Lock_time: 0.000321  Rows_sent: 100  Rows_examined: 1000000
+SET timestamp=1723977000;
+SELECT * FROM orders WHERE created_at > '2025-01-01' AND status = 'pending';
+```
+
+***
+
+## 二、慢查询分析工具
+
+### 2.1 mysqldumpslow（MySQL 自带）
+
+```bash
+# 按执行时间排序，显示前 10 条
+mysqldumpslow -s t -t 10 /var/log/mysql/slow.log
+
+# 按出现次数排序
+mysqldumpslow -s c -t 10 /var/log/mysql/slow.log
+
+# 按锁等待时间排序
+mysqldumpslow -s l -t 10 /var/log/mysql/slow.log
+
+# -s 排序方式：t=时间, c=次数, l=锁等待, r=返回行数, at=平均时间
+# -t 显示条数
+# -a 不将数字替换为 N（显示具体值）
+```
+
+### 2.2 pt-query-digest（Percona Toolkit，推荐）
+
+```bash
+# 分析慢查询日志（输出最全面）
+pt-query-digest /var/log/mysql/slow.log > /tmp/slow_report.txt
+
+# 只分析最近 1 小时的慢查询
+pt-query-digest --since '1h' /var/log/mysql/slow.log
+
+# 按平均响应时间排序，显示前 20 条
+pt-query-digest --limit 20 /var/log/mysql/slow.log
+
+# 分析指定时间段
+pt-query-digest --since '2026-08-18 09:00:00' --until '2026-08-18 10:00:00' /var/log/mysql/slow.log
+```
+
+**pt-query-digest 输出解读**：
+
+```
+# Profile
+# Rank Query ID           Response time  Calls  R/Call  V/M
+# ==== ================== ============== ====== ======= =====
+#    1 0xABC123...        1250.0000 50.2%    100 12.5000  0.00
+#    2 0xDEF456...         500.0000 20.1%    500  1.0000  0.00
+
+# 每条 SQL 的详细分析：
+# - Response time: 总响应时间和占比
+# - Calls: 执行次数
+# - R/Call: 平均每次执行时间
+# - V/M: 方差/均值（越大说明执行时间波动越大）
+```
+
+***
+
+## 三、全局参数调优
+
+### 3.1 Buffer Pool 调优
+
+```ini
+[mysqld]
+# Buffer Pool 大小（建议物理内存的 50%-70%，专用数据库服务器）
+innodb_buffer_pool_size = 4G
+
+# Buffer Pool 实例数（>1G 时建议多个，减少锁竞争）
+innodb_buffer_pool_instances = 4
+
+# Buffer Pool 预热（重启后自动加载热数据）
+innodb_buffer_pool_dump_at_shutdown = ON
+innodb_buffer_pool_load_at_startup = ON
+```
+
+### 3.2 Redo Log 调优
+
+```ini
+[mysqld]
+# Redo Log 文件大小（写入密集型场景增大）
+innodb_log_file_size = 1G
+
+# Redo Log 文件数量
+innodb_log_files_in_group = 2
+
+# Redo Log 缓冲区
+innodb_log_buffer_size = 64M
+
+# 刷盘策略（安全 vs 性能权衡）
+innodb_flush_log_at_trx_commit = 1  # 1=最安全 2=性能优先
+sync_binlog = 1                      # 1=最安全 0=性能优先
+```
+
+### 3.3 连接与线程配置
+
+```ini
+[mysqld]
+# 最大连接数（根据业务并发量调整）
+max_connections = 500
+
+# 每个连接的线程缓存（减少线程创建开销）
+thread_cache_size = 64
+
+# 表缓存（减少文件描述符打开关闭）
+table_open_cache = 4000
+table_open_cache_instances = 16
+```
+
+### 3.4 临时表与排序
+
+```ini
+[mysqld]
+# 内存临时表大小（超过后写磁盘）
+tmp_table_size = 64M
+max_heap_table_size = 64M
+
+# 排序缓冲区（每个连接独立分配）
+sort_buffer_size = 4M
+
+# JOIN 缓冲区
+join_buffer_size = 4M
+
+# 读缓冲区
+read_buffer_size = 2M
+read_rnd_buffer_size = 8M
+```
+
+> **注意**：`sort_buffer_size`、`join_buffer_size` 等是**每连接独立分配**的，设置过大在高并发时会消耗大量内存。
+
+***
+
+## 四、SQL 重写技巧
+
+### 4.1 避免 SELECT \*
+
+```sql
+-- ❌ 不推荐
+SELECT * FROM users WHERE id = 1;
+
+-- ✅ 只查需要的列（可能命中覆盖索引）
+SELECT id, username, email FROM users WHERE id = 1;
+```
+
+### 4.2 分页查询优化
+
+```sql
+-- ❌ 大偏移量分页
+SELECT * FROM orders ORDER BY id LIMIT 1000000, 20;
+
+-- ✅ 基于游标的分页（记住上次最大 id）
+SELECT * FROM orders WHERE id > 1000000 ORDER BY id LIMIT 20;
+
+-- ✅ 延迟关联
+SELECT o.* FROM orders o
+INNER JOIN (SELECT id FROM orders ORDER BY id LIMIT 1000000, 20) t
+ON o.id = t.id;
+```
+
+### 4.3 批量操作优化
+
+```sql
+-- ❌ 逐条插入
+INSERT INTO users (name, email) VALUES ('a', 'a@x.com');
+INSERT INTO users (name, email) VALUES ('b', 'b@x.com');
+INSERT INTO users (name, email) VALUES ('c', 'c@x.com');
+
+-- ✅ 批量插入（一次提交，减少网络往返和事务开销）
+INSERT INTO users (name, email) VALUES
+  ('a', 'a@x.com'),
+  ('b', 'b@x.com'),
+  ('c', 'c@x.com');
+
+-- ✅ 大批量更新分批提交
+-- 每次更新 1000 行，循环执行
+UPDATE orders SET status = 'archived'
+WHERE created_at < '2024-01-01' AND status != 'archived'
+LIMIT 1000;
+```
+
+### 4.4 EXISTS vs IN 选择
+
+```sql
+-- IN 适合子查询结果集小的情况
+SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE total > 500);
+
+-- EXISTS 适合外表大、子查询结果集小的情况
+SELECT * FROM users u WHERE EXISTS (
+  SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.total > 500
+);
+```
+
+### 4.5 UNION vs UNION ALL
+
+```sql
+-- UNION 会去重（有额外排序开销）
+SELECT user_id FROM orders WHERE status = 'paid'
+UNION
+SELECT user_id FROM orders WHERE status = 'refunded';
+
+-- UNION ALL 不去重（性能更好）
+SELECT user_id FROM orders WHERE status = 'paid'
+UNION ALL
+SELECT user_id FROM orders WHERE status = 'refunded';
+-- 如果确定没有重复，或者业务允许重复，优先用 UNION ALL
+```
+
+***
+
+## 五、性能监控常用命令
+
+```sql
+-- 查看当前连接和运行的查询
+SHOW FULL PROCESSLIST;
+
+-- 查看 InnoDB 引擎状态
+SHOW ENGINE INNODB STATUS;
+
+-- 查看 Buffer Pool 命中率
+SELECT
+  (1 - Innodb_buffer_pool_reads / Innodb_buffer_pool_read_requests) * 100 AS hit_rate
+FROM (
+  SELECT
+    VARIABLE_VALUE AS Innodb_buffer_pool_reads
+  FROM performance_schema.global_status
+  WHERE VARIABLE_NAME = 'Innodb_buffer_pool_reads'
+) a, (
+  SELECT
+    VARIABLE_VALUE AS Innodb_buffer_pool_read_requests
+  FROM performance_schema.global_status
+  WHERE VARIABLE_NAME = 'Innodb_buffer_pool_read_requests'
+) b;
+
+-- 查看 QPS 和 TPS
+SHOW GLOBAL STATUS LIKE 'Queries';
+SHOW GLOBAL STATUS LIKE 'Com_commit';
+SHOW GLOBAL STATUS LIKE 'Com_rollback';
+
+-- 查看 InnoDB 行操作统计
+SHOW GLOBAL STATUS LIKE 'Innodb_rows_%';
+```
+
+***
+
+---
+
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-yi-jie-duan-my-sql-he-xin/7-yong-hu-quan-xian-yu-an-quan-guan-li/index.md
+---
+# 用户权限与安全管理
+
+## 一、用户管理
+
+### 1.1 创建用户
+
+```sql
+-- 创建本地用户
+CREATE USER 'dev_user'@'localhost' IDENTIFIED BY 'StrongP@ss123';
+
+-- 创建远程用户（允许从任意主机连接）
+CREATE USER 'app_user'@'%' IDENTIFIED BY 'StrongP@ss123';
+
+-- 创建指定 IP 段用户
+CREATE USER 'readonly'@'192.168.1.%' IDENTIFIED BY 'ReadP@ss123';
+
+-- MySQL 8.0 推荐：使用 caching_sha2_password 插件（默认）
+CREATE USER 'new_user'@'%' IDENTIFIED WITH caching_sha2_password BY 'password';
+
+-- 兼容旧客户端：使用 mysql_native_password
+CREATE USER 'legacy_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+```
+
+### 1.2 修改用户
+
+```sql
+-- 修改密码
+ALTER USER 'dev_user'@'localhost' IDENTIFIED BY 'NewP@ss456';
+
+-- 当前用户修改自己的密码
+SET PASSWORD = PASSWORD('NewP@ss456');
+
+-- 重命名用户
+RENAME USER 'old_name'@'%' TO 'new_name'@'%';
+
+-- 删除用户
+DROP USER 'dev_user'@'localhost';
+
+-- 查看所有用户
+SELECT user, host, plugin FROM mysql.user;
+```
+
+### 1.3 密码策略（MySQL 8.0+）
+
+```sql
+-- 查看密码策略
+SHOW VARIABLES LIKE 'validate_password%';
+
+-- 设置密码策略
+SET GLOBAL validate_password.policy = STRONG;     -- LOW/MEDIUM/STRONG
+SET GLOBAL validate_password.length = 12;          -- 最小长度
+
+-- 密码过期策略
+ALTER USER 'app_user'@'%' PASSWORD EXPIRE INTERVAL 90 DAY;  -- 90 天过期
+ALTER USER 'app_user'@'%' PASSWORD EXPIRE NEVER;              -- 永不过期
+
+-- 密码历史（禁止重用最近 5 次密码）
+ALTER USER 'app_user'@'%' PASSWORD HISTORY 5;
+```
+
+***
+
+## 二、权限管理
+
+### 2.1 权限层级
+
+```
+全局层级（*.*）
+  └─ 数据库层级（mydb.*）
+       └─ 表层级（mydb.users）
+            └─ 列层级（mydb.users.email）
+```
+
+### 2.2 常用权限
+
+| 权限 | 范围 | 说明 |
+|:-----|:-----|:-----|
+| `ALL PRIVILEGES` | 全局/数据库/表 | 所有权限（不含 GRANT OPTION） |
+| `SELECT` | 全局/数据库/表/列 | 查询 |
+| `INSERT` | 全局/数据库/表/列 | 插入 |
+| `UPDATE` | 全局/数据库/表/列 | 更新 |
+| `DELETE` | 全局/数据库/表/列 | 删除 |
+| `CREATE` | 全局/数据库/表 | 创建库/表 |
+| `DROP` | 全局/数据库/表 | 删除库/表 |
+| `INDEX` | 全局/数据库/表 | 创建/删除索引 |
+| `ALTER` | 全局/数据库/表 | 修改表结构 |
+| `EXECUTE` | 全局/数据库 | 执行存储过程/函数 |
+| `PROCESS` | 全局 | 查看所有连接（SHOW PROCESSLIST） |
+| `REPLICATION SLAVE` | 全局 | 主从复制（从库需要） |
+| `REPLICATION CLIENT` | 全局 | 查看主从状态 |
+
+### 2.3 GRANT 与 REVOKE
+
+```sql
+-- 授予数据库级权限
+GRANT SELECT, INSERT, UPDATE, DELETE ON mydb.* TO 'app_user'@'%';
+
+-- 授予表级权限
+GRANT SELECT ON mydb.users TO 'readonly'@'%';
+
+-- 授予列级权限
+GRANT SELECT (id, username, email) ON mydb.users TO 'limited'@'%';
+
+-- 授予所有权限（生产慎用）
+GRANT ALL PRIVILEGES ON mydb.* TO 'admin'@'%';
+
+-- 带 GRANT OPTION（允许该用户授权给其他人）
+GRANT SELECT ON mydb.* TO 'admin'@'%' WITH GRANT OPTION;
+
+-- 撤销权限
+REVOKE INSERT, UPDATE ON mydb.* FROM 'app_user'@'%';
+
+-- 查看用户权限
+SHOW GRANTS FOR 'app_user'@'%';
+
+-- 刷新权限（GRANT/REVOKE 后通常自动刷新）
+FLUSH PRIVILEGES;  -- 仅在直接修改 mysql 表时需要
+```
+
+***
+
+## 三、角色（MySQL 8.0+）
+
+MySQL 8.0 引入了角色功能，方便批量管理权限：
+
+```sql
+-- 创建角色
+CREATE ROLE 'app_read', 'app_write', 'app_admin';
+
+-- 给角色授权
+GRANT SELECT ON mydb.* TO 'app_read';
+GRANT INSERT, UPDATE, DELETE ON mydb.* TO 'app_write';
+GRANT ALL PRIVILEGES ON mydb.* TO 'app_admin';
+
+-- 把角色赋给用户
+GRANT 'app_read' TO 'dev_user'@'localhost';
+GRANT 'app_read', 'app_write' TO 'app_user'@'%';
+
+-- 设置默认角色（用户连接时自动激活）
+SET DEFAULT ROLE ALL TO 'dev_user'@'localhost';
+
+-- 查看角色
+SELECT * FROM mysql.role_edges;
+
+-- 激活角色
+SET ROLE 'app_read';
+SET ROLE ALL;  -- 激活所有已分配角色
+
+-- 撤销角色
+REVOKE 'app_write' FROM 'app_user'@'%';
+
+-- 删除角色
+DROP ROLE 'app_read';
+```
+
+***
+
+## 四、权限最小化原则
+
+### 4.1 不同场景的权限建议
+
+| 场景 | 建议权限 | 禁止权限 |
+|:-----|:---------|:---------|
+| **应用连接** | `SELECT, INSERT, UPDATE, DELETE`（指定库） | `DROP, ALTER, CREATE, GRANT` |
+| **只读查询** | `SELECT`（指定库或表） | 所有写权限 |
+| **备份用户** | `SELECT, LOCK TABLES, SHOW VIEW, EVENT, TRIGGER` | `DROP, ALTER, INSERT` |
+| **主从复制** | `REPLICATION SLAVE`（全局） | 其他所有权限 |
+| **监控用户** | `PROCESS, REPLICATION CLIENT, SELECT`（performance\_schema） | 写权限 |
+
+### 4.2 实践检查清单
+
+```
+□ 应用程序不使用 root 账户连接数据库
+□ 应用账户只有业务所需数据库的 SELECT/INSERT/UPDATE/DELETE 权限
+□ 不同环境（dev/staging/prod）使用不同账户
+□ 密码使用强密码策略（12位以上，含大小写+数字+特殊字符）
+□ 不在 SQL 语句中硬编码密码（使用环境变量或配置中心）
+□ 定期审查用户权限，清理不再使用的账户
+□ 开启 general_log 或 audit log 审计敏感操作
+```
+
+***
+
+## 五、SQL 注入防护
+
+### 5.1 常见注入攻击
+
+```sql
+-- 原始查询
+SELECT * FROM users WHERE username = '$input' AND password = '$pwd';
+
+-- 恶意输入：input = ' OR 1=1 --
+-- 变成：
+SELECT * FROM users WHERE username = '' OR 1=1 --' AND password = '';
+-- 结果：绕过认证，返回所有用户
+```
+
+### 5.2 防护措施
+
+**1. 参数化查询（最重要）**
+
+```java
+// Java 预编译语句（PreparedStatement）
+String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+PreparedStatement ps = conn.prepareStatement(sql);
+ps.setString(1, username);
+ps.setString(2, password);
+ResultSet rs = ps.executeQuery();
+```
+
+```python
+# Python 参数化查询
+cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
+```
+
+**2. 存储过程**
+
+```sql
+CREATE PROCEDURE login(IN p_username VARCHAR(50), IN p_password VARCHAR(255))
+BEGIN
+  SELECT * FROM users WHERE username = p_username AND password = p_password;
+END;
+```
+
+**3. 输入验证**
+
+```python
+import re
+# 白名单验证：只允许字母数字
+if not re.match(r'^[a-zA-Z0-9_]+$', username):
+    raise ValueError("非法用户名")
+```
+
+**4. 最小权限**
+
+```sql
+-- 应用账户禁止执行动态 SQL
+-- 不授予 ALTER、CREATE、DROP 权限
+-- 禁止 FILE 权限（防止 LOAD_FILE / INTO OUTFILE 攻击）
+```
+
+***
+
+## 六、SSL 连接配置
+
+```sql
+-- 查看 SSL 状态
+SHOW VARIABLES LIKE '%ssl%';
+SHOW STATUS LIKE 'Ssl_cipher';
+
+-- 强制用户使用 SSL 连接
+ALTER USER 'app_user'@'%' REQUIRE SSL;
+
+-- 或 REQUIRE X509（要求客户端提供证书）
+ALTER USER 'app_user'@'%' REQUIRE X509;
+
+-- 服务端配置（my.cnf）
+[mysqld]
+ssl-ca = /etc/mysql/ssl/ca.pem
+ssl-cert = /etc/mysql/ssl/server-cert.pem
+ssl-key = /etc/mysql/ssl/server-key.pem
+require_secure_transport = ON  -- 强制所有连接使用 SSL
+```
+
+```bash
+# 客户端连接时指定 SSL
+mysql -u app_user -p --ssl-ca=/path/to/ca.pem --ssl-cert=/path/to/client-cert.pem --ssl-key=/path/to/client-key.pem
+```
+
+***
+
+---
+
+---
 url: /my_notes/notes/JAVA学习路线/index.md
 ---
 # 📚 Java 后端开发学习路线
@@ -6509,6 +12004,7 @@ url: /my_notes/notes/JAVA学习路线/index.md
 |:-----|:---------|:----:|
 | **2.1 Spring 全家桶** | IoC 容器 & DI、AOP 面向切面编程、Bean 生命周期；Spring MVC DispatcherServlet 流程、请求处理；Spring Boot 自动配置原理、Starter、Actuator；Spring Data JPA & MyBatis ORM 框架 | [📖 查看](./第二阶段-主流框架/2.1-Spring全家桶.md) |
 | **2.2 Starter 配置指南** | Web / JDBC / JPA / MyBatis / Security / Cache / Redis / RabbitMQ / Kafka 等常用 Starter 的 application.yml 配置教程，逐项解释每个配置项的作用 | [📖 查看](./第二阶段-主流框架/2.2-SpringBoot常用Starter配置.md) |
+| **2.3 SSE 实时推送** | SSE 协议原理与格式；Spring MVC SseEmitter 基础用法与广播；WebFlux Flux/ServerSentEvent 响应式实现；AI 流式输出实战 | [📖 查看](./第二阶段-主流框架/2.3-SSE实时推送-SseEmitter与WebFlux.md) |
 
 ***
 
@@ -6838,6 +12334,7 @@ url: /my_notes/notes/JAVA学习路线/第二阶段-主流框架/index.md
 
 * [Spring全家桶](./2.1-Spring全家桶.md)
 * [SpringBoot常用Starter配置](./2.2-SpringBoot常用Starter配置.md)
+* [SSE实时推送 — SseEmitter与WebFlux](./2.3-SSE实时推送-SseEmitter与WebFlux.md)
 
 ---
 
@@ -8594,6 +14091,498 @@ management:
 | Jackson 默认时间戳 | 输出为时间戳 | 输出为 ISO 时间字符串 |
 
 **最常见迁移坑**：Boot 2 → 3 升版后 Redis 连不上，绝大多数是 `spring.redis` 前缀忘了改成 `spring.data.redis`。
+
+---
+
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/di-er-jie-duan-zhu-liu-kuang-jia/3-sse-shi-shi-tui-song-sse-emitter-yu-web-flux/index.md
+---
+# SSE 实时推送 — SseEmitter 与 WebFlux
+
+## 一、SSE 协议基础
+
+### 1.1 什么是 SSE
+
+**SSE（Server-Sent Events）** 是一种基于 HTTP 的**服务端单向推送**协议。服务端通过一个持久连接向客户端持续发送事件，客户端通过 `EventSource` API 接收。
+
+```
+客户端 ──── GET /events ────► 服务端
+客户端 ◄─── data: {...}\n\n ─ 服务端  （持续推送）
+客户端 ◄─── data: {...}\n\n ─ 服务端
+客户端 ◄─── data: {...}\n\n ─ 服务端
+```
+
+### 1.2 SSE vs WebSocket vs 轮询
+
+| 特性 | SSE | WebSocket | HTTP 轮询 |
+|:-----|:----|:----------|:----------|
+| **通信方向** | 服务端 → 客户端（单向） | 双向 | 客户端 → 服务端（单向请求） |
+| **协议** | HTTP | ws:// / wss:// | HTTP |
+| **数据格式** | 纯文本（UTF-8） | 文本或二进制 | 任意 |
+| **自动重连** | 浏览器 EventSource 内置 | 需手动实现 | 不适用 |
+| **断点续传** | 内置 Last-Event-ID | 需手动实现 | 不适用 |
+| **防火墙/代理友好** | 极好（普通 HTTP） | 较差（需要特殊支持） | 极好 |
+| **浏览器支持** | 除 IE 外所有现代浏览器 | 所有现代浏览器 | 所有浏览器 |
+| **连接数限制** | HTTP/1.1 同域 6 个 | 同域 6 个 | 每次新建 |
+
+### 1.3 SSE 协议格式
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+data: 第一条消息
+
+data: 第二条消息，可以很长
+data: 多行 data 会被拼接
+
+event: notification
+data: {"title": "新消息", "content": "你好"}
+
+id: 1001
+data: 带 ID 的事件（支持断点续传）
+
+retry: 5000
+data: 客户端重连间隔设为 5 秒
+
+data: 这条消息有 \n 换行符
+```
+
+**字段说明**：
+
+| 字段 | 含义 | 规则 |
+|:-----|:-----|:-----|
+| `data` | 消息内容 | 多行 `data` 用 `\n` 拼接；空行表示事件结束 |
+| `event` | 事件类型 | 默认 `"message"`；客户端通过 `addEventListener` 监听自定义类型 |
+| `id` | 事件 ID | 设置后浏览器断线重连会发送 `Last-Event-ID` 头 |
+| `retry` | 重连间隔（毫秒） | 客户端断线后按此间隔重连 |
+| `:` | 注释行 | 用于保持连接活性（心跳） |
+
+***
+
+## 二、Spring MVC — SseEmitter
+
+`SseEmitter` 是 Spring MVC 提供的 SSE 推送实现，适用于 Spring Boot Web 应用。
+
+### 2.1 基础用法
+
+```java
+@RestController
+@RequestMapping("/api/events")
+public class SseController {
+
+    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
+    // 客户端订阅 SSE 连接
+    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribe() {
+        // 超时时间：0 表示不超时（长连接）
+        SseEmitter emitter = new SseEmitter(0L);
+        emitters.add(emitter);
+
+        // 连接关闭时自动移除
+        emitter.onCompletion(() -> emitters.remove(emitter));
+        emitter.onTimeout(() -> emitters.remove(emitter));
+        emitter.onError(e -> emitters.remove(emitter));
+
+        return emitter;
+    }
+
+    // 向所有已连接客户端推送消息
+    @PostMapping("/push")
+    public ResponseEntity<Void> push(@RequestBody String message) {
+        List<SseEmitter> deadEmitters = new ArrayList<>();
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event()
+                    .name("message")
+                    .data(message)
+                    .id(String.valueOf(System.currentTimeMillis())));
+            } catch (IOException e) {
+                deadEmitters.add(emitter);
+            }
+        }
+        emitters.removeAll(deadEmitters);
+        return ResponseEntity.ok().build();
+    }
+}
+```
+
+### 2.2 发送多种事件类型
+
+```java
+@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public SseEmitter stream() {
+    SseEmitter emitter = new SseEmitter(0L);
+
+    // 发送不同类型的消息
+    try {
+        // 默认 message 事件
+        emitter.send("普通消息");
+
+        // 自定义事件类型
+        emitter.send(SseEmitter.event()
+            .name("heartbeat")
+            .data("ping")
+            .id("1"));
+
+        emitter.send(SseEmitter.event()
+            .name("notification")
+            .data(Map.of("title", "新通知", "content": "您有新消息"))
+            .id("2"));
+
+        // 发送 JSON 对象（自动序列化）
+        emitter.send(SseEmitter.event()
+            .name("user-count")
+            .data(new UserCountEvent(42))
+            .id("3"));
+
+        // 注释行（保持连接心跳，客户端不会收到）
+        emitter.send(SseEmitter.event().name(":"));
+
+    } catch (IOException e) {
+        // 处理异常
+    }
+
+    return emitter;
+}
+```
+
+### 2.3 线程安全的广播服务
+
+```java
+@Service
+public class SseNotificationService {
+
+    private final ConcurrentHashMap<String, List<SseEmitter>> userEmitters
+        = new ConcurrentHashMap<>();
+
+    // 用户订阅（按用户隔离推送）
+    public SseEmitter subscribe(String userId) {
+        SseEmitter emitter = new SseEmitter(300_000L); // 5分钟超时
+        userEmitters.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>())
+                     .add(emitter);
+
+        emitter.onCompletion(() -> removeEmitter(userId, emitter));
+        emitter.onTimeout(() -> removeEmitter(userId, emitter));
+        emitter.onError(e -> removeEmitter(userId, emitter));
+
+        return emitter;
+    }
+
+    // 向指定用户推送
+    public void sendToUser(String userId, String eventName, Object data) {
+        List<SseEmitter> emitters = userEmitters.getOrDefault(userId, List.of());
+        List<SseEmitter> dead = new ArrayList<>();
+
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event()
+                    .name(eventName)
+                    .data(data));
+            } catch (IOException e) {
+                dead.add(emitter);
+            }
+        }
+        emitters.removeAll(dead);
+    }
+
+    // 广播给所有用户
+    public void broadcast(String eventName, Object data) {
+        userEmitters.forEach((userId, emitters) -> sendToUser(userId, eventName, data));
+    }
+
+    private void removeEmitter(String userId, SseEmitter emitter) {
+        userEmitters.computeIfPresent(userId, (k, list) -> {
+            list.remove(emitter);
+            return list.isEmpty() ? null : list;
+        });
+    }
+}
+```
+
+***
+
+## 三、Spring WebFlux — 响应式 SSE
+
+WebFlux 提供了更现代的响应式 SSE 实现，适合高并发场景。
+
+### 3.1 Flux-based SSE
+
+```java
+@RestController
+@RequestMapping("/api/reactive-events")
+public class ReactiveSseController {
+
+    // 使用 Flux 发送 SSE 流
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> stream() {
+        return Flux.interval(Duration.ofSeconds(1))
+            .map(seq -> ServerSentEvent.<String>builder()
+                .id(String.valueOf(seq))
+                .event("heartbeat")
+                .data("脉搏 #" + seq)
+                .build());
+    }
+
+    // 发送 JSON 对象
+    @GetMapping(value = "/metrics", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<SystemMetrics>> metrics() {
+        return Flux.interval(Duration.ofSeconds(5))
+            .map(seq -> ServerSentEvent.<SystemMetrics>builder()
+                .id(String.valueOf(seq))
+                .event("metrics")
+                .data(new SystemMetrics(
+                    Runtime.getRuntime().totalMemory(),
+                    Runtime.getRuntime().freeMemory(),
+                    ProcessHandle.current().pid()
+                ))
+                .build());
+    }
+}
+```
+
+### 3.2 WebFlux SSE 模板类
+
+```java
+@Component
+public class SseEmitterManager {
+
+    private final ConcurrentHashMap<String, Sinks.Many<ServerSentEvent<Object>>> sinks
+        = new ConcurrentHashMap<>();
+
+    // 创建或获取用户的 SSE Sink
+    public Sinks.Many<ServerSentEvent<Object>> getOrCreateSink(String userId) {
+        return sinks.computeIfAbsent(userId, k -> {
+            Sinks.Many<ServerSentEvent<Object>> sink = Sinks.many()
+                .multicast()
+                .onBackpressureBuffer(256, true);
+            return sink;
+        });
+    }
+
+    // 发送给指定用户
+    public void sendToUser(String userId, String eventName, Object data) {
+        Sinks.Many<ServerSentEvent<Object>> sink = sinks.get(userId);
+        if (sink != null) {
+            sink.tryEmitNext(ServerSentEvent.builder()
+                .event(eventName)
+                .data(data)
+                .id(String.valueOf(System.currentTimeMillis()))
+                .build());
+        }
+    }
+
+    // 返回 Flux 用于 SSE 连接
+    public Flux<ServerSentEvent<Object>> getStream(String userId) {
+        return getOrCreateSink(userId).asFlux()
+            .doOnCancel(() -> removeSink(userId));
+    }
+
+    private void removeSink(String userId) {
+        Sinks.Many<ServerSentEvent<Object>> sink = sinks.remove(userId);
+        if (sink != null) {
+            sink.tryEmitComplete();
+        }
+    }
+}
+```
+
+***
+
+## 四、SSE 客户端实现
+
+### 4.1 浏览器 EventSource API
+
+```javascript
+// 基础用法
+const source = new EventSource('/api/events/subscribe');
+
+source.onmessage = (event) => {
+    console.log('收到消息:', event.data);
+    console.log('事件 ID:', event.id);
+};
+
+// 监听自定义事件类型
+source.addEventListener('notification', (event) => {
+    const data = JSON.parse(event.data);
+    showNotification(data.title, data.content);
+});
+
+source.addEventListener('heartbeat', (event) => {
+    console.log('心跳:', event.data);
+});
+
+// 错误处理（自动重连）
+source.onerror = (error) => {
+    console.error('SSE 错误:', error);
+    // EventSource 会自动重连，可在此更新 UI 状态
+};
+
+// 关闭连接
+// source.close();
+```
+
+### 4.2 fetch + ReadableStream（现代方式）
+
+```javascript
+async function subscribeSSE() {
+    const response = await fetch('/api/events/subscribe');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        // 按照 SSE 格式解析
+        const lines = text.split('\n');
+        for (const line of lines) {
+            if (line.startsWith('data:')) {
+                console.log('收到:', line.slice(5).trim());
+            }
+        }
+    }
+}
+```
+
+### 4.3 Java 客户端（WebClient）
+
+```java
+@Service
+public class SseClientService {
+
+    private final WebClient webClient;
+
+    public SseClientService(WebClient.Builder builder) {
+        this.webClient = builder.baseUrl("http://api-server").build();
+    }
+
+    // 订阅 SSE 流
+    public Flux<ServerSentEvent<String>> subscribe() {
+        return webClient.get()
+            .uri("/api/events/subscribe")
+            .accept(MediaType.TEXT_EVENT_STREAM)
+            .retrieve()
+            .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {});
+    }
+
+    // 使用示例
+    public void consumeEvents() {
+        subscribe()
+            .subscribe(
+                event -> {
+                    System.out.println("收到事件 [" + event.event() + "]: " + event.data());
+                },
+                error -> System.err.println("错误: " + error.getMessage()),
+                () -> System.out.println("连接关闭")
+            );
+    }
+}
+```
+
+***
+
+## 五、SSE 实战场景
+
+### 5.1 实时日志流
+
+```java
+@GetMapping(value = "/logs", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public SseEmitter streamLogs(@RequestParam(defaultValue = "INFO") String level) {
+    SseEmitter emitter = new SseEmitter(0L);
+
+    // 启动异步线程tail日志文件
+    CompletableFuture.runAsync(() -> {
+        try (BufferedReader reader = new BufferedReader(
+                new FileReader("/var/log/app/application.log"))) {
+            String line;
+            while ((line = reader.readLine()) != null && !Thread.currentThread().isInterrupted()) {
+                if (line.contains(level)) {
+                    emitter.send(SseEmitter.event()
+                        .name("log")
+                        .data(line)
+                        .id(String.valueOf(System.currentTimeMillis())));
+                }
+                Thread.sleep(100); // 模拟实时读取
+            }
+        } catch (Exception e) {
+            emitter.completeWithError(e);
+        }
+    });
+
+    emitter.onCompletion(() -> Thread.currentThread().interrupt());
+    return emitter;
+}
+```
+
+### 5.2 AI 流式输出（LLM Streaming）
+
+```java
+// 对接大语言模型的流式输出
+@GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public SseEmitter chat(@RequestParam String prompt) {
+    SseEmitter emitter = new SseEmitter(60_000L); // 60秒超时
+
+    CompletableFuture.runAsync(() -> {
+        try {
+            // 模拟调用大模型 API（每次返回一个 token）
+            List<String> tokens = List.of("你", "好", "，", "我", "是", "AI", "助", "手", "。");
+            for (int i = 0; i < tokens.size(); i++) {
+                emitter.send(SseEmitter.event()
+                    .name("token")
+                    .data(Map.of(
+                        "token", tokens.get(i),
+                        "index", i
+                    ))
+                    .id(String.valueOf(i)));
+                Thread.sleep(200); // 模拟生成延迟
+            }
+
+            // 发送结束事件
+            emitter.send(SseEmitter.event()
+                .name("done")
+                .data(""));
+
+            emitter.complete();
+        } catch (Exception e) {
+            emitter.completeWithError(e);
+        }
+    });
+
+    return emitter;
+}
+```
+
+***
+
+## 六、SSE 注意事项与最佳实践
+
+### 6.1 服务端
+
+| 问题 | 解决方案 |
+|:-----|:---------|
+| 连接数限制（Tomcat 默认 200） | 调整 `server.tomcat.threads.max` 或使用 NIO 连接池 |
+| 长连接超时 | `SseEmitter(0L)` 设置无超时；或配置 `spring.mvc.async.request-timeout` |
+| 内存泄漏 | 连接关闭时必须移除 emitter；使用 `onCompletion`/`onError` 回调 |
+| 负载均衡 | 需要使用粘性会话（Sticky Session）或广播模式（每个节点维护自己的连接） |
+| 断线重连 | 服务端发送 `id` 字段；客户端 `EventSource` 自动发送 `Last-Event-ID` |
+
+### 6.2 生产建议
+
+```
+□ 连接池大小评估：根据最大并发连接数调整 Tomcat 线程池
+□ 心跳机制：每隔 15-30 秒发送注释行（:keepalive），防止代理/防火墙断连
+□ 超时设置：生产环境不要设置 0（永不超时），建议 5-30 分钟
+□ 负载均衡策略：使用 IP Hash 或 Sticky Session，避免 SSE 连接被路由到不同节点
+□ 监控：暴露 SSE 连接数指标，接入 Prometheus + Grafana
+```
+
+***
 
 ---
 
@@ -55879,11 +61868,12 @@ url: /my_notes/notes/Python学习路线/深度学习/01-AsyncWeb/index.md
 ---
 # 异步高性能 Web
 
-> 深入事件循环与异步架构，掌握 WebSocket 实时通信与高并发限流压测。
+> 深入事件循环与异步架构，掌握 WebSocket 实时通信、SSE 服务端推送与高并发限流压测。
 
 * [事件循环底层与异步架构](./1.1-事件循环底层与异步架构.md)
 * [WebSocket 与实时通信](./1.2-WebSocket与实时通信.md)
 * [高并发限流与性能压测](./1.3-高并发限流与性能压测.md)
+* [SSE 实时推送 — StreamingResponse 与 EventSource](./1.4-SSE实时推送-StreamingResponse与EventSource.md)
 
 ---
 
@@ -67769,6 +73759,450 @@ perf-tuning/
 ├── loadtest.py          # locust 压测
 └── REPORT.md            # 优化对比报告
 ```
+
+---
+
+---
+url: >-
+  /my_notes/notes/Python学习路线/shen-du-xue-xi/01-async-web/4-sse-shi-shi-tui-song-streaming-response-yu-event-source/index.md
+---
+# SSE 实时推送 — StreamingResponse 与 EventSource
+
+## 一、SSE 协议基础（Python 视角）
+
+### 1.1 SSE 协议格式
+
+SSE 基于 HTTP，服务端以 `text/event-stream` 内容类型持续推送事件：
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+data: 第一条消息
+
+data: 第二条消息
+event: notification
+id: 1001
+
+data: {"user": "alice", "text": "你好"}
+id: 1002
+retry: 5000
+
+: 这是注释行（心跳）
+```
+
+**字段规则**：
+
+* `data`：消息内容（多行 `data` 用 `\n` 拼接；空行 `=` 事件分隔符）
+* `event`：事件类型（默认 `"message"`）
+* `id`：事件 ID（断线重连时通过 `Last-Event-ID` 头回传）
+* `retry`：客户端重连间隔（毫秒）
+* `:` 开头的行为注释，客户端不处理（用于心跳保活）
+
+### 1.2 SSE vs WebSocket vs 轮询
+
+| 特性 | SSE | WebSocket | HTTP 轮询 |
+|:-----|:----|:----------|:----------|
+| **方向** | 服务端 → 客户端（单向） | 双向 | 客户端 → 服务端 |
+| **协议** | HTTP（极好的代理兼容性） | ws:// / wss:// | HTTP |
+| **数据格式** | 纯文本（UTF-8） | 文本或二进制 | 任意 |
+| **自动重连** | EventSource 内置 | 需手动实现 | 不适用 |
+| **断点续传** | Last-Event-ID 内置支持 | 需手动实现 | 不适用 |
+| **FastAPI 支持** | `StreamingResponse` 原生支持 | `WebSocket` 类原生支持 | 普通 `Response` |
+| **典型场景** | 通知推送、AI 流式输出、日志流 | 聊天、游戏、协同编辑 | 数据拉取 |
+
+***
+
+## 二、FastAPI SSE 实现
+
+### 2.1 StreamingResponse 基础
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
+import time
+
+app = FastAPI()
+
+# 异步生成器产出 SSE 事件
+async def event_generator():
+    for i in range(10):
+        await asyncio.sleep(1)
+        data = json.dumps({"count": i, "time": time.time()})
+        yield f"data: {data}\n\n"   # 每个事件以 \n\n 结尾
+
+@app.get("/events")
+async def events():
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # 禁用 Nginx 缓冲
+        },
+    )
+```
+
+### 2.2 完整 SSE 端点模板
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
+import uuid
+
+app = FastAPI()
+
+class EventBroadcaster:
+    def __init__(self):
+        self.subscribers: dict[str, asyncio.Queue] = {}
+
+    def subscribe(self) -> tuple[str, asyncio.Queue]:
+        client_id = str(uuid.uuid4())
+        queue = asyncio.Queue()
+        self.subscribers[client_id] = queue
+        return client_id, queue
+
+    def unsubscribe(self, client_id: str):
+        self.subscribers.pop(client_id, None)
+
+    async def publish(self, event: str, data: dict):
+        message = f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+        dead = []
+        for client_id, queue in self.subscribers.items():
+            try:
+                await queue.put(message)
+            except Exception:
+                dead.append(client_id)
+        for cid in dead:
+            self.unsubscribe(cid)
+
+broadcaster = EventBroadcaster()
+
+@app.get("/stream")
+async def stream(request: Request):
+    client_id, queue = broadcaster.subscribe()
+
+    async def event_generator():
+        try:
+            # 发送初始连接成功事件
+            yield f"event: connected\ndata: {json.dumps({'client_id': client_id})}\n\n"
+
+            while True:
+                # 检查客户端是否断开
+                if await request.is_disconnected():
+                    break
+
+                try:
+                    # 等待新消息（最多 30 秒无消息则发心跳）
+                    message = await asyncio.wait_for(queue.get(), timeout=30)
+                    yield message
+                except asyncio.TimeoutError:
+                    # 心跳注释行，保持连接活性
+                    yield ": heartbeat\n\n"
+        finally:
+            broadcaster.unsubscribe(client_id)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+@app.post("/broadcast")
+async def broadcast(event: str = "message", data: dict = {}):
+    await broadcaster.publish(event, data)
+    return {"status": "ok"}
+```
+
+### 2.3 依赖注入方式（推荐生产使用）
+
+```python
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import StreamingResponse
+from typing import AsyncGenerator
+import asyncio
+import json
+
+app = FastAPI()
+
+async def sse_generator(
+    request: Request,
+    queue: asyncio.Queue = Depends(lambda: asyncio.Queue()),
+) -> AsyncGenerator[str, None]:
+    """通用 SSE 生成器依赖"""
+    try:
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                message = await asyncio.wait_for(queue.get(), timeout=30)
+                yield message
+            except asyncio.TimeoutError:
+                yield ": keepalive\n\n"
+    finally:
+        pass  # 清理资源
+
+@app.get("/notifications")
+async def notifications(request: Request):
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def generate():
+        yield f"event: ready\ndata: {json.dumps({'status': 'connected'})}\n\n"
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                msg = await asyncio.wait_for(queue.get(), timeout=30)
+                yield msg
+            except asyncio.TimeoutError:
+                yield ": ping\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+```
+
+***
+
+## 三、SSE 与大语言模型流式输出
+
+### 3.1 对接 OpenAI/Claude API 流式输出
+
+```python
+import httpx
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import json
+
+app = FastAPI()
+
+async def call_llm_stream(prompt: str):
+    """调用大语言模型 API，流式返回 token"""
+    async with httpx.AsyncClient(timeout=60) as client:
+        async with client.stream(
+            "POST",
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": "gpt-4",
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": True,  # 开启流式输出
+            },
+        ) as response:
+            async for line in response.aiter_lines():
+                if line.startswith("data: ") and line != "data: [DONE]":
+                    chunk = json.loads(line[6:])
+                    token = chunk["choices"][0]["delta"].get("content", "")
+                    if token:
+                        yield f"data: {json.dumps({'token': token})}\n\n"
+            yield "data: [DONE]\n\n"
+
+@app.post("/chat/stream")
+async def chat_stream(prompt: str):
+    return StreamingResponse(
+        call_llm_stream(prompt),
+        media_type="text/event-stream",
+    )
+```
+
+### 3.2 对接 LangChain 流式输出
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import json
+
+app = FastAPI()
+llm = ChatOpenAI(model="gpt-4", streaming=True)
+
+@app.post("/langchain/stream")
+async def langchain_stream(prompt: str):
+    async def generate():
+        async for chunk in llm.astream([HumanMessage(content=prompt)]):
+            token = chunk.content
+            if token:
+                yield f"data: {json.dumps({'token': token})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+```
+
+***
+
+## 四、Django SSE 实现
+
+### 4.1 StreamingHttpResponse
+
+```python
+from django.http import StreamingHttpResponse
+import json
+import time
+
+def event_generator():
+    for i in range(100):
+        time.sleep(1)
+        data = json.dumps({"count": i, "timestamp": time.time()})
+        yield f"data: {data}\n\n"
+
+def sse_view(request):
+    response = StreamingHttpResponse(
+        event_generator(),
+        content_type="text/event-stream",
+    )
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
+```
+
+### 4.2 Django Channels（异步 SSE）
+
+```python
+# consumers.py
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+# 对于纯 SSE 场景，Django 推荐使用 StreamingHttpResponse
+# Channels 主要用于 WebSocket
+
+# SSE views.py（Django 4.2+ 异步视图）
+from django.http import StreamingHttpResponse
+import asyncio
+
+async def async_sse_view(request):
+    async def generate():
+        for i in range(60):
+            await asyncio.sleep(1)
+            yield f"data: {json.dumps({'tick': i})}\n\n"
+    return StreamingHttpResponse(generate(), content_type="text/event-stream")
+```
+
+***
+
+## 五、SSE 客户端实现
+
+### 5.1 浏览器 EventSource
+
+```javascript
+// 基础订阅
+const source = new EventSource('/stream');
+
+// 默认 message 事件
+source.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('收到:', data);
+};
+
+// 自定义事件
+source.addEventListener('notification', (event) => {
+    const data = JSON.parse(event.data);
+    showNotification(data.title, data.content);
+});
+
+// 连接成功事件
+source.addEventListener('connected', (event) => {
+    console.log('连接建立:', JSON.parse(event.data));
+});
+
+// 错误（自动重连）
+source.onerror = (err) => {
+    console.error('SSE 错误，将自动重连...');
+};
+
+// 关闭
+// source.close();
+```
+
+### 5.2 Python 客户端（httpx）
+
+```python
+import httpx
+import json
+
+async def subscribe_sse(url: str):
+    async with httpx.AsyncClient() as client:
+        async with client.stream("GET", url) as response:
+            event_type = "message"
+            event_id = None
+            data_lines = []
+
+            async for line in response.aiter_lines():
+                line = line.strip()
+
+                if line == "":
+                    # 空行 = 事件结束
+                    if data_lines:
+                        data = "\n".join(data_lines)
+                        yield event_type, event_id, data
+                    event_type = "message"
+                    event_id = None
+                    data_lines = []
+
+                elif line.startswith("event:"):
+                    event_type = line[6:].strip()
+                elif line.startswith("id:"):
+                    event_id = line[3:].strip()
+                elif line.startswith("data:"):
+                    data_lines.append(line[5:].strip())
+                elif line.startswith(":"):
+                    pass  # 注释行，忽略
+
+# 使用示例
+async for event_type, event_id, data in subscribe_sse("http://localhost:8000/stream"):
+    print(f"事件类型: {event_type}, ID: {event_id}, 数据: {data}")
+```
+
+***
+
+## 六、SSE 注意事项与最佳实践
+
+### 6.1 异步框架选型
+
+| 框架 | SSE 推荐方案 | 说明 |
+|:-----|:-------------|:-----|
+| **FastAPI** | `StreamingResponse` + async generator | 原生异步，性能极好 |
+| **Flask** | `Response` + generator（`stream_with_context`） | 同步框架，需配合 `gevent` 或 `gunicorn --threads` |
+| **Django** | `StreamingHttpResponse` | Django 4.2+ 支持 async generator |
+
+### 6.2 Nginx 配置
+
+```nginx
+# SSE 必须禁用缓冲，否则事件会被攒批发送
+location /api/events/ {
+    proxy_pass http://backend;
+    proxy_set_header Connection '';
+    proxy_http_version 1.1;
+    proxy_buffering off;           # 关键：禁用代理缓冲
+    proxy_cache off;
+    chunked_transfer_encoding off;
+    proxy_read_timeout 3600s;      # 长连接超时（1小时）
+    proxy_send_timeout 3600s;
+}
+```
+
+### 6.3 生产检查清单
+
+```
+□ Nginx proxy_buffering off（否则事件被缓冲，客户端收不到实时推送）
+□ 设置心跳（每 15-30 秒发送 :keepalive 注释行，防止代理/防火墙断连）
+□ 客户端 EventSource 自动重连（确认 Last-Event-ID 在服务端处理正确）
+□ 连接数监控：SSE 长连接会占用 worker 连接，评估最大并发数
+□ 超时设置：不要设置无限超时，建议 30 分钟内断开重连
+□ 内存管理：及时清理断开的订阅者（request.is_disconnected()）
+□ 异步生成器：使用 async def + yield，不要在 async 上下文中用 time.sleep()
+```
+
+***
 
 ---
 

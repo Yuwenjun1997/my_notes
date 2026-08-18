@@ -1,0 +1,278 @@
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/6-kuo-zhan-yu-cha-jian-sheng-tai/index.md
+---
+# 扩展与插件生态
+
+## 一、扩展系统概述
+
+PostgreSQL 的扩展系统是其最强大的特性之一，通过 `CREATE EXTENSION` 即可安装功能模块，无需重新编译数据库。
+
+***
+
+## 二、常用扩展详解
+
+### 2.1 pg\_stat\_statements — 查询性能分析
+
+最常用的性能分析扩展，记录所有 SQL 的执行统计信息：
+
+```sql
+-- 安装
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- 需要在 postgresql.conf 中预加载
+-- shared_preload_libraries = 'pg_stat_statements'
+-- 然后重启 PostgreSQL
+
+-- 查看最耗时的 SQL（按总时间排序）
+SELECT
+  queryid,
+  LEFT(query, 80) AS short_query,
+  calls,
+  ROUND(total_exec_time::numeric, 2) AS total_ms,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  rows
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 10;
+
+-- 查看调用次数最多的 SQL
+SELECT
+  LEFT(query, 80) AS short_query,
+  calls,
+  ROUND(mean_exec_time::numeric, 2) AS avg_ms,
+  rows
+FROM pg_stat_statements
+ORDER BY calls DESC
+LIMIT 10;
+
+-- 重置统计信息
+SELECT pg_stat_statements_reset();
+```
+
+### 2.2 pg\_trgm — 模糊匹配加速
+
+基于三元组（Trigram）的模糊匹配，大幅提升 `LIKE '%keyword%'` 和相似度查询性能：
+
+```sql
+-- 安装
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- 创建 GIN 索引（加速 LIKE 查询）
+CREATE INDEX idx_users_name_trgm ON users USING gin (name gin_trgm_ops);
+
+-- 模糊匹配查询（现在可以使用索引）
+SELECT * FROM users WHERE name LIKE '%张%';
+SELECT * FROM users WHERE name % '张三';  -- 相似度匹配
+
+-- 相似度计算
+SELECT name, similarity(name, '张三') AS sim
+FROM users
+WHERE name % '张三'
+ORDER BY sim DESC;
+
+-- 设置相似度阈值
+SET pg_trgm.similarity_threshold = 0.3;
+
+-- 快速相似度搜索（使用 GIST 索引）
+CREATE INDEX idx_users_name_gist ON users USING gist (name gist_trgm_ops);
+```
+
+### 2.3 PostGIS — 地理空间数据
+
+PostgreSQL 最著名的扩展，提供完整的地理空间支持：
+
+```sql
+-- 安装
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- 创建含空间列的表
+CREATE TABLE stores (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  location GEOMETRY(POINT, 4326)  -- WGS 84 坐标系
+);
+
+-- 插入空间数据
+INSERT INTO stores (name, location) VALUES
+  ('北京店', ST_SetSRID(ST_MakePoint(116.404, 39.915), 4326)),
+  ('上海店', ST_SetSRID(ST_MakePoint(121.474, 31.230), 4326));
+
+-- 创建空间索引
+CREATE INDEX idx_stores_location ON stores USING gist (location);
+
+-- 查询附近的店铺（5公里内）
+SELECT name,
+  ST_Distance(
+    location::geography,
+    ST_SetSRID(ST_MakePoint(116.400, 39.910), 4326)::geography
+  ) AS distance_meters
+FROM stores
+WHERE ST_DWithin(
+  location::geography,
+  ST_SetSRID(ST_MakePoint(116.400, 39.910), 4326)::geography,
+  5000  -- 5000 米
+)
+ORDER BY distance_meters;
+```
+
+### 2.4 pgvector — 向量相似度搜索
+
+AI 应用必备扩展，支持向量的余弦距离/欧氏距离搜索：
+
+```sql
+-- 安装（需要编译或使用预编译版本）
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 创建含向量列的表
+CREATE TABLE documents (
+  id SERIAL PRIMARY KEY,
+  content TEXT,
+  embedding VECTOR(1536)  -- OpenAI ada-002 输出维度
+);
+
+-- 插入向量数据
+INSERT INTO documents (content, embedding) VALUES
+  ('PostgreSQL is a powerful database', '[0.1, 0.2, ...]'::vector);
+
+-- 创建向量索引（IVFFlat 算法，适合中等数据量）
+CREATE INDEX idx_docs_embedding ON documents USING ivfflat (embedding vector_cosine_ops)
+  WITH (lists = 100);
+
+-- HNSW 索引（更高精度，适合大数据量）
+CREATE INDEX idx_docs_embedding_hnsw ON documents USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 200);
+
+-- 余弦相似度搜索（最相似的 10 条）
+SELECT content,
+  1 - (embedding <=> '[0.1, 0.2, ...]'::vector) AS cosine_similarity
+FROM documents
+ORDER BY embedding <=> '[0.1, 0.2, ...]'::vector
+LIMIT 10;
+
+-- 欧氏距离搜索
+SELECT content, embedding <-> '[0.1, 0.2, ...]'::vector AS l2_distance
+FROM documents
+ORDER BY embedding <-> '[0.1, 0.2, ...]'::vector
+LIMIT 10;
+```
+
+### 2.5 其他常用扩展
+
+| 扩展 | 用途 | 说明 |
+|:-----|:-----|:-----|
+| `uuid-ossp` | UUID 生成 | `uuid_generate_v4()` |
+| `pgcrypto` | 加密函数 | `pgp_sym_encrypt()`, `digest()` |
+| `hstore` | 键值存储（JSONB 之前的选择） | 已被 JSONB 取代 |
+| `tablefunc` | 交叉表等高级查询 | `crosstab()` |
+| `intarray` | 整数数组操作 | `idx()`, `uniq()` |
+| `btree_gist` | B-tree 上的 GiST 索引 | 排他约束需要 |
+| `btree_gin` | B-tree 上的 GIN 索引 | 多类型 GIN 查询 |
+| `pg_fuzzystrmatch` | 模糊字符串匹配 | `soundex()`, `levenshtein()` |
+
+***
+
+## 三、扩展管理
+
+### 3.1 查看已安装扩展
+
+```sql
+-- 查看当前数据库已安装的扩展
+SELECT
+  extname AS name,
+  extversion AS version,
+  nspname AS schema,
+  obj_description(oid) AS description
+FROM pg_extension
+ORDER BY extname;
+
+-- 查看可用扩展（文件系统）
+\dx       -- psql 元命令，列出已安装扩展
+SELECT * FROM pg_available_extensions WHERE name LIKE '%vector%';
+```
+
+### 3.2 安装与卸载
+
+```sql
+-- 安装扩展（默认安装到 public schema）
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- 安装到指定 schema
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;
+
+-- 更新扩展
+ALTER EXTENSION pg_trgm UPDATE;
+
+-- 卸载扩展（先删除依赖它的对象）
+DROP EXTENSION IF EXISTS pg_trgm;
+```
+
+### 3.3 预加载扩展
+
+某些扩展需要在启动时预加载到共享内存（修改后需要重启）：
+
+```ini
+# postgresql.conf
+shared_preload_libraries = 'pg_stat_statements, auto_explain'
+
+# auto_explain：自动记录慢查询执行计划
+auto_explain.log_min_duration = '1000'  -- 超过 1 秒自动记录执行计划
+auto_explain.log_analyze = true         -- 包含 ANALYZE 信息
+auto_explain.log_buffers = true         -- 包含 Buffers 信息
+```
+
+***
+
+## 四、扩展开发简介
+
+```sql
+-- 创建自定义函数（PL/pgSQL）
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 创建触发器
+CREATE TRIGGER trigger_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamp();
+
+-- 创建自定义聚合函数
+CREATE OR REPLACE FUNCTION array_append_unique(anyarray, anyelement)
+RETURNS anyarray AS $$
+BEGIN
+  IF $1 IS NULL THEN
+    RETURN ARRAY[$2];
+  ELSIF $2 = ANY($1) THEN
+    RETURN $1;
+  ELSE
+    RETURN array_append($1, $2);
+  END IF;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+```
+
+***
+
+## 五、扩展选型速查
+
+```
+你的需求是什么？
+│
+├─ 模糊搜索 / LIKE 加速 ──→ pg_trgm
+├─ 地理位置查询 ──────────→ PostGIS
+├─ AI 向量相似搜索 ───────→ pgvector
+├─ 查询性能分析 ──────────→ pg_stat_statements
+├─ 自动生成执行计划日志 ──→ auto_explain
+├─ UUID 生成 ─────────────→ uuid-ossp
+├─ 数据加密 ──────────────→ pgcrypto
+├─ JSONB 查询加速 ───────→ 内置 GIN 索引（无需额外扩展）
+└─ 其他 ──────────────────→ SELECT * FROM pg_available_extensions;
+```
+
+***

@@ -1,0 +1,172 @@
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-san-jie-duan-shi-zhan-yu-dui-bi/1-my-sql-yu-postgre-sql-dui-bi-xuan-xing/index.md
+---
+# MySQL 与 PostgreSQL 对比选型
+
+## 一、核心差异对比
+
+### 1.1 架构与模型
+
+| 维度 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **架构** | 单进程多线程 | 多进程（每连接一个进程） |
+| **默认存储** | InnoDB（行存储） | Heap（行存储） |
+| **扩展性** | 插件式存储引擎 | 插件式功能扩展（扩展系统） |
+| **开发语言** | C/C++ | C |
+| **协议** | MySQL 协议 | PostgreSQL 协议 |
+| **标准兼容** | 部分 SQL 标准 | 高度兼容 SQL 标准 |
+
+### 1.2 语法差异速查
+
+| 功能 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **字符串拼接** | `CONCAT(a, b)` | `a \|\| b` |
+| **限制行数** | `LIMIT 10 OFFSET 5` | `LIMIT 10 OFFSET 5`（相同） |
+| **UPSERT** | `INSERT ... ON DUPLICATE KEY UPDATE` | `INSERT ... ON CONFLICT DO UPDATE` |
+| **正则匹配** | `REGEXP` | `~`（区分大小写）/ `~*`（不区分） |
+| **LIKE（不区分大小写）** | 默认不区分 | `ILIKE` |
+| **AUTO\_INCREMENT** | `AUTO_INCREMENT` | `SERIAL` / `GENERATED ALWAYS AS IDENTITY` |
+| **布尔类型** | `TINYINT(1)`（无真正布尔） | `BOOLEAN`（真正的布尔） |
+| \*\* ENUM 类型\*\* | `ENUM('a','b','c')`（字符串） | `CREATE TYPE ... AS ENUM`（类型系统） |
+| **日期格式化** | `DATE_FORMAT(d, '%Y-%m-%d')` | `TO_CHAR(d, 'YYYY-MM-DD')` |
+| **当前时间** | `NOW()` / `CURRENT_TIMESTAMP` | `NOW()` / `CURRENT_TIMESTAMP`（相同） |
+| **IF 函数** | `IF(condition, true, false)` | `CASE WHEN ... THEN ... ELSE ... END` |
+| **SHOW 命令** | `SHOW VARIABLES LIKE 'x'` | `SHOW x` / 查询 `pg_settings` |
+| **元数据查询** | `information_schema` + `SHOW` | `information_schema` + `pg_*` 系统视图 |
+
+***
+
+## 二、功能差异
+
+### 2.1 SQL 特性支持
+
+| 特性 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **CTE（公用表表达式）** | ✅ MySQL 8.0+ | ✅ 原生支持 |
+| **递归 CTE** | ✅ MySQL 8.0+ | ✅ 原生支持 |
+| **窗口函数** | ✅ MySQL 8.0+ | ✅ 原生支持（更完善） |
+| **JSON 支持** | ✅ JSON 类型（功能有限） | ✅ JSONB（功能强大，可索引） |
+| **数组类型** | ❌ 不支持 | ✅ 原生数组 |
+| **范围类型** | ❌ 不支持 | ✅ int4range, tstzrange 等 |
+| **物化视图** | ❌ 不支持 | ✅ 支持 |
+| **表继承** | ❌ 不支持 | ✅ 支持（但不推荐） |
+| **LATERAL JOIN** | ✅ MySQL 8.0+ | ✅ 原生支持 |
+| \*\* RETURNING 子句\*\* | ❌ 不支持 | ✅ INSERT/UPDATE/DELETE 后返回 |
+| **可序列化隔离** | ❌ 未原生实现 | ✅ SSI（自动检测冲突） |
+| **多版本并发控制** | ✅ Undo Log | ✅ 行内 xmin/xmax |
+| **外键** | ✅ 支持 | ✅ 支持 |
+| **CHECK 约束** | ✅ MySQL 8.0.16+ 才真正检查 | ✅ 原生支持 |
+| **生成列** | ✅ MySQL 5.7+ | ✅ PostgreSQL 12+ |
+| **全文搜索** | ✅ 基础支持 | ✅ tsvector/tsquery（强大） |
+
+### 2.2 数据类型
+
+| 类型 | MySQL | PostgreSQL |
+|:-----|:------|:-----------|
+| **自增主键** | `BIGINT AUTO_INCREMENT` | `BIGSERIAL` / `GENERATED ALWAYS AS IDENTITY` |
+| **UUID** | 存为 `CHAR(36)` 或 `BINARY(16)` | 原生 `UUID` 类型 |
+| **网络地址** | 存为 `VARCHAR` | `INET` / `CIDR` |
+| **几何类型** | 有限支持 | `POINT` / `LINE` / `POLYGON` 等 |
+| **XML** | 存为 `TEXT` | 原生 `XML` 类型 |
+| **大文本** | `TEXT`（最大 64KB）`MEDIUMTEXT` / `LONGTEXT` | `TEXT`（无限制，1GB） |
+| **二进制** | `BLOB` / `MEDIUMBLOB` | `BYTEA` |
+| **精确数值** | `DECIMAL(M,D)` | `NUMERIC(p,s)`（等价） |
+
+***
+
+## 三、生态工具对比
+
+| 工具类别 | MySQL | PostgreSQL |
+|:---------|:------|:-----------|
+| **GUI 客户端** | MySQL Workbench, DBeaver, Navicat | pgAdmin, DBeaver, DataGrip |
+| **命令行客户端** | `mysql` | `psql`（功能强大，元命令丰富） |
+| **备份工具** | mysqldump, xtrabackup, mydumper | pg\_dump, pg\_basebackup, Barman |
+| **复制** | 主从复制（binlog） | 流复制 / 逻辑复制 |
+| **连接池** | ProxySQL, HikariCP, Druid | PgBouncer, PgPool-II |
+| **监控** | Percona PMM, PMM | pg\_stat\_statements, pgBadger, pgWatch2 |
+| **负载均衡** | ProxySQL, MySQL Router | PgPool-II, HAProxy |
+| **ORM 支持** | SQLAlchemy, MyBatis, Sequelize | SQLAlchemy, MyBatis, Sequelize |
+
+***
+
+## 四、选型决策框架
+
+### 4.1 选 MySQL 的场景
+
+```
+✅ 适用场景：
+├─ 互联网应用（高并发读、简单查询为主）
+├─ 团队 MySQL 经验丰富
+├─ 需要成熟的主从复制方案
+├─ PHP/Java 生态项目（MySQL 生态更成熟）
+├─ 只需要基本的 JSON 支持
+├─ 需要 MyISAM 的快速 COUNT(*)（只读表场景）
+└─ 运维工具链更完善（xtrabackup、Percona Toolkit）
+
+✅ 选 MySQL 的理由：
+├─ 国内使用率更高，社区和招聘资源丰富
+├─ 学习成本较低（基础功能简单易上手）
+├─ 单线程连接模型，连接开销较小
+└─ InnoDB 性能经过多年优化，非常成熟
+```
+
+### 4.2 选 PostgreSQL 的场景
+
+```
+✅ 适用场景：
+├─ 复杂查询、复杂数据分析
+├─ 需要 JSONB 灵活存储（半结构化数据）
+├─ 地理空间应用（PostGIS）
+├─ AI/向量搜索应用（pgvector）
+├─ 需要严格事务隔离（SERIALIZABLE SSI）
+├─ 需要高级数据类型（数组、范围、网络地址）
+├─ 需要物化视图、递归查询
+├─ 需要全文搜索（内置 tsvector）
+└─ 需要扩展系统（按需安装功能）
+
+✅ 选 PostgreSQL 的理由：
+├─ SQL 标准兼容性更好
+├─ 功能更丰富（数据类型、索引类型、扩展）
+├─ MVCC 实现更干净（无 Undo Log 膨胀问题）
+├─ ACID 实现更严格（SERIALIZABLE 真正可序列化）
+├─ 开源社区活跃，功能迭代快
+└─ 不受 Oracle 控制（MySQL 被 Oracle 收购）
+```
+
+### 4.3 选型速查表
+
+| 问什么 | 答案偏向 |
+|:-------|:---------|
+| 项目是互联网高并发读？ | MySQL |
+| 需要复杂的 JSON 操作？ | PostgreSQL |
+| 需要地理空间查询？ | PostgreSQL |
+| 需要 AI 向量搜索？ | PostgreSQL |
+| 团队更熟悉 MySQL？ | MySQL |
+| 需要物化视图？ | PostgreSQL |
+| 需要严格的数据完整性？ | PostgreSQL |
+| 运维工具链更成熟？ | MySQL |
+| 需要真全文搜索？ | PostgreSQL |
+| 预算有限，需要开源+丰富扩展？ | PostgreSQL |
+| 微服务架构，各服务可能需要不同特性？ | **两者都用**（Polyglot Persistence） |
+
+***
+
+## 五、两者共存策略
+
+现代架构中，MySQL 和 PostgreSQL 可以共存：
+
+```yaml
+# 典型微服务数据架构
+services:
+  user-service:
+    database: PostgreSQL    # 利用 JSONB 存储用户扩展信息
+  order-service:
+    database: MySQL         # 成熟的事务支持，团队经验
+  search-service:
+    database: PostgreSQL    # pgvector 向量搜索
+  log-service:
+    database: MySQL         # 高并发写入，日志归档
+```
+
+***

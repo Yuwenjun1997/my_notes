@@ -1,0 +1,301 @@
+---
+url: >-
+  /my_notes/notes/数据库知识库/di-er-jie-duan-postgre-sql-he-xin/1-postgre-sql-an-zhuang-yu-pei-zhi/index.md
+---
+# PostgreSQL 安装与配置
+
+## 一、安装方式选择
+
+### 1.1 安装方式对比
+
+| 方式 | 适用场景 | 优点 | 缺点 |
+|:-----|:---------|:-----|:-----|
+| **apt 官方源** | Ubuntu 服务器生产部署 | 官方维护、版本更新及时 | 默认源版本可能偏旧 |
+| **apt PostgreSQL 源** | 需要最新版本 | 版本最新、扩展丰富 | 需添加第三方源 |
+| **Docker** | 本地开发/测试环境 | 隔离性好、多版本共存、即用即弃 | 需理解 Docker 卷管理 |
+| **源码编译** | 特定功能需求 | 完全定制 | 维护成本高 |
+
+### 1.2 Ubuntu apt 安装（推荐生产）
+
+```bash
+# 添加 PostgreSQL 官方 APT 源（以 PG 16 为例）
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+  > /etc/apt/sources.list.d/pgdg.list'
+
+# 导入 GPG 密钥
+curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+
+sudo apt update
+
+# 安装 PostgreSQL 16 及常用扩展
+sudo apt install -y postgresql-16 postgresql-client-16 postgresql-contrib
+
+# 安装后状态
+sudo systemctl status postgresql
+# PostgreSQL 安装后自动启动，默认创建 postgres 系统用户
+```
+
+### 1.3 Docker 安装（推荐本地开发）
+
+```bash
+# 拉取 PostgreSQL 16 镜像
+docker pull postgres:16
+
+# 启动容器
+docker run -d \
+  --name pg-dev \
+  -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=testdb \
+  -e POSTGRES_USER=postgres \
+  -v pgdata:/var/lib/postgresql/data \
+  postgres:16
+
+# 进入容器连接
+docker exec -it pg-dev psql -U postgres
+
+# 或从宿主机连接
+psql -h 127.0.0.1 -p 5432 -U postgres
+```
+
+### 1.4 CentOS/RHEL 安装
+
+```bash
+# 安装官方 YUM 源（以 PG 16 为例）
+sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# 禁用系统自带的 PostgreSQL 模块（CentOS 8+）
+sudo dnf -qy module disable postgresql
+
+sudo yum install -y postgresql16-server postgresql16
+
+# 初始化数据库
+sudo /usr/pgsql-16/bin/postgresql-16-setup initdb
+
+# 启动并设置开机自启
+sudo systemctl start postgresql-16
+sudo systemctl enable postgresql-16
+```
+
+***
+
+## 二、核心配置文件
+
+### 2.1 配置文件位置
+
+```
+/etc/postgresql/16/main/           # Debian/Ubuntu 配置目录
+├── postgresql.conf                # 主配置文件
+├── pg_hba.conf                    # 客户端认证配置
+└── pg_ident.conf                  # 用户名映射
+
+# CentOS/RHEL：/var/lib/pgsql/16/data/
+```
+
+### 2.2 postgresql.conf 核心参数
+
+```ini
+# ---- 连接配置 ----
+listen_addresses = '*'            # 监听所有接口（默认 localhost）
+port = 5432
+max_connections = 200             # 最大连接数
+
+# ---- 内存配置 ----
+shared_buffers = 1GB              # 共享缓冲区（建议物理内存的 25%）
+work_mem = 16MB                   # 每个操作的排序/哈希内存（每连接独立）
+maintenance_work_mem = 256MB      # 维护操作（VACUUM/CREATE INDEX）内存
+effective_cache_size = 4GB        # 告诉优化器系统可用缓存总量（物理内存的 50%-75%）
+
+# ---- WAL 配置（类似 MySQL binlog + redo log） ----
+wal_level = replica               # minimal/replica/logical（主从复制需要 replica）
+max_wal_size = 2GB                # WAL 大小触发 checkpoint
+min_wal_size = 1GB
+checkpoint_completion_target = 0.9  # checkpoint 平滑刷盘比例
+
+# ---- 日志配置 ----
+logging_collector = on            # 开启日志收集
+log_directory = 'log'             # 日志目录（相对于数据目录）
+log_filename = 'postgresql-%Y-%m-%d.log'
+log_min_duration_statement = 1000 # 慢查询阈值（毫秒），1000ms = 1s
+log_statement = 'ddl'             # 记录 DDL 语句（none/ddl/mod/all）
+log_duration = off                # 记录所有语句耗时（调试用）
+
+# ---- 复制配置 ----
+# max_wal_senders = 10            # 主从复制时需要
+# wal_keep_size = 1GB
+```
+
+### 2.3 pg\_hba.conf 认证配置
+
+```ini
+# TYPE  DATABASE  USER      ADDRESS         METHOD
+# 本地 Unix Socket 连接
+local   all       postgres                  peer        # postgres 用户用系统认证
+local   all       all                       scram-sha-256
+
+# 本地 TCP/IP 连接
+host    all       all       127.0.0.1/32    scram-sha-256
+host    all       all       ::1/128         scram-sha-256
+
+# 远程连接（允许所有 IP，生产环境应限制）
+host    all       all       0.0.0.0/0       scram-sha-256
+```
+
+**认证方式说明**：
+
+| METHOD | 说明 | 安全性 |
+|:-------|:-----|:-------|
+| `trust` | 无需密码（仅本地开发） | ⚠️ 不安全 |
+| `peer` | 使用操作系统用户名匹配（仅本地） | ✅ 安全 |
+| `md5` | MD5 密码认证 | ⚠️ 较弱 |
+| `scram-sha-256` | SCRAM 认证（PG 10+ 推荐） | ✅ 安全 |
+| `reject` | 拒绝连接 | - |
+
+修改 `pg_hba.conf` 后需要重新加载：
+
+```bash
+sudo systemctl reload postgresql
+# 或在 psql 中
+SELECT pg_reload_conf();
+```
+
+***
+
+## 三、服务管理
+
+### 3.1 systemctl 命令
+
+```bash
+# 启动/停止/重启
+sudo systemctl start postgresql
+sudo systemctl stop postgresql
+sudo systemctl restart postgresql
+
+# 查看状态
+sudo systemctl status postgresql
+
+# 开机自启/取消
+sudo systemctl enable postgresql
+sudo systemctl disable postgresql
+
+# 重新加载配置（不重启服务）
+sudo systemctl reload postgresql
+```
+
+### 3.2 pg\_ctl 命令
+
+```bash
+# 以 postgres 用户执行
+sudo -u postgres pg_ctl status -D /var/lib/postgresql/16/main
+sudo -u postgres pg_ctl restart -D /var/lib/postgresql/16/main
+sudo -u postgres pg_ctl reload -D /var/lib/postgresql/16/main
+
+# Docker 中查看状态
+docker exec -it pg-dev pg_isready -U postgres
+```
+
+### 3.3 psql 客户端常用命令
+
+```bash
+# 连接数据库
+psql -h 127.0.0.1 -p 5432 -U postgres -d testdb
+
+# 连接后常用元命令（在 psql 终端中执行）
+\l          # 列出所有数据库
+\c dbname   # 切换数据库
+\dt         # 列出当前 schema 的所有表
+\dt *.*     # 列出所有 schema 的所有表
+\d tablename  # 查看表结构
+\di         # 列出索引
+\df         # 列出函数
+\dv         # 列出视图
+\du         # 列出所有用户/角色
+\dp         # 列出表权限
+\x          # 切换扩展显示模式（宽表格式）
+\q          # 退出
+```
+
+***
+
+## 四、用户与权限管理
+
+### 4.1 创建用户和数据库
+
+```sql
+-- PostgreSQL 中 User 和 Role 本质相同，User = Role + LOGIN 权限
+
+-- 创建角色（无登录权限）
+CREATE ROLE app_readonly;
+
+-- 创建用户（有登录权限）
+CREATE USER app_user WITH PASSWORD 'strong_password';
+-- 等价于：CREATE ROLE app_user WITH LOGIN PASSWORD 'strong_password';
+
+-- 创建数据库并指定所有者
+CREATE DATABASE mydb OWNER app_user;
+
+-- 修改用户密码
+ALTER USER app_user WITH PASSWORD 'new_password';
+
+-- 删除用户
+DROP USER app_user;
+```
+
+### 4.2 权限管理
+
+```sql
+-- Schema 权限
+GRANT USAGE ON SCHEMA public TO app_user;
+GRANT CREATE ON SCHEMA public TO app_user;
+
+-- 表权限
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO app_readonly;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
+
+-- 默认权限（新建表自动授予权限）
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT ON TABLES TO app_readonly;
+
+-- 撤销权限
+REVOKE INSERT ON users FROM app_user;
+
+-- 查看权限
+\dp users   # psql 中查看表权限
+SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name = 'users';
+```
+
+***
+
+## 五、Docker 多版本共存
+
+```bash
+# 同时运行 PostgreSQL 14 和 16
+docker run -d --name pg14 -p 5433:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -v pg14-data:/var/lib/postgresql/data \
+  postgres:14
+
+docker run -d --name pg16 -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -v pg16-data:/var/lib/postgresql/data \
+  postgres:16
+
+# 连接
+psql -h 127.0.0.1 -p 5433 -U postgres  # PG 14
+psql -h 127.0.0.1 -p 5432 -U postgres  # PG 16
+```
+
+***
+
+## 六、常见安装问题
+
+| 问题 | 原因 | 解决方案 |
+|:-----|:-----|:---------|
+| `FATAL: password authentication failed` | 密码错误或 pg\_hba.conf 配置 | 检查密码、修改 pg\_hba.conf 认证方式 |
+| `FATAL: role "xxx" does not exist` | 用户不存在 | `CREATE USER xxx WITH LOGIN PASSWORD 'pwd';` |
+| `FATAL: database "xxx" does not exist` | 数据库不存在 | `CREATE DATABASE xxx;` |
+| `connection refused` | PostgreSQL 未启动或端口不对 | `systemctl status postgresql`、检查端口 |
+| `remaining connection slots are reserved` | 连接数已满 | 增大 `max_connections` 或使用 PgBouncer |
+| `FATAL: could not create lock file` | 权限问题 | `chown -R postgres:postgres /var/run/postgresql` |
+
+***
