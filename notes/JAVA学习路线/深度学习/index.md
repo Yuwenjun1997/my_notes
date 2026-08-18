@@ -55,9 +55,10 @@ url: /my_notes/notes/JAVA学习路线/深度学习/index.md
 │
 ├── 🔧 04-运维与工程化/
 │   ├── 4.1-CICD流程搭建.md
-│   ├── 4.2-Docker-K8s部署实战.md
-│   ├── 4.3-性能测试与调优.md
-│   └── 4.4-Arthas线上诊断.md
+│   ├── 4.2-Docker基础与容器化.md
+│   ├── 4.3-Docker-K8s进阶实战.md
+│   ├── 4.4-性能测试与调优.md
+│   └── 4.5-Arthas线上诊断.md
 │
 └── 🏛️ 05-设计模式与架构/
     ├── 5.1-设计模式与Spring源码分析.md

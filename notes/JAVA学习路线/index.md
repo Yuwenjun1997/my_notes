@@ -65,7 +65,7 @@ url: /my_notes/notes/JAVA学习路线/index.md
 
 | 模块 | 核心内容 | 文档 |
 |:-----|:---------|:----:|
-| **4.1 微服务架构** | Spring Cloud 服务发现（Nacos）、API 网关（Gateway）、服务调用（OpenFeign）；Docker 镜像构建与编排（Compose）；Kubernetes 核心资源（Pod/Service/Deployment/Ingress）与部署策略 | [📖 查看](./第四阶段-分布式与系统设计/4.1-微服务架构.md) |
+| **4.1 微服务架构** | Spring Cloud 服务发现（Nacos）、API 网关（Gateway）、服务调用（OpenFeign）；Kubernetes 核心资源（Pod/Service/Deployment/Ingress）与部署策略；Docker 基础参见 [Docker 基础与容器化](./深度学习/04-运维与工程化/4.2-Docker基础与容器化.md) | [📖 查看](./第四阶段-分布式与系统设计/4.1-微服务架构.md) |
 | **4.2 可观测性** | Logback 配置与结构化日志、ELK 日志收集；SkyWalking 链路追踪（Trace/Span）；Prometheus + Grafana 指标监控与告警 | [📖 查看](./第四阶段-分布式与系统设计/4.2-可观测性.md) |
 | **4.3 数据库进阶** | MySQL 索引优化 & EXPLAIN 分析、慢查询优化；ShardingSphere 分库分表（取模/范围/一致性哈希）；主从复制与读写分离、主从延迟解决方案 | [📖 查看](./第四阶段-分布式与系统设计/4.3-数据库进阶.md) |
 
@@ -115,9 +115,10 @@ url: /my_notes/notes/JAVA学习路线/index.md
 | 主题 | 文档 |
 |:-----|:----:|
 | 4.1 CI/CD 流程搭建 | [📖 查看](./深度学习/04-运维与工程化/4.1-CICD流程搭建.md) |
-| 4.2 Docker & K8s 部署实战 | [📖 查看](./深度学习/04-运维与工程化/4.2-Docker-K8s部署实战.md) |
-| 4.3 性能测试与调优 | [📖 查看](./深度学习/04-运维与工程化/4.3-性能测试与调优.md) |
-| 4.4 Arthas 线上诊断 | [📖 查看](./深度学习/04-运维与工程化/4.4-Arthas线上诊断.md) |
+| 4.2 Docker 基础与容器化 | [📖 查看](./深度学习/04-运维与工程化/4.2-Docker基础与容器化.md) |
+| 4.3 Docker & K8s 进阶实战 | [📖 查看](./深度学习/04-运维与工程化/4.3-Docker-K8s进阶实战.md) |
+| 4.4 性能测试与调优 | [📖 查看](./深度学习/04-运维与工程化/4.4-性能测试与调优.md) |
+| 4.5 Arthas 线上诊断 | [📖 查看](./深度学习/04-运维与工程化/4.5-Arthas线上诊断.md) |
 
 ### 🏛️ 05 — 设计模式与架构
 
