@@ -118,6 +118,71 @@ html.force-dark {
   filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.45));
 }
 
+/* ---------- Hero：Tagline 空心描边 — 与主标题虚实对比 ---------- */
+.hero-tagline {
+  color: transparent !important;
+  -webkit-text-stroke: 1px #d946ef;
+  text-shadow: 0 0 10px rgba(217, 70, 239, 0.35);
+}
+
+/* ---------- Hero：心电图脉冲线（banner 中间） ---------- */
+@keyframes ecg-sweep {
+  0% {
+    mask-position: 100% 50%;
+  }
+  100% {
+    mask-position: -200% 50%;
+  }
+}
+
+@keyframes ecg-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.vp-home-hero::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 80px;
+  transform: translateY(-50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3000 100'%3E%3Cpolyline fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' points='0,60 200,60 260,52 300,52 340,60 380,60 400,55 420,15 440,72 460,60 520,52 580,60 800,60 1200,60 1260,52 1300,52 1340,60 1380,60 1400,55 1420,15 1440,72 1460,60 1520,52 1580,60 1800,60 2400,60 2460,52 2500,52 2540,60 2580,60 2600,55 2620,15 2640,72 2660,60 2720,52 2780,60 3000,60'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent calc(50% - 150px),
+    rgba(0, 0, 0, 0.3) calc(50% - 100px),
+    black calc(50% - 20px),
+    black 50%,
+    black calc(50% + 20px),
+    rgba(0, 0, 0, 0.3) calc(50% + 100px),
+    transparent calc(50% + 150px),
+    transparent 100%
+  );
+  mask-repeat: no-repeat;
+  mask-size: 3000px 100px;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.6))
+    drop-shadow(0 0 14px rgba(0, 255, 255, 0.3));
+  animation: ecg-sweep 4s linear infinite, ecg-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .vp-home-hero::before {
+    display: none;
+  }
+}
+
 /* ---------- Hero：柔和青紫辉光，衬托点阵网格 ---------- */
 [data-theme='dark'] .vp-home-hero {
   background:
