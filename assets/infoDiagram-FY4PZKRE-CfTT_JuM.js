@@ -1,2 +1,0 @@
-import{$r as e,fr as t,ii as n,mn as r,xn as i}from"./common-Bn5cDZaY.js";var a={parse:n(async t=>{let n=await r(`info`,t);e.debug(n)},`parse`)},o={version:`11.16.1`},s={parser:a,db:{getVersion:n(()=>o.version,`getVersion`)},renderer:{draw:n((n,r,a)=>{e.debug(`rendering info diagram
-`+n);let o=i(r);t(o,100,400,!0),o.append(`g`).append(`text`).attr(`x`,100).attr(`y`,40).attr(`class`,`version`).attr(`font-size`,32).style(`text-anchor`,`middle`).text(`v${a}`)},`draw`)}};export{s as diagram};
