@@ -18,7 +18,6 @@ config:
       shockStrength: 6
     hero:
       name: 小鱼知识库
-      tagline: 大鱼吃小鱼
       text: "技术知识沉淀与参考文档\n前端 · Java · Python · LangChain · 数据库 · Linux"
       actions:
         -
