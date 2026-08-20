@@ -60,6 +60,7 @@
 - [2-消息队列](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/2-xiao-xi-dui-lie/index.md)
 - [3-安全](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/3-an-quan/index.md)
 - [4-定时任务](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/4-ding-shi-ren-wu/index.md)
+- [5-RBAC权限设计](/my_notes/notes/JAVA学习路线/di-san-jie-duan-jin-jie-neng-li/5-rbac-quan-xian-she-ji/index.md)
 - [1-微服务架构](/my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/1-wei-fu-wu-jia-gou/index.md)
 - [2-可观测性](/my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/2-ke-guan-ce-xing/index.md)
 - [3-数据库进阶](/my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/3-shu-ju-ku-jin-jie/index.md)
