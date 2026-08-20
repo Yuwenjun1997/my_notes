@@ -1,0 +1,186 @@
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/2-react-tuo-zhuai-ji-shu-dnd-kit/index.md
+---
+# React 拖拽技术：dnd-kit 实战
+
+## 拖拽技术概述
+
+拖拽（Drag and Drop）是可视化编辑器最基础的交互方式——从组件面板拖入画布、在画布中调整顺序、跨容器移动节点，都依赖 DnD 能力。
+
+| 库 | 特点 | 状态 |
+|:---|:-----|:-----|
+| HTML5 Drag API | 原生，功能有限，移动端不支持 | 不推荐单独使用 |
+| react-dnd | 基于 HTML5 DnD API 的封装 | 维护模式 |
+| react-beautiful-dnd | Atlassian 出品，列表排序体验极佳 | 已停止维护 |
+| **dnd-kit** | 现代化、轻量、支持多传感器、可访问性好 | **推荐** |
+
+dnd-kit 是当前 React 生态中拖拽库的最佳选择，支持指针、键盘、触控等多种传感器，且 API 设计简洁。
+
+## dnd-kit 核心概念
+
+### 基础结构
+
+```tsx
+import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
+
+function App() {
+  return (
+    <DndContext onDragEnd={handleDragEnd}>
+      <DraggableItem />
+      <DroppableZone />
+    </DndContext>
+  );
+}
+```
+
+* `DndContext`：顶层 Provider，管理拖拽状态，处理 `onDragStart` / `onDragEnd` / `onDragOver` 事件
+* `useDraggable`：让一个元素可被拖拽，返回 `attributes`、`listeners`、`setNodeRef`
+* `useDroppable`：让一个元素可作为放置目标，返回 `setNodeRef` 和 `isOver` 状态
+
+### 传感器（Sensors）
+
+```tsx
+import { PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core';
+
+const sensors = useSensors(
+  useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  useSensor(KeyboardSensor)
+);
+```
+
+传感器决定拖拽如何触发。`PointerSensor` 需要移动 5px 才激活（避免误触），`KeyboardSensor` 让视障用户也能通过键盘操作拖拽。
+
+## 基础排序列表
+
+最常见的场景：一个可拖拽排序的列表。
+
+```tsx
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useState } from 'react';
+
+function SortableItem({ id, label }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    padding: '12px 16px',
+    background: '#fff',
+    border: '1px solid #ddd',
+    marginBottom: 8,
+    cursor: 'grab',
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {label}
+    </div>
+  );
+}
+
+function SortableList() {
+  const [items, setItems] = useState([
+    { id: 1, label: '项目 A' },
+    { id: 2, label: '项目 B' },
+    { id: 3, label: '项目 C' },
+  ]);
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setItems(prev => {
+        const oldIndex = prev.findIndex(i => i.id === active.id);
+        const newIndex = prev.findIndex(i => i.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={items}>
+        {items.map(item => (
+          <SortableItem key={item.id} {...item} />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+}
+```
+
+关键点：`collisionDetection` 决定如何判断拖到了哪个目标上，`closestCenter` 适合列表排序场景。
+
+## 跨容器拖拽
+
+低代码编辑器的核心场景：从左侧组件面板拖到右侧画布。
+
+```tsx
+function handleDragEnd(event) {
+  const { active, over } = event;
+  if (!over) return;
+
+  const sourceContainer = findContainer(active.id);  // 组件面板
+  const targetContainer = findContainer(over.id);     // 画布
+
+  if (sourceContainer !== targetContainer) {
+    // 跨容器移动：从面板复制一个新节点到画布
+    const componentType = active.id;
+    const newNode = createDefaultSchema(componentType);
+    setCanvasNodes(prev => [...prev, newNode]);
+  } else {
+    // 同容器内排序
+    setCanvasNodes(prev => {
+      const oldIndex = prev.findIndex(n => n.id === active.id);
+      const newIndex = prev.findIndex(n => n.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }
+}
+```
+
+注意：组件面板中的元素通常是"模板"，拖拽后应**复制**而非移动；画布内的元素则是**移动**排序。
+
+## 拖拽预览与自定义手柄
+
+默认拖拽时会半透明显示原元素，`DragOverlay` 可以自定义拖拽中的预览效果：
+
+```tsx
+import { DragOverlay } from '@dnd-kit/core';
+
+function Editor() {
+  const [activeId, setActiveId] = useState(null);
+
+  return (
+    <DndContext
+      onDragStart={({ active }) => setActiveId(active.id)}
+      onDragEnd={() => setActiveId(null)}
+    >
+      <ComponentPalette />
+      <Canvas />
+      <DragOverlay>
+        {activeId ? (
+          <div style={{ padding: 8, background: '#e6f7ff', border: '1px dashed #1890ff' }}>
+            {getComponentLabel(activeId)}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+```
+
+通过 `modifiers` 可限制拖拽行为：
+
+```tsx
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+
+<DndContext modifiers={[restrictToVerticalAxis]}>
+```
+
+## 性能优化
+
+* **大列表虚拟化**：结合 `react-window` 或 `@tanstack/react-virtual`，只渲染可视区域内的拖拽项
+* **避免深层嵌套**：嵌套 `DndContext` 会导致事件冒泡复杂化，尽量保持扁平结构
+* **`useMemo` 缓存 items**：`SortableContext` 的 `items` prop 变化会触发全部重排计算，确保引用稳定
+* **触控传感器**：移动端需要配置 `TouchSensor` 并设置较长的 `activationConstraint.delay`（约 250ms）避免与滚动冲突

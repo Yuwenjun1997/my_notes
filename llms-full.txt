@@ -3,7 +3,7 @@ url: /my_notes/notes/前端学习路线/index.md
 ---
 # 🌐 前端开发学习路线
 
-> 一份面向 Web 初学者的系统化前端学习指南，涵盖 **网页基础 → JavaScript 核心 → TypeScript → 工程化与实战** 四个阶段，从零到能独立搭建并维护一个现代前端项目。
+> 一份面向 Web 初学者的系统化前端学习指南，涵盖 **网页基础 → JavaScript 核心 → TypeScript → 工程化与实战 → 可视化编辑器与低代码技术** 五个阶段，从零到能独立搭建并维护一个现代前端项目，并具备低代码平台开发能力。
 
 ***
 
@@ -13,6 +13,7 @@ url: /my_notes/notes/前端学习路线/index.md
 * [第二阶段：JavaScript 核心](#-第二阶段javascript核心)
 * [第三阶段：TypeScript](#-第三阶段typescript)
 * [第四阶段：工程化与实战](#-第四阶段工程化与实战)
+* [第五阶段：可视化编辑器与低代码技术](#-第五阶段可视化编辑器与低代码技术)
 * [学习路线总览](#-学习路线总览)
 
 ***
@@ -85,6 +86,26 @@ url: /my_notes/notes/前端学习路线/index.md
 
 ***
 
+## 🧩 第五阶段：可视化编辑器与低代码技术
+
+> **学习周期**：4-6 周 | **每日建议**：2-3 小时
+> **目标**：掌握基于 React 的低代码核心技术——拖拽交互、Schema 驱动渲染、页面编辑器、富文本、流程图，能搭建可视化编辑器原型。
+
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **5.1 低代码平台概述与架构** | 低代码 vs 无代码、三层架构、Schema 驱动渲染原理、React 在低代码中的角色 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.1-低代码平台概述与架构.md) |
+| **5.2 React 拖拽技术（dnd-kit）** | dnd-kit 核心概念、SortableContext 排序列表、跨容器拖拽、DragOverlay 自定义预览 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.2-React拖拽技术-dnd-kit.md) |
+| **5.3 Schema 驱动渲染** | Schema 规范设计、SchemaRenderer 组件实现、数据绑定与表达式求值、Schema 序列化 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.3-Schema驱动渲染.md) |
+| **5.4 表单 Schema 引擎（Formily）** | Formily 核心概念、JSON Schema 表单、x-reactions 联动校验、自定义组件、方案对比 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.4-表单Schema引擎-Formily实战.md) |
+| **5.5 可视化页面编辑器架构** | 四区布局、组件注册与面板、属性面板设计、撤销重做 Command 模式 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.5-可视化页面编辑器架构.md) |
+| **5.6 页面编辑器实战** | 拖拽构建画布、画布内排序嵌套、选择高亮、属性实时编辑、SchemaTree 树形面板 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.6-页面编辑器实战-拖拽构建与布局.md) |
+| **5.7 富文本编辑器（TipTap）** | TipTap 核心概念、工具栏、自定义节点扩展、ProseMirror JSON 集成、协作编辑 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.7-富文本编辑器-TipTap入门.md) |
+| **5.8 流程图编辑器（React Flow）** | React Flow 核心概念、自定义节点、连线验证与条件标签、流程 JSON 序列化 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.8-流程图编辑器-React-Flow实战.md) |
+| **5.9 自定义低代码组件与平台案例** | 组件低代码化改造、ComponentMeta 规范、Amis / LowCodeEngine / Retool 案例 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.9-自定义低代码组件与平台案例.md) |
+| **5.10 预览发布与沙箱隔离** | 预览模式、iframe 沙箱、动态脚本安全执行、发布流程与版本回滚 | [📖 查看](./第五阶段-可视化编辑器与低代码技术/5.10-预览发布与沙箱隔离.md) |
+
+***
+
 ## 📐 学习路线总览
 
 ```
@@ -98,7 +119,12 @@ url: /my_notes/notes/前端学习路线/index.md
     │  编译 → 类型基础 → 枚举 → 接口 → 类 → 泛型 → 函数 → 类与接口
     ▼
 第四阶段：工程化与实战（3-4周）
-    Vite构建工具 → 工具函数 → 上传图片 → 二维码 → 上拉加载 → 可折叠列表 → Excel解析
+    │  Vite构建工具 → 工具函数 → 上传图片 → 二维码 → 上拉加载 → 可折叠列表 → Excel解析
+    ▼
+第五阶段：可视化编辑器与低代码技术（4-6周）
+    低代码架构 → dnd-kit拖拽 → Schema渲染 → Formily表单引擎
+    → 页面编辑器架构 → 编辑器实战 → TipTap富文本 → React Flow流程图
+    → 组件生态与案例 → 预览发布与沙箱
 ```
 
 ### 💡 学习建议
@@ -5682,6 +5708,2422 @@ index.html
 	</body>
 </html>
 ```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/1-di-dai-ma-ping-tai-gai-shu-yu-jia-gou/index.md
+---
+# 低代码平台概述与架构
+
+## 什么是低代码 / 无代码
+
+**低代码（Low-Code）** 是一种通过可视化配置、少量手写代码即可完成应用开发的方式。与之对应的 **无代码（No-Code）** 则完全不写代码，适合更简单的场景。
+
+| 维度 | 低代码 | 无代码 |
+|:-----|:-------|:-------|
+| 目标用户 | 有编程基础的开发者 | 业务人员 / 运营 |
+| 灵活度 | 高，可手写代码扩展 | 低，受限于平台能力 |
+| 典型场景 | 企业后台、表单审批、数据大屏 | 简单表单、问卷、页面搭建 |
+| 代表平台 | LowCodeEngine、Retool、Appsmith | Amis、简道云、明道云 |
+
+低代码平台的核心价值：**降低重复性开发成本**，让开发者专注于业务逻辑而非 UI 胶水代码。
+
+## 低代码平台核心架构
+
+一个典型的低代码平台分为三层：
+
+```
+┌─────────────────────────────────────┐
+│           可视化编辑器 (Editor)        │
+│  组件面板 │ 画布 │ 属性面板 │ 工具栏    │
+├─────────────────────────────────────┤
+│           DSL / Schema 层            │
+│  JSON 描述 → 组件树 + 属性 + 数据绑定  │
+├─────────────────────────────────────┤
+│           渲染引擎 (Runtime)          │
+│  Schema → React 组件树 → 真实 DOM      │
+└─────────────────────────────────────┘
+```
+
+* **编辑器层**：提供拖拽、配置、预览等可视化操作界面
+* **DSL / Schema 层**：用 JSON 数据描述页面结构，是编辑器与渲染引擎之间的"合约"
+* **渲染引擎层**：解释 Schema，映射到真实的 React 组件并挂载
+
+## 核心概念：Schema 驱动渲染
+
+低代码的核心思想可以用一个公式概括：
+
+```
+UI = f(Schema)
+```
+
+Schema 是一棵用 JSON 描述的组件树。一个最简单的 Schema 示例：
+
+```json
+{
+  "componentName": "Button",
+  "props": {
+    "type": "primary",
+    "label": "提交"
+  }
+}
+```
+
+渲染引擎的工作就是把这个 JSON 映射成真实的 React 组件：
+
+```tsx
+// 简化的渲染逻辑
+function SchemaRenderer({ schema }) {
+  const Component = registry[schema.componentName];
+  if (!Component) return null;
+  return <Component {...schema.props}>{renderChildren(schema.children)}</Component>;
+}
+```
+
+## DSL 与元数据设计
+
+每个可被低代码平台使用的组件，都需要注册 **元数据（Metadata）**：
+
+```ts
+interface ComponentMeta {
+  componentName: string;   // 唯一标识，如 "AntdButton"
+  title: string;           // 显示名称，如 "按钮"
+  icon: string;            // 图标
+  category: string;        // 分类：基础组件 / 布局组件 / 表单组件
+  defaultSchema: object;   // 拖入画布时的默认 Schema
+  propertySchema: object;  // 属性面板的配置描述（字段列表 + 类型）
+}
+```
+
+平台维护一个组件注册表（Registry），编辑器和渲染引擎都从注册表中读取组件信息。
+
+## React 在低代码中的角色
+
+React 成为低代码平台首选技术栈的原因：
+
+1. **组件模型天然契合**：React 组件是 Schema 节点的最佳映射目标，props 对应 Schema 中的属性
+2. **JSX 灵活组合**：可以通过 `createElement` 或 JSX 动态创建组件树，无需模板编译
+3. **生态丰富**：antd、Material UI 等成熟 UI 库可直接作为低代码组件源
+4. **虚拟 DOM 适合动态渲染**：Schema 变更后通过 state 更新即可触发重渲染，无需手动操作 DOM
+5. **社区主流**：阿里 LowCodeEngine、百度 Amis 等主流低代码平台均以 React 为基础
+
+## 本阶段学习路线
+
+```
+概念入门（5.1）
+    │
+    ├── 核心原语：拖拽（5.2）
+    ├── 核心原语：Schema 渲染（5.3）
+    │
+    ├── 应用一：表单引擎（5.4）
+    │
+    ├── 页面编辑器架构（5.5）
+    ├── 页面编辑器实战（5.6）
+    │
+    ├── 专项：富文本编辑器（5.7）
+    ├── 专项：流程图编辑器（5.8）
+    │
+    ├── 生态与平台案例（5.9）
+    └── 预览发布与沙箱（5.10）
+```
+
+完成本阶段后，你将能够独立搭建一个具备拖拽布局、属性配置、Schema 渲染、预览发布能力的可视化编辑器原型。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/10-yu-lan-fa-bu-yu-sha-xiang-ge-li/index.md
+---
+# 预览发布与沙箱隔离
+
+## 预览模式实现
+
+从编辑模式切换到预览模式：隐藏编辑器 UI，Schema 以只读方式全屏渲染。
+
+```tsx
+function EditorApp() {
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const { schema } = useEditorStore();
+
+  return (
+    <div className="editor-app">
+      {/* 工具栏 */}
+      <Toolbar>
+        <button onClick={() => setMode(mode === 'edit' ? 'preview' : 'edit')}>
+          {mode === 'edit' ? '预览' : '退出预览'}
+        </button>
+      </Toolbar>
+
+      {mode === 'edit' ? (
+        <EditorLayout>
+          <ComponentPalette />
+          <Canvas />
+          <PropertyPanel />
+        </EditorLayout>
+      ) : (
+        <PreviewLayout>
+          <SchemaRenderer schema={schema} />
+        </PreviewLayout>
+      )}
+    </div>
+  );
+}
+```
+
+更严格的预览应使用 **iframe 隔离**，避免编辑器样式污染预览区域。
+
+## iframe 沙箱隔离
+
+iframe 是最常用的隔离手段，提供 CSS 隔离、JS 隔离和安全边界：
+
+```tsx
+function PreviewFrame({ schema, data }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const doc = iframe.contentDocument;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/antd.min.css" />
+        <style>
+          body { margin: 0; font-family: -apple-system, sans-serif; }
+        </style>
+      </head>
+      <body>
+        <div id="preview-root"></div>
+        <script src="/preview-runtime.js"></script>
+        <script>
+          window.__RENDER_SCHEMA__(${JSON.stringify(schema)});
+          window.__RENDER_DATA__(${JSON.stringify(data)});
+        </script>
+      </body>
+      </html>
+    `);
+    doc.close();
+  }, [schema, data]);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      style={{ width: '100%', height: '100%', border: 'none' }}
+      sandbox="allow-scripts"
+    />
+  );
+}
+```
+
+**iframe sandbox 属性说明**：
+
+| 值 | 含义 |
+|:---|:-----|
+| `allow-scripts` | 允许执行 JS（必须有，否则无法渲染） |
+| 禁止 `allow-same-origin` | 防止 iframe 内页面访问父页面 DOM |
+| 按需添加 `allow-forms` | 如果预览页面需要表单提交 |
+
+**父-子通信**使用 `postMessage`：
+
+```tsx
+// 父页面 → iframe：更新数据
+iframeRef.current.contentWindow.postMessage(
+  { type: 'UPDATE_DATA', payload: formData },
+  '*'
+);
+
+// iframe 内 → 父页面：上报事件
+window.parent.postMessage(
+  { type: 'BUTTON_CLICK', payload: { nodeId: 'btn-1' } },
+  '*'
+);
+```
+
+## 动态脚本加载与执行
+
+当低代码页面包含用户自定义的 JavaScript（事件处理器、数据获取逻辑）时，需要安全地执行：
+
+```ts
+// 安全沙箱执行器
+function createSandbox() {
+  const sandbox = {
+    // 可访问的安全 API
+    console: { log: console.log, error: console.error },
+    fetch: window.fetch.bind(window),
+    alert: window.alert.bind(window),
+    // 禁止访问的对象
+    document: null,
+    window: null,
+    eval: null,
+  };
+
+  return function executeScript(code: string, context: Record<string, any>) {
+    const keys = [...Object.keys(sandbox), ...Object.keys(context)];
+    const values = [...Object.values(sandbox), ...Object.values(context)];
+
+    try {
+      const fn = new Function(...keys, `"use strict"; ${code}`);
+      return fn(...values);
+    } catch (err) {
+      console.error('脚本执行错误:', err);
+      return undefined;
+    }
+  };
+}
+```
+
+更严格的场景可以使用 **Web Worker** 作为沙箱：
+
+```ts
+function executeInWorker(code: string, data: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([`
+      self.onmessage = function(e) {
+        try {
+          const fn = new Function('data', e.data.code);
+          const result = fn(e.data.data);
+          self.postMessage({ type: 'success', result });
+        } catch (err) {
+          self.postMessage({ type: 'error', message: err.message });
+        }
+      };
+    `], { type: 'application/javascript' });
+
+    const worker = new Worker(URL.createObjectURL(blob));
+    worker.onmessage = (e) => {
+      if (e.data.type === 'success') resolve(e.data.result);
+      else reject(new Error(e.data.message));
+      worker.terminate();
+    };
+    worker.postMessage({ code, data });
+  });
+}
+```
+
+## 发布流程设计
+
+将 Schema 发布为可访问的线上页面：
+
+```ts
+async function publishPage(pageId: string, schema: SchemaNode) {
+  // 1. 保存 Schema 到后端
+  await api.saveSchema(pageId, schema);
+
+  // 2. 编译：收集用到的组件，生成按需加载的 HTML
+  const usedComponents = collectComponents(schema);
+  const html = generateHTML(schema, usedComponents);
+
+  // 3. 上传到 CDN / 静态托管
+  await cdn.upload(`pages/${pageId}/index.html`, html);
+  await cdn.upload(`pages/${pageId}/schema.json`, JSON.stringify(schema));
+
+  // 4. 返回访问 URL
+  return `https://your-domain.com/pages/${pageId}`;
+}
+
+// 生成最终 HTML
+function generateHTML(schema: SchemaNode, components: string[]): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${schema.props?.title || 'Low-Code Page'}</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="/runtime.js"></script>
+  <script>
+    window.__SCHEMA__ = ${JSON.stringify(schema)};
+    window.__COMPONENTS__ = ${JSON.stringify(components)};
+    window.renderPage(window.__SCHEMA__, window.__COMPONENTS__);
+  </script>
+</body>
+</html>`;
+}
+```
+
+## 版本管理与回滚
+
+每次发布创建版本记录，支持回滚到任意历史版本：
+
+```ts
+interface PageVersion {
+  id: string;
+  pageId: string;
+  schema: SchemaNode;
+  status: 'draft' | 'published';
+  createdAt: Date;
+  createdBy: string;
+  comment?: string;
+}
+
+// 发布新版本
+async function publishVersion(pageId: string, schema: SchemaNode, comment?: string) {
+  // 保存为新版本
+  const version = await api.createVersion({
+    pageId,
+    schema: JSON.stringify(schema),
+    status: 'published',
+    comment,
+  });
+
+  // 更新页面当前版本指针
+  await api.updatePage(pageId, { currentVersionId: version.id });
+
+  return version;
+}
+
+// 回滚到指定版本
+async function rollbackToVersion(pageId: string, versionId: string) {
+  const version = await api.getVersion(versionId);
+  const schema = JSON.parse(version.schema);
+
+  // 创建新版本（内容为旧版本的 Schema）
+  await publishVersion(pageId, schema, `回滚到 ${version.createdAt}`);
+}
+```
+
+建议维护三种状态：
+
+* **草稿（Draft）**：编辑中的版本，不影响线上
+* **已发布（Published）**：当前线上运行的版本
+* **历史（Archived）**：所有过往发布版本，支持查看和回滚
+
+## 性能优化
+
+### 组件按需加载
+
+Schema 中用到哪些组件，就只加载哪些组件的代码：
+
+```ts
+// 根据 Schema 收集需要的组件
+function collectComponents(schema: SchemaNode): Set<string> {
+  const components = new Set<string>();
+  function walk(node: SchemaNode) {
+    components.add(node.componentName);
+    node.children?.forEach(walk);
+  }
+  walk(schema);
+  return components;
+}
+
+// 动态 import 实现按需加载
+const componentLoaders: Record<string, () => Promise<any>> = {
+  Button: () => import('antd').then(m => m.Button),
+  Table: () => import('antd').then(m => m.Table),
+  Chart: () => import('@ant-design/charts').then(m => m.Line),
+};
+
+async function loadComponents(names: string[]) {
+  const loads = names
+    .filter(name => componentLoaders[name])
+    .map(name => componentLoaders[name]());
+  await Promise.all(loads);
+}
+```
+
+### 预加载与缓存
+
+* 预加载常用组件（Button、Input、Form），减少首次渲染延迟
+* Schema JSON 走 CDN 缓存，配置短 TTL（如 60s）平衡实时性与性能
+* 对大页面（100+ 节点），Schema 按区块拆分，进入视口时才加载对应区块的渲染逻辑
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/2-react-tuo-zhuai-ji-shu-dnd-kit/index.md
+---
+# React 拖拽技术：dnd-kit 实战
+
+## 拖拽技术概述
+
+拖拽（Drag and Drop）是可视化编辑器最基础的交互方式——从组件面板拖入画布、在画布中调整顺序、跨容器移动节点，都依赖 DnD 能力。
+
+| 库 | 特点 | 状态 |
+|:---|:-----|:-----|
+| HTML5 Drag API | 原生，功能有限，移动端不支持 | 不推荐单独使用 |
+| react-dnd | 基于 HTML5 DnD API 的封装 | 维护模式 |
+| react-beautiful-dnd | Atlassian 出品，列表排序体验极佳 | 已停止维护 |
+| **dnd-kit** | 现代化、轻量、支持多传感器、可访问性好 | **推荐** |
+
+dnd-kit 是当前 React 生态中拖拽库的最佳选择，支持指针、键盘、触控等多种传感器，且 API 设计简洁。
+
+## dnd-kit 核心概念
+
+### 基础结构
+
+```tsx
+import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
+
+function App() {
+  return (
+    <DndContext onDragEnd={handleDragEnd}>
+      <DraggableItem />
+      <DroppableZone />
+    </DndContext>
+  );
+}
+```
+
+* `DndContext`：顶层 Provider，管理拖拽状态，处理 `onDragStart` / `onDragEnd` / `onDragOver` 事件
+* `useDraggable`：让一个元素可被拖拽，返回 `attributes`、`listeners`、`setNodeRef`
+* `useDroppable`：让一个元素可作为放置目标，返回 `setNodeRef` 和 `isOver` 状态
+
+### 传感器（Sensors）
+
+```tsx
+import { PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core';
+
+const sensors = useSensors(
+  useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  useSensor(KeyboardSensor)
+);
+```
+
+传感器决定拖拽如何触发。`PointerSensor` 需要移动 5px 才激活（避免误触），`KeyboardSensor` 让视障用户也能通过键盘操作拖拽。
+
+## 基础排序列表
+
+最常见的场景：一个可拖拽排序的列表。
+
+```tsx
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useState } from 'react';
+
+function SortableItem({ id, label }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    padding: '12px 16px',
+    background: '#fff',
+    border: '1px solid #ddd',
+    marginBottom: 8,
+    cursor: 'grab',
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {label}
+    </div>
+  );
+}
+
+function SortableList() {
+  const [items, setItems] = useState([
+    { id: 1, label: '项目 A' },
+    { id: 2, label: '项目 B' },
+    { id: 3, label: '项目 C' },
+  ]);
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setItems(prev => {
+        const oldIndex = prev.findIndex(i => i.id === active.id);
+        const newIndex = prev.findIndex(i => i.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={items}>
+        {items.map(item => (
+          <SortableItem key={item.id} {...item} />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+}
+```
+
+关键点：`collisionDetection` 决定如何判断拖到了哪个目标上，`closestCenter` 适合列表排序场景。
+
+## 跨容器拖拽
+
+低代码编辑器的核心场景：从左侧组件面板拖到右侧画布。
+
+```tsx
+function handleDragEnd(event) {
+  const { active, over } = event;
+  if (!over) return;
+
+  const sourceContainer = findContainer(active.id);  // 组件面板
+  const targetContainer = findContainer(over.id);     // 画布
+
+  if (sourceContainer !== targetContainer) {
+    // 跨容器移动：从面板复制一个新节点到画布
+    const componentType = active.id;
+    const newNode = createDefaultSchema(componentType);
+    setCanvasNodes(prev => [...prev, newNode]);
+  } else {
+    // 同容器内排序
+    setCanvasNodes(prev => {
+      const oldIndex = prev.findIndex(n => n.id === active.id);
+      const newIndex = prev.findIndex(n => n.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }
+}
+```
+
+注意：组件面板中的元素通常是"模板"，拖拽后应**复制**而非移动；画布内的元素则是**移动**排序。
+
+## 拖拽预览与自定义手柄
+
+默认拖拽时会半透明显示原元素，`DragOverlay` 可以自定义拖拽中的预览效果：
+
+```tsx
+import { DragOverlay } from '@dnd-kit/core';
+
+function Editor() {
+  const [activeId, setActiveId] = useState(null);
+
+  return (
+    <DndContext
+      onDragStart={({ active }) => setActiveId(active.id)}
+      onDragEnd={() => setActiveId(null)}
+    >
+      <ComponentPalette />
+      <Canvas />
+      <DragOverlay>
+        {activeId ? (
+          <div style={{ padding: 8, background: '#e6f7ff', border: '1px dashed #1890ff' }}>
+            {getComponentLabel(activeId)}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+```
+
+通过 `modifiers` 可限制拖拽行为：
+
+```tsx
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+
+<DndContext modifiers={[restrictToVerticalAxis]}>
+```
+
+## 性能优化
+
+* **大列表虚拟化**：结合 `react-window` 或 `@tanstack/react-virtual`，只渲染可视区域内的拖拽项
+* **避免深层嵌套**：嵌套 `DndContext` 会导致事件冒泡复杂化，尽量保持扁平结构
+* **`useMemo` 缓存 items**：`SortableContext` 的 `items` prop 变化会触发全部重排计算，确保引用稳定
+* **触控传感器**：移动端需要配置 `TouchSensor` 并设置较长的 `activationConstraint.delay`（约 250ms）避免与滚动冲突
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/3-schema-qu-dong-xuan-ran/index.md
+---
+# Schema 驱动渲染
+
+## 什么是 Schema 驱动渲染
+
+传统开发中，UI 是用 JSX 代码写死的。Schema 驱动渲染则将 UI 描述为 **JSON 数据**，由渲染引擎解释执行：
+
+```
+传统模式：  JSX 代码 → 编译 → DOM
+Schema 模式：JSON Schema → 渲染引擎 → React 组件树 → DOM
+```
+
+这种模式让 UI 变成**可序列化、可传输、可持久化**的数据，是低代码平台的基石。
+
+## Schema 规范设计
+
+一个实用的 Schema 需要包含以下字段：
+
+```ts
+interface SchemaNode {
+  id: string;                   // 唯一标识
+  componentName: string;        // 组件名，映射到注册表
+  props?: Record<string, any>;  // 组件属性
+  children?: SchemaNode[];      // 子节点数组
+  text?: string;                // 文本内容（叶子节点）
+  visible?: string;             // 条件表达式，如 "formData.status === 'active'"
+  dataBinding?: Record<string, string>; // 数据绑定，如 { value: "{{formData.name}}" }
+}
+```
+
+完整示例——一个登录表单的 Schema：
+
+```json
+{
+  "id": "root",
+  "componentName": "Form",
+  "props": { "layout": "vertical" },
+  "children": [
+    {
+      "id": "field-1",
+      "componentName": "FormItem",
+      "props": { "label": "用户名" },
+      "children": [
+        {
+          "id": "input-1",
+          "componentName": "Input",
+          "props": { "placeholder": "请输入用户名" },
+          "dataBinding": { "value": "{{formData.username}}" }
+        }
+      ]
+    },
+    {
+      "id": "field-2",
+      "componentName": "FormItem",
+      "props": { "label": "密码" },
+      "children": [
+        {
+          "id": "input-2",
+          "componentName": "Input.Password",
+          "props": { "placeholder": "请输入密码" }
+        }
+      ]
+    },
+    {
+      "id": "btn-submit",
+      "componentName": "Button",
+      "props": { "type": "primary", "label": "登录" }
+    }
+  ]
+}
+```
+
+## Schema 到 React 组件的映射
+
+核心渲染器 `SchemaRenderer` 的实现：
+
+```tsx
+import { createContext, useContext } from 'react';
+
+// 组件注册表
+const ComponentRegistry: Record<string, React.ComponentType<any>> = {};
+
+export function registerComponent(name: string, component: React.ComponentType<any>) {
+  ComponentRegistry[name] = component;
+}
+
+// 注册常用组件
+import { Button, Input, Form, FormItem } from 'antd';
+registerComponent('Button', Button);
+registerComponent('Input', Input);
+registerComponent('Form', Form);
+registerComponent('FormItem', FormItem);
+
+// 渲染器
+function SchemaRenderer({ schema, data = {} }: { schema: SchemaNode; data?: any }) {
+  if (!schema) return null;
+
+  // 处理文本节点
+  if (schema.text !== undefined) {
+    return <>{resolveExpression(schema.text, data)}</>;
+  }
+
+  const Component = ComponentRegistry[schema.componentName];
+  if (!Component) {
+    console.warn(`组件 ${schema.componentName} 未注册`);
+    return null;
+  }
+
+  // 解析数据绑定
+  const resolvedProps = resolveDataBinding(schema.props || {}, data);
+
+  // 处理条件渲染
+  if (schema.visible && !evaluateExpression(schema.visible, data)) {
+    return null;
+  }
+
+  return (
+    <Component {...resolvedProps}>
+      {schema.children?.map(child => (
+        <SchemaRenderer key={child.id} schema={child} data={data} />
+      ))}
+    </Component>
+  );
+}
+```
+
+## 数据绑定与表达式求值
+
+数据绑定让 Schema 中的属性可以引用运行时数据。最常用的是模板字符串语法：
+
+```ts
+// 解析 "{{formData.name}}" → data.formData.name
+function resolveDataBinding(props: Record<string, any>, data: any): Record<string, any> {
+  const result = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (typeof value === 'string') {
+      result[key] = value.replace(/\{\{(.+?)\}\}/g, (_, expression) => {
+        return evaluateExpression(expression.trim(), data);
+      });
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+// 安全求值：避免直接使用 eval
+function evaluateExpression(expression: string, data: any): any {
+  try {
+    // 将 data 的每个 key 解构为函数参数
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const fn = new Function(...keys, `return ${expression}`);
+    return fn(...values);
+  } catch {
+    return undefined;
+  }
+}
+```
+
+> **安全提示**：`new Function` 虽比 `eval` 安全，但在生产环境中仍需对 `expression` 做白名单校验，避免执行任意代码。更安全的做法是使用沙箱化的表达式引擎。
+
+## Schema 的序列化与持久化
+
+Schema 是纯 JSON 数据，天然支持序列化：
+
+```ts
+// 保存 Schema 到后端
+async function saveSchema(pageId: string, schema: SchemaNode) {
+  await api.post(`/pages/${pageId}/schema`, {
+    schema: JSON.stringify(schema),
+    version: schemaVersion++,
+  });
+}
+
+// 加载 Schema
+async function loadSchema(pageId: string): Promise<SchemaNode> {
+  const res = await api.get(`/pages/${pageId}/schema`);
+  return JSON.parse(res.data.schema);
+}
+```
+
+**版本迁移**：当 Schema 规范变更时，提供迁移函数处理旧版本：
+
+```ts
+const migrations = {
+  2: (schema: any) => ({ ...schema, id: schema.id || generateId() }),
+  3: (schema: any) => migrateVisibility(schema),  // visible 字段格式变更
+};
+
+function migrateSchema(schema: any, fromVersion: number, toVersion: number): SchemaNode {
+  let current = schema;
+  for (let v = fromVersion + 1; v <= toVersion; v++) {
+    if (migrations[v]) current = migrations[v](current);
+  }
+  return current;
+}
+```
+
+## 与 React 虚拟 DOM 的协同
+
+Schema 渲染本质上是 React 动态组件树，需要注意性能优化：
+
+```tsx
+// 每个 Schema 节点用 memo 包裹，避免不必要的重渲染
+const MemoizedSchemaNode = memo(function SchemaNode({ schema, data }) {
+  return <SchemaRenderer schema={schema} data={data} />;
+});
+
+// 深层 Schema 树中，只在 schema 或 data 变化时重渲染
+function SchemaTree({ schema, data }) {
+  return (
+    <MemoizedSchemaNode
+      schema={schema}
+      data={data}
+    />
+  );
+}
+```
+
+关键原则：
+
+* **stable key**：用 Schema 节点的 `id` 作为 React key，确保 React 复用 DOM 节点
+* **局部更新**：编辑器修改某个节点属性时，只触发该节点及其父链的重渲染，而不是整棵树
+* **拆分 Schema**：大页面可按区块拆分成多个 Schema 片段，独立加载与渲染
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/4-biao-dan-schema-yin-qing-formily-shi-zhan/index.md
+---
+# 表单 Schema 引擎：Formily 实战
+
+## JSON Schema 表单概述
+
+表单是低代码平台最常见的应用场景。传统表单每个字段都需要手写 JSX，而 Schema 驱动表单只需一份 JSON 描述，引擎自动渲染完整的表单 UI、校验逻辑和联动行为。
+
+典型需求：
+
+* 后端返回字段配置，前端动态渲染表单
+* 字段间存在复杂的显隐、禁用、选项依赖关系
+* 同一套 Schema 需要在多个页面复用
+
+主流方案对比：
+
+| 方案 | 出品方 | 特点 |
+|:-----|:-------|:-----|
+| **Formily** | 阿里巴巴 | 联动能力强，Schema 规范完整，适合复杂场景 |
+| FormRender | 京东 | 轻量易上手，与 antd 集成好 |
+| Ant Design ProForm | 蚂蚁 | 配置式 API，与 antd 深度绑定，上手最快 |
+
+## Formily 核心概念
+
+### 基础结构
+
+```tsx
+import { createForm } from '@formily/core';
+import { FormProvider, FormConsumer, Field, useField } from '@formily/react';
+import { Input, Select, DatePicker, Form } from 'antd';
+
+// 创建表单实例
+const form = createForm();
+
+function MyForm() {
+  return (
+    <FormProvider form={form}>
+      <Form layout="vertical">
+        <Field name="username" label="用户名" component={Input} />
+        <Field name="birthday" label="生日" component={DatePicker} />
+      </Form>
+    </FormProvider>
+  );
+}
+```
+
+### Schema 模式
+
+Formily 的精髓在于用 Schema 替代 JSX 描述表单：
+
+```tsx
+import { createSchemaField } from '@formily/react';
+
+// 注册 Schema 中使用的组件
+const SchemaField = createSchemaField({
+  components: {
+    Input,
+    Select,
+    DatePicker,
+    FormItem: Form.Item,
+  },
+});
+
+const schema = {
+  type: 'object',
+  properties: {
+    username: {
+      type: 'string',
+      title: '用户名',
+      'x-decorator': 'FormItem',
+      'x-component': 'Input',
+      'x-component-props': { placeholder: '请输入用户名' },
+      required: true,
+    },
+    role: {
+      type: 'string',
+      title: '角色',
+      'x-decorator': 'FormItem',
+      'x-component': 'Select',
+      enum: [
+        { label: '管理员', value: 'admin' },
+        { label: '普通用户', value: 'user' },
+      ],
+    },
+  },
+};
+
+function SchemaForm() {
+  return (
+    <FormProvider form={form}>
+      <SchemaField schema={schema} />
+    </FormProvider>
+  );
+}
+```
+
+`x-component` 指定渲染哪个组件，`x-decorator` 指定外层包裹组件（通常是 FormItem），`x-component-props` 透传组件属性。
+
+## 联动与校验
+
+### 字段联动（x-reactions）
+
+```ts
+const schema = {
+  type: 'object',
+  properties: {
+    province: {
+      type: 'string',
+      title: '省份',
+      'x-decorator': 'FormItem',
+      'x-component': 'Select',
+      enum: [
+        { label: '浙江省', value: 'zhejiang' },
+        { label: '广东省', value: 'guangdong' },
+      ],
+    },
+    city: {
+      type: 'string',
+      title: '城市',
+      'x-decorator': 'FormItem',
+      'x-component': 'Select',
+      // 联动：根据省份动态加载城市
+      'x-reactions': {
+        dependencies: ['province'],
+        fulfill: {
+          state: {
+            visible: '{{$deps[0] !== undefined}}',
+          },
+          run: async (field) => {
+            const province = field.query('province').get('value');
+            const cities = await fetchCities(province);
+            field.dataSource = cities.map(c => ({ label: c.name, value: c.code }));
+          },
+        },
+      },
+    },
+  },
+};
+```
+
+`x-reactions` 是 Formily 最强大的特性，支持：
+
+* **状态驱动**：根据依赖字段值控制 visible / editable / required 等
+* **副作用**：动态修改字段数据源、默认值、校验规则
+
+### 校验规则
+
+```ts
+const schema = {
+  type: 'object',
+  properties: {
+    email: {
+      type: 'string',
+      title: '邮箱',
+      'x-decorator': 'FormItem',
+      'x-component': 'Input',
+      required: true,
+      'x-validator': [
+        { pattern: /^\w+@\w+\.\w+$/, message: '邮箱格式不正确' },
+      ],
+    },
+    age: {
+      type: 'number',
+      title: '年龄',
+      'x-decorator': 'FormItem',
+      'x-component': 'InputNumber',
+      'x-component-props': { min: 0, max: 150 },
+      'x-validator': [
+        { required: true, message: '请输入年龄' },
+        { minimum: 18, message: '年龄不能小于18岁' },
+      ],
+    },
+  },
+};
+```
+
+## 自定义表单组件
+
+将业务组件接入 Formily：
+
+```tsx
+// 1. 编写业务组件
+function ColorPicker({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      {['#1890ff', '#52c41a', '#faad14', '#f5222d'].map(color => (
+        <div
+          key={color}
+          onClick={() => onChange?.(color)}
+          style={{
+            width: 32, height: 32, borderRadius: 4, background: color,
+            border: value === color ? '3px solid #000' : '1px solid #ddd',
+            cursor: 'pointer',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// 2. 注册到 SchemaField
+const SchemaField = createSchemaField({
+  components: { Input, Select, FormItem, ColorPicker },
+});
+
+// 3. 在 Schema 中使用
+const schema = {
+  properties: {
+    themeColor: {
+      title: '主题色',
+      'x-decorator': 'FormItem',
+      'x-component': 'ColorPicker',
+    },
+  },
+};
+```
+
+## Formily vs 其他方案
+
+| 维度 | Formily | FormRender | ProForm |
+|:-----|:--------|:-----------|:--------|
+| 联动能力 | 强（x-reactions） | 中（watch 模式） | 弱（依赖 ProForm 本身） |
+| Schema 规范 | 自有扩展 Schema | JSON Schema 标准 | 非标准，配置式 |
+| 学习成本 | 中高 | 低 | 低 |
+| 适用场景 | 复杂表单、低代码引擎 | 中等复杂度表单 | 快速后台表单 |
+| 与 antd 集成 | 解耦，可适配任何 UI 库 | 解耦 | 深度绑定 antd |
+| 类型支持 | 完善（TypeScript） | 一般 | 一般 |
+
+**选型建议**：
+
+* 如果在做低代码平台、需要复杂联动 → **Formily**
+* 如果是普通后台管理系统 → **ProForm** 最快
+* 如果项目用 antd 但需要一定程度的 Schema 化 → **FormRender**
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/5-ke-shi-hua-ye-mian-bian-ji-qi-jia-gou/index.md
+---
+# 可视化页面编辑器架构
+
+## 页面编辑器的核心模型
+
+页面编辑器本质上是一个**状态机**：状态是 Schema 树，用户操作（拖拽、选中、配置、删除）产生 Schema 变更，变更触发画布重渲染。
+
+```
+用户操作 → State 更新 → Schema 变化 → 画布重渲染
+   ↑                                    │
+   └────────── 视觉反馈 ←──────────────┘
+```
+
+核心状态包括：
+
+* `schema`：当前页面的完整 Schema 树
+* `selectedNodeId`：当前选中的节点 ID
+* `hoveredNodeId`：鼠标悬停的节点 ID
+* `history`：撤销/重做操作栈
+* `mode`：编辑模式 / 预览模式
+
+## 四区布局架构
+
+几乎所有可视化编辑器都采用相似的四区布局：
+
+```
+┌──────────────────────────────────────────────┐
+│                  工具栏                        │
+│       撤销 │ 重做 │ 预览 │ 保存 │ 设置        │
+├────────┬─────────────────────┬───────────────┤
+│        │                     │               │
+│ 组件面板 │       画布区域       │   属性面板     │
+│        │                     │               │
+│ 按钮    │  ┌─────────────┐   │  标题: 按钮    │
+│ 输入框  │  │  Button      │   │  类型: Primary │
+│ 表格    │  │  [提交]      │   │  尺寸: 中      │
+│ 图片    │  └─────────────┘   │               │
+│ ...    │                     │               │
+├────────┴─────────────────────┴───────────────┤
+│                 Schema 树面板                 │
+└──────────────────────────────────────────────┘
+```
+
+* **组件面板（左侧）**：展示所有可用组件，按分类组织，拖拽进入画布
+* **画布区域（中间）**：渲染当前 Schema，支持选中、拖拽、缩放
+* **属性面板（右侧）**：选中节点后，动态显示该组件可配置的属性表单
+* **工具栏（顶部）**：全局操作——撤销/重做、预览/编辑切换、保存/发布
+
+## 组件面板设计
+
+组件面板从注册表读取所有组件元数据，分类展示：
+
+```tsx
+interface ComponentMeta {
+  componentName: string;
+  title: string;
+  icon: React.ReactNode;
+  category: '基础' | '布局' | '表单' | '数据展示';
+  defaultSchema: SchemaNode;
+  propertySchema: PropertyField[];  // 属性面板的字段定义
+}
+
+// 预设组件列表
+const COMPONENT_CATALOG: ComponentMeta[] = [
+  {
+    componentName: 'Button',
+    title: '按钮',
+    icon: <ButtonIcon />,
+    category: '基础',
+    defaultSchema: {
+      id: '',
+      componentName: 'Button',
+      props: { type: 'primary', label: '按钮' },
+    },
+    propertySchema: [
+      { key: 'label', label: '按钮文字', type: 'string' },
+      { key: 'type', label: '类型', type: 'select', options: ['primary', 'default', 'dashed'] },
+      { key: 'size', label: '尺寸', type: 'select', options: ['large', 'middle', 'small'] },
+      { key: 'disabled', label: '禁用', type: 'boolean' },
+    ],
+  },
+  // ...更多组件
+];
+```
+
+面板支持搜索和分类过滤：
+
+```tsx
+function ComponentPalette() {
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('基础');
+
+  const filtered = COMPONENT_CATALOG.filter(c =>
+    c.category === activeCategory && c.title.includes(search)
+  );
+
+  return (
+    <div className="component-palette">
+      <input placeholder="搜索组件..." value={search} onChange={e => setSearch(e.target.value)} />
+      <div className="category-tabs">
+        {['基础', '布局', '表单', '数据展示'].map(cat => (
+          <button key={cat} onClick={() => setActiveCategory(cat)}>{cat}</button>
+        ))}
+      </div>
+      <div className="component-list">
+        {filtered.map(meta => (
+          <DraggableComponent key={meta.componentName} meta={meta} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## 属性面板设计
+
+属性面板根据当前选中节点的组件类型，动态渲染对应的属性编辑器：
+
+```tsx
+function PropertyPanel({ selectedNode, schema, onChange }) {
+  if (!selectedNode) {
+    return <div className="empty-hint">请选择一个组件</div>;
+  }
+
+  // 从注册表获取该组件的属性定义
+  const meta = getComponentMeta(selectedNode.componentName);
+
+  function handlePropChange(key: string, value: any) {
+    onChange({
+      ...selectedNode,
+      props: { ...selectedNode.props, [key]: value },
+    });
+  }
+
+  return (
+    <div className="property-panel">
+      <h4>{meta.title} 属性</h4>
+      {meta.propertySchema.map(field => (
+        <PropertyField
+          key={field.key}
+          field={field}
+          value={selectedNode.props?.[field.key]}
+          onChange={v => handlePropChange(field.key, v)}
+        />
+      ))}
+    </div>
+  );
+}
+
+// 根据字段类型渲染不同的编辑器
+function PropertyField({ field, value, onChange }) {
+  switch (field.type) {
+    case 'string':
+      return <label>{field.label}<input value={value} onChange={e => onChange(e.target.value)} /></label>;
+    case 'number':
+      return <label>{field.label}<input type="number" value={value} onChange={e => onChange(+e.target.value)} /></label>;
+    case 'boolean':
+      return <label><input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} />{field.label}</label>;
+    case 'select':
+      return (
+        <label>{field.label}
+          <select value={value} onChange={e => onChange(e.target.value)}>
+            {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        </label>
+      );
+    case 'color':
+      return <label>{field.label}<input type="color" value={value} onChange={e => onChange(e.target.value)} /></label>;
+    default:
+      return null;
+  }
+}
+```
+
+## 撤销/重做与状态管理
+
+编辑器的撤销/重做功能通过 **Command 模式** 实现：
+
+```ts
+interface Command {
+  execute(): void;   // 执行操作
+  undo(): void;      // 撤销操作
+  description: string;
+}
+
+class UndoManager {
+  private undoStack: Command[] = [];
+  private redoStack: Command[] = [];
+
+  execute(command: Command) {
+    command.execute();
+    this.undoStack.push(command);
+    this.redoStack = [];  // 新操作清空重做栈
+  }
+
+  undo() {
+    const cmd = this.undoStack.pop();
+    if (cmd) {
+      cmd.undo();
+      this.redoStack.push(cmd);
+    }
+  }
+
+  redo() {
+    const cmd = this.redoStack.pop();
+    if (cmd) {
+      cmd.execute();
+      this.undoStack.push(cmd);
+    }
+  }
+
+  canUndo() { return this.undoStack.length > 0; }
+  canRedo() { return this.redoStack.length > 0; }
+}
+
+// 使用示例：修改属性的 Command
+class UpdatePropsCommand implements Command {
+  description = '修改组件属性';
+  constructor(
+    private schema: SchemaNode,
+    private nodeId: string,
+    private newProps: Record<string, any>,
+    private oldProps: Record<string, any>,
+  ) {}
+  execute() { updateNodeProps(this.schema, this.nodeId, this.newProps); }
+  undo() { updateNodeProps(this.schema, this.nodeId, this.oldProps); }
+}
+```
+
+状态管理推荐方案：
+
+| 工具 | 适用场景 |
+|:-----|:---------|
+| **Zustand** | 轻量，推荐用于编辑器全局状态 |
+| **Immer** | 不可变更新，避免 Schema 拷贝性能问题 |
+| Jotai | 原子化状态，适合大页面多区域独立更新 |
+
+```ts
+// Zustand + Immer 组合
+import { create } from 'zustand';
+import { produce } from 'immer';
+
+interface EditorState {
+  schema: SchemaNode;
+  selectedNodeId: string | null;
+  updateNodeProps: (nodeId: string, props: Record<string, any>) => void;
+  selectNode: (nodeId: string | null) => void;
+}
+
+const useEditorStore = create<EditorState>((set) => ({
+  schema: { id: 'root', componentName: 'Page', children: [] },
+  selectedNodeId: null,
+  selectNode: (nodeId) => set({ selectedNodeId: nodeId }),
+  updateNodeProps: (nodeId, props) => set(produce((state: EditorState) => {
+    const node = findNode(state.schema, nodeId);
+    if (node) Object.assign(node.props, props);
+  })),
+}));
+```
+
+## 画布区域设计
+
+画布区域的核心职责：
+
+1. **渲染 Schema 树**：递归渲染所有 Schema 节点
+2. **选中与高亮**：点击节点时设置 `selectedNodeId`，显示蓝色边框
+3. **拖拽接收**：作为 dnd-kit 的 Droppable，接收从面板拖入的组件
+4. **缩放与平移**：支持 zoom in/out 和画布拖拽移动
+
+```tsx
+function Canvas() {
+  const { schema, selectedNodeId, selectNode } = useEditorStore();
+
+  return (
+    <div className="canvas-wrapper" onClick={() => selectNode(null)}>
+      <div className="canvas-content" onClick={e => e.stopPropagation()}>
+        {schema.children?.map(node => (
+          <CanvasNode key={node.id} node={node} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CanvasNode({ node }: { node: SchemaNode }) {
+  const { selectedNodeId, selectNode } = useEditorStore();
+  const isSelected = selectedNodeId === node.id;
+
+  return (
+    <div
+      className={`canvas-node ${isSelected ? 'selected' : ''}`}
+      onClick={e => { e.stopPropagation(); selectNode(node.id); }}
+      style={{ outline: isSelected ? '2px solid #1890ff' : 'none' }}
+    >
+      <SchemaRenderer schema={node} />
+    </div>
+  );
+}
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/6-ye-mian-bian-ji-qi-shi-zhan-tuo-zhuai-gou-jian-yu-bu-ju/index.md
+---
+# 页面编辑器实战：拖拽构建与布局
+
+## 从组件面板拖入画布
+
+将 [dnd-kit 拖拽能力](./5.2-React拖拽技术-dnd-kit.md) 与 [编辑器架构](./5.5-可视化页面编辑器架构.md) 结合，实现从组件面板拖入画布生成新节点：
+
+```tsx
+import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
+import { nanoid } from 'nanoid';
+
+function Editor() {
+  const { schema, addNode, selectNode } = useEditorStore();
+  const [activeMeta, setActiveMeta] = useState<ComponentMeta | null>(null);
+
+  function handleDragStart({ active }) {
+    // 记录正在拖拽的组件元数据，用于 DragOverlay 预览
+    const meta = findComponentMeta(active.id);
+    setActiveMeta(meta);
+  }
+
+  function handleDragEnd({ active, over }) {
+    setActiveMeta(null);
+    if (!over || over.id !== 'canvas') return;
+
+    const meta = findComponentMeta(active.id);
+    if (!meta) return;  // 画布内排序，非新组件拖入
+
+    // 在画布末尾添加新节点
+    const newNode: SchemaNode = {
+      id: nanoid(),
+      componentName: meta.componentName,
+      props: { ...meta.defaultSchema.props },
+      children: meta.defaultSchema.children,
+    };
+    addNode(newNode);
+    selectNode(newNode.id);
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <ComponentPalette />
+      <CanvasArea />
+      <DragOverlay>
+        {activeMeta ? <div className="drag-preview">{activeMeta.title}</div> : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+// 画布作为放置目标
+function CanvasArea() {
+  const { setNodeRef, isOver } = useDroppable({ id: 'canvas' });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`canvas-area ${isOver ? 'drop-active' : ''}`}
+      style={{ minHeight: 400, background: isOver ? '#f0f5ff' : '#fafafa' }}
+    >
+      <Canvas />
+    </div>
+  );
+}
+```
+
+## 画布内排序与嵌套
+
+让画布内的节点支持拖拽重排，并允许将组件拖入容器组件（如 Row、Card、Tabs）中：
+
+```tsx
+// 递归渲染画布节点，每个节点都是可排序的
+function CanvasNode({ node, index }: { node: SchemaNode; index: number }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: node.id,
+  });
+
+  const Component = registry[node.componentName];
+  const isContainer = CONTAINER_COMPONENTS.includes(node.componentName);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    position: 'relative' as const,
+    minHeight: 40,
+    outline: '1px dashed transparent',
+    margin: 4,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Component {...node.props}>
+        {isContainer && node.children?.map((child, i) => (
+          <CanvasNode key={child.id} node={child} index={i} />
+        ))}
+      </Component>
+      {/* 拖拽手柄 */}
+      <div className="drag-handle">⋮⋮</div>
+    </div>
+  );
+}
+```
+
+容器组件（如 Flex、Grid、Card）需要在注册时声明支持子节点：
+
+```ts
+const CONTAINER_COMPONENTS = ['Flex', 'Grid', 'Card', 'Tabs', 'Collapse'];
+
+// 容器组件的 Schema 需要 children 字段
+const flexDefaultSchema: SchemaNode = {
+  componentName: 'Flex',
+  props: { gap: 8, direction: 'row' },
+  children: [],  // 空子节点列表，等待拖入填充
+};
+```
+
+## 选择与高亮
+
+点击节点时高亮选中，同时在右侧属性面板显示该节点的配置表单：
+
+```tsx
+// 全局状态
+interface EditorState {
+  selectedNodeId: string | null;
+  hoveredNodeId: string | null;
+  // ...其他状态
+}
+
+// 选中层覆盖在画布上方，显示蓝色边框
+function SelectionOverlay({ schema }: { schema: SchemaNode }) {
+  const { selectedNodeId } = useEditorStore();
+  if (!selectedNodeId) return null;
+
+  const nodeRect = getNodeRect(selectedNodeId);  // 通过 ref 获取节点位置
+  if (!nodeRect) return null;
+
+  return (
+    <div
+      className="selection-overlay"
+      style={{
+        position: 'absolute',
+        top: nodeRect.top,
+        left: nodeRect.left,
+        width: nodeRect.width,
+        height: nodeRect.height,
+        border: '2px solid #1890ff',
+        pointerEvents: 'none',
+      }}
+    >
+      <div className="selection-label">
+        {getNodeName(selectedNodeId)}
+      </div>
+    </div>
+  );
+}
+```
+
+## 属性面板实时编辑
+
+属性面板变更实时反映到画布上，使用 [Zustand + Immer](./5.5-可视化页面编辑器架构.md) 进行不可变更新：
+
+```tsx
+function PropertyPanel() {
+  const { selectedNodeId, schema, updateNodeProps } = useEditorStore();
+
+  const selectedNode = selectedNodeId ? findNode(schema, selectedNodeId) : null;
+  const meta = selectedNode ? getComponentMeta(selectedNode.componentName) : null;
+
+  if (!selectedNode || !meta) {
+    return <div className="empty-hint">请选择画布中的组件进行编辑</div>;
+  }
+
+  return (
+    <div className="property-panel">
+      <h4>{meta.title}</h4>
+      {meta.propertySchema.map(field => (
+        <div key={field.key} className="prop-field">
+          <label>{field.label}</label>
+          <PropEditor
+            field={field}
+            value={selectedNode.props?.[field.key]}
+            onChange={(val) => updateNodeProps(selectedNode.id, { [field.key]: val })}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## SchemaTree 树形面板
+
+类似于浏览器 DevTools 的 Elements 面板，展示 Schema 的层级结构：
+
+```tsx
+function SchemaTree() {
+  const { schema, selectedNodeId, selectNode } = useEditorStore();
+
+  return (
+    <div className="schema-tree">
+      <h4>页面结构</h4>
+      <TreeNode node={schema} depth={0} />
+    </div>
+  );
+}
+
+function TreeNode({ node, depth }: { node: SchemaNode; depth: number }) {
+  const { selectedNodeId, selectNode } = useEditorStore();
+  const [expanded, setExpanded] = useState(true);
+  const hasChildren = node.children && node.children.length > 0;
+
+  return (
+    <div>
+      <div
+        className={`tree-node ${selectedNodeId === node.id ? 'selected' : ''}`}
+        style={{ paddingLeft: depth * 16 }}
+        onClick={() => selectNode(node.id)}
+      >
+        {hasChildren && (
+          <span className="expand-toggle" onClick={e => { e.stopPropagation(); setExpanded(!expanded); }}>
+            {expanded ? '▼' : '▶'}
+          </span>
+        )}
+        <span className="node-icon">{getNodeIcon(node.componentName)}</span>
+        <span className="node-name">
+          {node.componentName}
+          {node.props?.label ? ` · ${node.props.label}` : ''}
+        </span>
+      </div>
+      {expanded && hasChildren && node.children.map(child => (
+        <TreeNode key={child.id} node={child} depth={depth + 1} />
+      ))}
+    </div>
+  );
+}
+```
+
+树形面板与画布双向联动：点击树节点 → 画布中对应节点高亮；点击画布节点 → 树中对应项高亮并滚动到可视区域。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/7-fu-wen-ben-bian-ji-qi-tip-tap-ru-men/index.md
+---
+# 富文本编辑器：TipTap 入门
+
+## 富文本编辑器技术选型
+
+在低代码平台中，富文本编辑器用于支持用户直接编辑段落、标题、列表等内容。主流方案：
+
+| 方案 | 底层 | 特点 |
+|:-----|:-----|:-----|
+| **TipTap** | ProseMirror | 开箱即用，扩展体系完善，React/Vue 双支持，中文社区活跃 |
+| Slate.js | 自研 | 灵活度最高，但学习曲线陡，API 变动频繁 |
+| ProseMirror | 自研 | 底层框架，功能完备但需大量胶水代码 |
+| Quill | 自研 | 简单易用，但架构限制多，扩展性差 |
+
+推荐选择 **TipTap**：它在 ProseMirror 之上封装了易用的 React API，同时保留了完整的扩展能力。
+
+## TipTap 核心概念
+
+```
+TipTap = ProseMirror 核心 + Extension 扩展体系 + React 集成
+```
+
+三个核心概念：
+
+* **Extension（扩展）**：为编辑器添加行为，如加粗、斜体、历史记录
+* **Node（节点）**：块级元素，如段落、标题、代码块、图片
+* **Mark（标记）**：行内格式，如加粗、斜体、链接、行内代码
+
+```tsx
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+
+function RichTextEditor() {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: '<p>Hello World</p>',
+  });
+
+  return <EditorContent editor={editor} />;
+}
+```
+
+## 基础编辑器搭建
+
+完整示例：带工具栏的富文本编辑器。
+
+```tsx
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+
+function BasicEditor({ content, onChange }) {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content,
+    onUpdate: ({ editor }) => {
+      onChange?.(editor.getHTML());
+    },
+  });
+
+  if (!editor) return null;
+
+  return (
+    <div className="editor-wrapper">
+      {/* 工具栏 */}
+      <div className="toolbar">
+        <button
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={editor.isActive('bold') ? 'active' : ''}
+        >
+          <strong>B</strong>
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={editor.isActive('italic') ? 'active' : ''}
+        >
+          <em>I</em>
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={editor.isActive('heading', { level: 2 }) ? 'active' : ''}
+        >
+          H2
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={editor.isActive('bulletList') ? 'active' : ''}
+        >
+          列表
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          className={editor.isActive('codeBlock') ? 'active' : ''}
+        >
+          代码块
+        </button>
+      </div>
+      {/* 编辑区域 */}
+      <EditorContent editor={editor} className="editor-content" />
+    </div>
+  );
+}
+```
+
+工具栏按钮的 `editor.chain().focus().toggleXxx().run()` 是 TipTap 的命令链模式——可以链式调用多个编辑操作。
+
+## 自定义节点与扩展
+
+以"高亮提示块（Callout）"为例，创建一个自定义 TipTap 节点：
+
+```tsx
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+
+// 1. 定义节点类型
+const Callout = Node.create({
+  name: 'callout',
+  group: 'block',
+  content: 'inline*',  // 接受行内内容
+
+  addAttributes() {
+    return {
+      type: { default: 'info', parseHTML: el => el.dataset.type },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'div[data-callout]', attrs: { type: 'info' } }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-callout': '' }), 0];
+  },
+
+  // React 组件渲染
+  addNodeView() {
+    return ReactNodeViewRenderer(CalloutComponent);
+  },
+});
+
+// 2. 编写 React 视图组件
+function CalloutComponent({ node, updateAttributes }) {
+  const colors = { info: '#e6f7ff', warning: '#fffbe6', error: '#fff2f0' };
+
+  return (
+    <NodeViewWrapper>
+      <div
+        style={{ background: colors[node.attrs.type], padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}
+      >
+        <select
+          value={node.attrs.type}
+          onChange={e => updateAttributes({ type: e.target.value })}
+          style={{ marginBottom: 4 }}
+        >
+          <option value="info">信息</option>
+          <option value="warning">警告</option>
+          <option value="error">错误</option>
+        </select>
+        <NodeViewContent as="p" />
+      </div>
+    </NodeViewWrapper>
+  );
+}
+
+// 3. 注册到编辑器
+const editor = useEditor({
+  extensions: [StarterKit, Callout],
+  content: '<div data-callout data-type="warning">请注意这个配置！</div>',
+});
+```
+
+## 富文本与 Schema 的集成
+
+在低代码编辑器中，富文本节点作为 Schema 树的一部分存在。Schema 节点中存储 ProseMirror JSON 格式：
+
+```json
+{
+  "id": "richtext-1",
+  "componentName": "RichText",
+  "props": {
+    "content": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "heading",
+          "attrs": { "level": 2 },
+          "content": [{ "type": "text", "text": "项目简介" }]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "这是一个" },
+            { "type": "text", "marks": [{ "type": "bold" }], "text": "重要" },
+            { "type": "text", "text": "的项目。" }
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+RichText 组件在画布中渲染时，初始化一个只读 TipTap 编辑器；在属性面板中编辑时，切换为可编辑模式。
+
+## 协作编辑简介
+
+TipTap 可通过 **Yjs** 实现多人实时协作编辑：
+
+```tsx
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+import { useCollaboration } from '@tiptap/extension-collaboration';
+
+// Yjs 文档
+const ydoc = new Y.Doc();
+const provider = new WebsocketProvider('wss://your-server.com', 'doc-id', ydoc);
+
+const editor = useEditor({
+  extensions: [
+    StarterKit.configure({ history: false }),  // 关闭本地历史，使用 Yjs 版本
+    Collaboration.configure({ document: ydoc }),
+  ],
+});
+```
+
+协作编辑的关键概念：
+
+* **Yjs CRDT**：冲突自动合并，无需锁机制
+* **Awareness 协议**：显示其他用户的光标位置和选区
+* **y-websocket**：Yjs 官方 WebSocket 同步后端
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/8-liu-cheng-tu-bian-ji-qi-react-flow-shi-zhan/index.md
+---
+# 流程图编辑器：React Flow 实战
+
+## 节点编辑器概述
+
+节点编辑器（Node-based Editor）是一种用"节点 + 连线"来表达流程、逻辑或数据关系的可视化工具。在低代码平台中，常用于：
+
+* **审批流程设计**：配置多级审批、条件分支
+* **数据处理管线**：ETL 流程可视化编排
+* **逻辑编排**：用节点组合替代 if-else 代码
+* **AI 工作流**：类似 LangChain 的 Agent 编排
+
+**React Flow** 是 React 生态中最成熟的节点编辑器库，支持自定义节点、多种连线类型、迷你地图、minimap 等。
+
+## React Flow 核心概念
+
+### 基础结构
+
+```tsx
+import ReactFlow, { MiniMap, Controls, Background } from 'reactflow';
+import 'reactflow/dist/style.css';
+
+const initialNodes = [
+  { id: '1', position: { x: 0, y: 0 }, data: { label: '开始' }, type: 'input' },
+  { id: '2', position: { x: 200, y: 0 }, data: { label: '处理数据' } },
+  { id: '3', position: { x: 400, y: 0 }, data: { label: '结束' }, type: 'output' },
+];
+
+const initialEdges = [
+  { id: 'e1-2', source: '1', target: '2', animated: true },
+  { id: 'e2-3', source: '2', target: '3' },
+];
+
+function FlowEditor() {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  const onConnect = useCallback((params) => {
+    setEdges(eds => addEdge(params, eds));
+  }, []);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+    >
+      <MiniMap />
+      <Controls />
+      <Background />
+    </ReactFlow>
+  );
+}
+```
+
+React Flow 采用**受控模式**：节点和边的数据由外部 state 管理，通过 `onNodesChange` / `onEdgesChange` 回调更新。
+
+### 节点和边
+
+* **Node**：`{ id, position: { x, y }, data: { label, ... }, type }` — `type` 决定渲染哪个组件
+* **Edge**：`{ id, source, target, type, animated, label }` — 连接两个节点
+
+## 自定义节点开发
+
+为流程编辑器创建四种常用节点：
+
+```tsx
+// 1. 开始节点
+function StartNode({ data }) {
+  return (
+    <div style={{ padding: '8px 16px', borderRadius: 20, background: '#52c41a', color: '#fff' }}>
+      {data.label}
+      <Handle type="source" position={Position.Right} />
+    </div>
+  );
+}
+
+// 2. 处理节点（带表单属性）
+function ActionNode({ data }) {
+  return (
+    <div style={{ padding: 12, border: '1px solid #d9d9d9', borderRadius: 8, background: '#fff' }}>
+      <Handle type="target" position={Position.Left} />
+      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{data.label}</div>
+      <div style={{ fontSize: 12, color: '#666' }}>{data.description || '点击配置操作'}</div>
+      <Handle type="source" position={Position.Right} />
+    </div>
+  );
+}
+
+// 3. 条件节点（带两个出口）
+function ConditionNode({ data }) {
+  return (
+    <div style={{ padding: 12, border: '2px solid #faad14', borderRadius: 8, background: '#fffbe6' }}>
+      <Handle type="target" position={Position.Left} />
+      <div style={{ fontWeight: 'bold', marginBottom: 8 }}>{data.label}</div>
+      <div style={{ position: 'relative', height: 20 }}>
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="true"
+          style={{ top: -10, background: '#52c41a' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="false"
+          style={{ top: 10, background: '#f5222d' }}
+        />
+      </div>
+      <div style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ color: '#52c41a' }}>是</span>
+        <span style={{ color: '#f5222d' }}>否</span>
+      </div>
+    </div>
+  );
+}
+
+// 4. 结束节点
+function EndNode({ data }) {
+  return (
+    <div style={{ padding: '8px 16px', borderRadius: 20, background: '#f5222d', color: '#fff' }}>
+      <Handle type="target" position={Position.Left} />
+      {data.label}
+    </div>
+  );
+}
+
+// 注册自定义节点类型
+const nodeTypes = {
+  start: StartNode,
+  action: ActionNode,
+  condition: ConditionNode,
+  end: EndNode,
+};
+
+// 使用
+<ReactFlow nodeTypes={nodeTypes} nodes={nodes} edges={edges} ... />
+```
+
+## 连线与交互
+
+### 连线验证
+
+不是任意两个节点都能连线，需要验证：
+
+```tsx
+function FlowEditor() {
+  const onConnect = useCallback((params) => {
+    // 规则：条件节点只能连接到 action 或 end 节点
+    const sourceNode = nodes.find(n => n.id === params.source);
+    const targetNode = nodes.find(n => n.id === params.target);
+
+    if (sourceNode?.type === 'condition' && targetNode?.type === 'start') {
+      return;  // 拒绝连接
+    }
+    setEdges(eds => addEdge({ ...params, animated: false }, eds));
+  }, [nodes]);
+
+  // 连线验证：拖拽连线时实时判断
+  const isValidConnection = useCallback((connection) => {
+    return connection.source !== connection.target;  // 不能连自己
+  }, []);
+}
+
+<ReactFlow isValidConnection={isValidConnection} onConnect={onConnect} ... />
+```
+
+### 自定义边标签
+
+```tsx
+// 条件连线标签：显示条件表达式
+function ConditionEdge({ id, sourceX, sourceY, targetX, targetY, data, style }) {
+  return (
+    <g>
+      <path d={getSmoothStepPath({ sourceX, sourceY, targetX, targetY })} style={style} />
+      <foreignObject x={sourceX + (targetX - sourceX) / 2 - 40} y={sourceY - 10} width={80} height={20}>
+        <div style={{ fontSize: 11, textAlign: 'center', color: '#666' }}>
+          {data?.label || ''}
+        </div>
+      </foreignObject>
+    </g>
+  );
+}
+```
+
+## 节点面板与工具栏
+
+从侧边栏拖拽新节点到画布（复用 [dnd-kit](./5.2-React拖拽技术-dnd-kit.md)）：
+
+```tsx
+function NodePalette() {
+  const nodeTemplates = [
+    { type: 'action', label: '处理节点', icon: '⚙️' },
+    { type: 'condition', label: '条件判断', icon: '❓' },
+    { type: 'end', label: '结束', icon: '🛑' },
+  ];
+
+  return (
+    <div className="node-palette">
+      <h4>节点</h4>
+      {nodeTemplates.map(t => (
+        <div
+          key={t.type}
+          className="palette-node"
+          draggable
+          onDragStart={e => e.dataTransfer.setData('nodeType', t.type)}
+        >
+          {t.icon} {t.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 画布接收拖入
+function FlowCanvas() {
+  const onDragOver = (e) => { e.preventDefault(); };
+
+  const onDrop = (e) => {
+    const type = e.dataTransfer.getData('nodeType');
+    const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    const newNode = {
+      id: nanoid(),
+      type,
+      position,
+      data: { label: getDefaultLabel(type) },
+    };
+    setNodes(nds => [...nds, newNode]);
+  };
+
+  return <ReactFlow onDragOver={onDragOver} onDrop={onDrop} ... />;
+}
+```
+
+## 流程序列化
+
+保存和加载流程定义：
+
+```ts
+// 导出为 JSON
+function exportFlow(nodes, edges) {
+  return JSON.stringify({ nodes, edges }, null, 2);
+}
+
+// 导入
+function importFlow(json: string) {
+  const { nodes, edges } = JSON.parse(json);
+  setNodes(nodes);
+  setEdges(edges);
+}
+
+// 简单的流程执行：按拓扑顺序遍历节点
+async function executeFlow(nodes, edges) {
+  const adjacency = buildAdjacencyList(nodes, edges);
+  const startNode = nodes.find(n => n.type === 'start');
+  const queue = [startNode];
+
+  while (queue.length > 0) {
+    const node = queue.shift();
+    await executeNode(node);  // 执行节点逻辑
+
+    const nextEdges = adjacency[node.id] || [];
+    for (const edge of nextEdges) {
+      if (edge.sourceHandle === 'true' || !edge.sourceHandle) {
+        queue.push(nodes.find(n => n.id === edge.target));
+      }
+    }
+  }
+}
+```
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/9-zi-ding-yi-di-dai-ma-zu-jian-yu-ping-tai-an-li/index.md
+---
+# 自定义低代码组件与平台案例
+
+## 组件的低代码化改造
+
+一个普通 React 组件要接入低代码平台，需要满足以下条件：
+
+```tsx
+// 改造前：普通 React 组件
+function UserProfile({ userId }) {
+  const user = useUser(userId);
+  return (
+    <div className="user-profile">
+      <img src={user.avatar} />
+      <h3>{user.name}</h3>
+    </div>
+  );
+}
+
+// 改造后：低代码兼容组件
+function UserProfile({ userId, avatarSize = 48, showName = true, style }) {
+  const user = useUser(userId);
+  return (
+    <div className="user-profile" style={style}>
+      <img src={user.avatar} width={avatarSize} height={avatarSize} />
+      {showName && <h3>{user.name}</h3>}
+    </div>
+  );
+}
+```
+
+改造要点：
+
+1. **属性扁平化**：所有配置项都通过 props 传入，不依赖外部 hook 或 context
+2. **提供默认值**：每个 prop 都有合理的 default，保证拖入画布即可正常显示
+3. **无副作用**：组件不应该依赖外部状态（如 Redux store），数据由 Schema 的 dataBinding 提供
+
+## 组件注册与元数据规范
+
+```ts
+interface ComponentMeta {
+  // 基本信息
+  componentName: string;      // 唯一标识
+  title: string;              // 中文显示名
+  icon: React.ReactNode;      // 面板图标
+  category: string;           // 分组：基础 | 布局 | 表单 | 数据展示 | 业务
+
+  // 默认 Schema
+  defaultSchema: Partial<SchemaNode>;
+
+  // 属性面板配置
+  propertySchema: PropertyField[];
+}
+
+interface PropertyField {
+  key: string;                // 对应 props 的属性名
+  label: string;              // 面板中显示的标签
+  type: 'string' | 'number' | 'boolean' | 'select' | 'color' | 'json' | 'slot';
+  defaultValue?: any;
+  options?: { label: string; value: any }[];  // select 类型的选项
+  group?: string;             // 属性分组（基础 | 样式 | 高级）
+}
+
+// 注册中心
+class ComponentRegistry {
+  private metaMap = new Map<string, ComponentMeta>();
+
+  register(meta: ComponentMeta, component: React.ComponentType<any>) {
+    this.metaMap.set(meta.componentName, { ...meta, component });
+  }
+
+  get(name: string) { return this.metaMap.get(name); }
+  getAll() { return Array.from(this.metaMap.values()); }
+  getByCategory(category: string) { return this.getAll().filter(m => m.category === category); }
+}
+
+// 使用
+const registry = new ComponentRegistry();
+registry.register({
+  componentName: 'UserProfile',
+  title: '用户头像',
+  icon: <UserIcon />,
+  category: '业务',
+  defaultSchema: { componentName: 'UserProfile', props: { avatarSize: 48 } },
+  propertySchema: [
+    { key: 'avatarSize', label: '头像大小', type: 'number', defaultValue: 48 },
+    { key: 'showName', label: '显示名称', type: 'boolean', defaultValue: true },
+  ],
+}, UserProfile);
+```
+
+## 属性面板与插槽机制
+
+属性面板根据 `propertySchema` 自动生成编辑表单，`slot` 类型支持子节点拖入：
+
+```tsx
+function PropertyEditor({ propertySchema, values, onChange }) {
+  // 按 group 分组显示
+  const groups = groupBy(propertySchema, f => f.group || '基础');
+
+  return (
+    <div className="property-editor">
+      {Object.entries(groups).map(([group, fields]) => (
+        <div key={group} className="prop-group">
+          <h5>{group}</h5>
+          {fields.map(field => {
+            if (field.type === 'slot') {
+              return (
+                <div key={field.key} className="slot-area">
+                  <label>{field.label}</label>
+                  <div className="slot-drop-zone" data-slot={field.key}>
+                    拖入组件到此插槽
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div key={field.key} className="prop-field">
+                <label>{field.label}</label>
+                <FieldEditor field={field} value={values[field.key]}
+                  onChange={v => onChange({ ...values, [field.key]: v })} />
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+插槽 Schema 示例——一个卡片组件支持 header / body / footer 三个插槽：
+
+```json
+{
+  "componentName": "Card",
+  "props": { "title": "我的卡片" },
+  "slots": {
+    "header": [],
+    "body": [
+      { "componentName": "Text", "props": { "content": "卡片内容" } }
+    ],
+    "footer": []
+  }
+}
+```
+
+## Amis 案例分析
+
+百度 **Amis** 的核心思想：**JSON 配置即页面**。一个完整的后台页面只需一段 JSON：
+
+```json
+{
+  "type": "page",
+  "title": "用户管理",
+  "body": {
+    "type": "crud",
+    "api": "/api/users",
+    "columns": [
+      { "name": "name", "label": "用户名" },
+      { "name": "email", "label": "邮箱" },
+      { "name": "status", "label": "状态", "type": "mapping", "map": {
+        "active": "<span class='label label-success'>启用</span>",
+        "inactive": "<span class='label label-danger'>禁用</span>"
+      }}
+    ]
+  }
+}
+```
+
+Amis 的架构要点：
+
+* **渲染器映射**：100+ 内置组件，每种 type 对应一个 React 渲染器
+* **插件机制**：自定义渲染器通过注册 ` amisOptions` 接入
+* **优势**：后台表单类页面搭建极快，组件丰富
+* **局限**：高度定制化的 UI 较难实现，样式定制成本高
+
+## LowCodeEngine（阿里）案例分析
+
+阿里 **LowCodeEngine** 是更接近"可视化搭建平台"的架构：
+
+```
+┌──────────────────────────────────────────┐
+│                 编辑器主框架               │
+├────────┬──────────────┬─────────────────┤
+│ 面板    │   模拟器      │   Setter 面板   │
+│ 组件树  │  渲染预览区    │   属性/样式/事件 │
+├────────┴──────────────┴─────────────────┤
+│               插件协议层                  │
+├──────────────────────────────────────────┤
+│          组件元数据 + Setter 注册          │
+└──────────────────────────────────────────┘
+```
+
+核心设计：
+
+* **Setter 系统**：每个组件对应一套 Setter（属性 Setter、样式 Setter、事件 Setter），Setter 本质是 React 表单组件
+* **模拟器（Simulator）**：在 iframe 中渲染用户搭建的页面，与编辑器环境隔离
+* **插件协议**：面板、工具栏、属性栏均通过插件注册，支持高度自定义
+
+```ts
+// LowCodeEngine 组件注册示例（概念）
+import { materialRegistry, setterRegistry } from '@alilc/lowcode-engine';
+
+materialRegistry.register({
+  componentName: 'MyButton',
+  title: '我的按钮',
+  category: '基础组件',
+  group: '精选',
+  snippet: { // 拖入画布时的默认 Schema
+    componentName: 'MyButton',
+    props: { type: 'primary', children: '按钮' },
+  },
+  configure: {
+    props: [
+      { name: 'children', title: '按钮文字', setter: 'StringSetter' },
+      { name: 'type', title: '按钮类型', setter: { componentName: 'SelectSetter', props: {
+        options: [{ label: '主要', value: 'primary' }, { label: '默认', value: 'default' }]
+      }}},
+    ],
+  },
+});
+```
+
+## Retool / Appsmith 模式对比
+
+| 维度 | Retool | Appsmith | Amis | LowCodeEngine |
+|:-----|:-------|:---------|:-----|:-------------|
+| 开源 | 商业 | 开源 | 开源 | 开源 |
+| 数据源优先 | 是（连接数据库/API） | 是 | 否（页面优先） | 否（组件优先） |
+| 组件生态 | 60+ 组件 | 45+ 组件 | 100+ 组件 | 依赖 antd |
+| 自定义组件 | 支持（React） | 支持（React） | 支持（渲染器） | 支持（React） |
+| 部署方式 | SaaS / 自托管 | 自托管 | 嵌入式 | 嵌入式 |
+| 适合场景 | 内部工具 | 内部工具 | 后台页面快速搭建 | 通用低代码平台 |
+
+共同趋势：**数据源连接能力 + 组件市场 + 自定义扩展** 是现代低代码平台的三大支柱。
+
+---
+
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/readme/index.md
+---
+# 第五阶段 · 可视化编辑器与低代码技术
+
+> 从拖拽、Schema 渲染、表单引擎到完整的可视化页面编辑器，系统掌握基于 React 的低代码核心技术栈。
+
+* [5.1 低代码平台概述与架构](./5.1-低代码平台概述与架构.md)
+* [5.2 React 拖拽技术：dnd-kit 实战](./5.2-React拖拽技术-dnd-kit.md)
+* [5.3 Schema 驱动渲染](./5.3-Schema驱动渲染.md)
+* [5.4 表单 Schema 引擎：Formily 实战](./5.4-表单Schema引擎-Formily实战.md)
+* [5.5 可视化页面编辑器架构](./5.5-可视化页面编辑器架构.md)
+* [5.6 页面编辑器实战：拖拽构建与布局](./5.6-页面编辑器实战-拖拽构建与布局.md)
+* [5.7 富文本编辑器：TipTap 入门](./5.7-富文本编辑器-TipTap入门.md)
+* [5.8 流程图编辑器：React Flow 实战](./5.8-流程图编辑器-React-Flow实战.md)
+* [5.9 自定义低代码组件与平台案例](./5.9-自定义低代码组件与平台案例.md)
+* [5.10 预览发布与沙箱隔离](./5.10-预览发布与沙箱隔离.md)
 
 ---
 

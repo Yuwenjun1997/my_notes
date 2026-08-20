@@ -1,0 +1,228 @@
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/3-schema-qu-dong-xuan-ran/index.md
+---
+# Schema 驱动渲染
+
+## 什么是 Schema 驱动渲染
+
+传统开发中，UI 是用 JSX 代码写死的。Schema 驱动渲染则将 UI 描述为 **JSON 数据**，由渲染引擎解释执行：
+
+```
+传统模式：  JSX 代码 → 编译 → DOM
+Schema 模式：JSON Schema → 渲染引擎 → React 组件树 → DOM
+```
+
+这种模式让 UI 变成**可序列化、可传输、可持久化**的数据，是低代码平台的基石。
+
+## Schema 规范设计
+
+一个实用的 Schema 需要包含以下字段：
+
+```ts
+interface SchemaNode {
+  id: string;                   // 唯一标识
+  componentName: string;        // 组件名，映射到注册表
+  props?: Record<string, any>;  // 组件属性
+  children?: SchemaNode[];      // 子节点数组
+  text?: string;                // 文本内容（叶子节点）
+  visible?: string;             // 条件表达式，如 "formData.status === 'active'"
+  dataBinding?: Record<string, string>; // 数据绑定，如 { value: "{{formData.name}}" }
+}
+```
+
+完整示例——一个登录表单的 Schema：
+
+```json
+{
+  "id": "root",
+  "componentName": "Form",
+  "props": { "layout": "vertical" },
+  "children": [
+    {
+      "id": "field-1",
+      "componentName": "FormItem",
+      "props": { "label": "用户名" },
+      "children": [
+        {
+          "id": "input-1",
+          "componentName": "Input",
+          "props": { "placeholder": "请输入用户名" },
+          "dataBinding": { "value": "{{formData.username}}" }
+        }
+      ]
+    },
+    {
+      "id": "field-2",
+      "componentName": "FormItem",
+      "props": { "label": "密码" },
+      "children": [
+        {
+          "id": "input-2",
+          "componentName": "Input.Password",
+          "props": { "placeholder": "请输入密码" }
+        }
+      ]
+    },
+    {
+      "id": "btn-submit",
+      "componentName": "Button",
+      "props": { "type": "primary", "label": "登录" }
+    }
+  ]
+}
+```
+
+## Schema 到 React 组件的映射
+
+核心渲染器 `SchemaRenderer` 的实现：
+
+```tsx
+import { createContext, useContext } from 'react';
+
+// 组件注册表
+const ComponentRegistry: Record<string, React.ComponentType<any>> = {};
+
+export function registerComponent(name: string, component: React.ComponentType<any>) {
+  ComponentRegistry[name] = component;
+}
+
+// 注册常用组件
+import { Button, Input, Form, FormItem } from 'antd';
+registerComponent('Button', Button);
+registerComponent('Input', Input);
+registerComponent('Form', Form);
+registerComponent('FormItem', FormItem);
+
+// 渲染器
+function SchemaRenderer({ schema, data = {} }: { schema: SchemaNode; data?: any }) {
+  if (!schema) return null;
+
+  // 处理文本节点
+  if (schema.text !== undefined) {
+    return <>{resolveExpression(schema.text, data)}</>;
+  }
+
+  const Component = ComponentRegistry[schema.componentName];
+  if (!Component) {
+    console.warn(`组件 ${schema.componentName} 未注册`);
+    return null;
+  }
+
+  // 解析数据绑定
+  const resolvedProps = resolveDataBinding(schema.props || {}, data);
+
+  // 处理条件渲染
+  if (schema.visible && !evaluateExpression(schema.visible, data)) {
+    return null;
+  }
+
+  return (
+    <Component {...resolvedProps}>
+      {schema.children?.map(child => (
+        <SchemaRenderer key={child.id} schema={child} data={data} />
+      ))}
+    </Component>
+  );
+}
+```
+
+## 数据绑定与表达式求值
+
+数据绑定让 Schema 中的属性可以引用运行时数据。最常用的是模板字符串语法：
+
+```ts
+// 解析 "{{formData.name}}" → data.formData.name
+function resolveDataBinding(props: Record<string, any>, data: any): Record<string, any> {
+  const result = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (typeof value === 'string') {
+      result[key] = value.replace(/\{\{(.+?)\}\}/g, (_, expression) => {
+        return evaluateExpression(expression.trim(), data);
+      });
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+// 安全求值：避免直接使用 eval
+function evaluateExpression(expression: string, data: any): any {
+  try {
+    // 将 data 的每个 key 解构为函数参数
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const fn = new Function(...keys, `return ${expression}`);
+    return fn(...values);
+  } catch {
+    return undefined;
+  }
+}
+```
+
+> **安全提示**：`new Function` 虽比 `eval` 安全，但在生产环境中仍需对 `expression` 做白名单校验，避免执行任意代码。更安全的做法是使用沙箱化的表达式引擎。
+
+## Schema 的序列化与持久化
+
+Schema 是纯 JSON 数据，天然支持序列化：
+
+```ts
+// 保存 Schema 到后端
+async function saveSchema(pageId: string, schema: SchemaNode) {
+  await api.post(`/pages/${pageId}/schema`, {
+    schema: JSON.stringify(schema),
+    version: schemaVersion++,
+  });
+}
+
+// 加载 Schema
+async function loadSchema(pageId: string): Promise<SchemaNode> {
+  const res = await api.get(`/pages/${pageId}/schema`);
+  return JSON.parse(res.data.schema);
+}
+```
+
+**版本迁移**：当 Schema 规范变更时，提供迁移函数处理旧版本：
+
+```ts
+const migrations = {
+  2: (schema: any) => ({ ...schema, id: schema.id || generateId() }),
+  3: (schema: any) => migrateVisibility(schema),  // visible 字段格式变更
+};
+
+function migrateSchema(schema: any, fromVersion: number, toVersion: number): SchemaNode {
+  let current = schema;
+  for (let v = fromVersion + 1; v <= toVersion; v++) {
+    if (migrations[v]) current = migrations[v](current);
+  }
+  return current;
+}
+```
+
+## 与 React 虚拟 DOM 的协同
+
+Schema 渲染本质上是 React 动态组件树，需要注意性能优化：
+
+```tsx
+// 每个 Schema 节点用 memo 包裹，避免不必要的重渲染
+const MemoizedSchemaNode = memo(function SchemaNode({ schema, data }) {
+  return <SchemaRenderer schema={schema} data={data} />;
+});
+
+// 深层 Schema 树中，只在 schema 或 data 变化时重渲染
+function SchemaTree({ schema, data }) {
+  return (
+    <MemoizedSchemaNode
+      schema={schema}
+      data={data}
+    />
+  );
+}
+```
+
+关键原则：
+
+* **stable key**：用 Schema 节点的 `id` 作为 React key，确保 React 复用 DOM 节点
+* **局部更新**：编辑器修改某个节点属性时，只触发该节点及其父链的重渲染，而不是整棵树
+* **拆分 Schema**：大页面可按区块拆分成多个 Schema 片段，独立加载与渲染

@@ -1,0 +1,302 @@
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-wu-jie-duan-ke-shi-hua-bian-ji-qi-yu-di-dai-ma-ji-shu/10-yu-lan-fa-bu-yu-sha-xiang-ge-li/index.md
+---
+# 预览发布与沙箱隔离
+
+## 预览模式实现
+
+从编辑模式切换到预览模式：隐藏编辑器 UI，Schema 以只读方式全屏渲染。
+
+```tsx
+function EditorApp() {
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const { schema } = useEditorStore();
+
+  return (
+    <div className="editor-app">
+      {/* 工具栏 */}
+      <Toolbar>
+        <button onClick={() => setMode(mode === 'edit' ? 'preview' : 'edit')}>
+          {mode === 'edit' ? '预览' : '退出预览'}
+        </button>
+      </Toolbar>
+
+      {mode === 'edit' ? (
+        <EditorLayout>
+          <ComponentPalette />
+          <Canvas />
+          <PropertyPanel />
+        </EditorLayout>
+      ) : (
+        <PreviewLayout>
+          <SchemaRenderer schema={schema} />
+        </PreviewLayout>
+      )}
+    </div>
+  );
+}
+```
+
+更严格的预览应使用 **iframe 隔离**，避免编辑器样式污染预览区域。
+
+## iframe 沙箱隔离
+
+iframe 是最常用的隔离手段，提供 CSS 隔离、JS 隔离和安全边界：
+
+```tsx
+function PreviewFrame({ schema, data }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const doc = iframe.contentDocument;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/antd.min.css" />
+        <style>
+          body { margin: 0; font-family: -apple-system, sans-serif; }
+        </style>
+      </head>
+      <body>
+        <div id="preview-root"></div>
+        <script src="/preview-runtime.js"></script>
+        <script>
+          window.__RENDER_SCHEMA__(${JSON.stringify(schema)});
+          window.__RENDER_DATA__(${JSON.stringify(data)});
+        </script>
+      </body>
+      </html>
+    `);
+    doc.close();
+  }, [schema, data]);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      style={{ width: '100%', height: '100%', border: 'none' }}
+      sandbox="allow-scripts"
+    />
+  );
+}
+```
+
+**iframe sandbox 属性说明**：
+
+| 值 | 含义 |
+|:---|:-----|
+| `allow-scripts` | 允许执行 JS（必须有，否则无法渲染） |
+| 禁止 `allow-same-origin` | 防止 iframe 内页面访问父页面 DOM |
+| 按需添加 `allow-forms` | 如果预览页面需要表单提交 |
+
+**父-子通信**使用 `postMessage`：
+
+```tsx
+// 父页面 → iframe：更新数据
+iframeRef.current.contentWindow.postMessage(
+  { type: 'UPDATE_DATA', payload: formData },
+  '*'
+);
+
+// iframe 内 → 父页面：上报事件
+window.parent.postMessage(
+  { type: 'BUTTON_CLICK', payload: { nodeId: 'btn-1' } },
+  '*'
+);
+```
+
+## 动态脚本加载与执行
+
+当低代码页面包含用户自定义的 JavaScript（事件处理器、数据获取逻辑）时，需要安全地执行：
+
+```ts
+// 安全沙箱执行器
+function createSandbox() {
+  const sandbox = {
+    // 可访问的安全 API
+    console: { log: console.log, error: console.error },
+    fetch: window.fetch.bind(window),
+    alert: window.alert.bind(window),
+    // 禁止访问的对象
+    document: null,
+    window: null,
+    eval: null,
+  };
+
+  return function executeScript(code: string, context: Record<string, any>) {
+    const keys = [...Object.keys(sandbox), ...Object.keys(context)];
+    const values = [...Object.values(sandbox), ...Object.values(context)];
+
+    try {
+      const fn = new Function(...keys, `"use strict"; ${code}`);
+      return fn(...values);
+    } catch (err) {
+      console.error('脚本执行错误:', err);
+      return undefined;
+    }
+  };
+}
+```
+
+更严格的场景可以使用 **Web Worker** 作为沙箱：
+
+```ts
+function executeInWorker(code: string, data: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([`
+      self.onmessage = function(e) {
+        try {
+          const fn = new Function('data', e.data.code);
+          const result = fn(e.data.data);
+          self.postMessage({ type: 'success', result });
+        } catch (err) {
+          self.postMessage({ type: 'error', message: err.message });
+        }
+      };
+    `], { type: 'application/javascript' });
+
+    const worker = new Worker(URL.createObjectURL(blob));
+    worker.onmessage = (e) => {
+      if (e.data.type === 'success') resolve(e.data.result);
+      else reject(new Error(e.data.message));
+      worker.terminate();
+    };
+    worker.postMessage({ code, data });
+  });
+}
+```
+
+## 发布流程设计
+
+将 Schema 发布为可访问的线上页面：
+
+```ts
+async function publishPage(pageId: string, schema: SchemaNode) {
+  // 1. 保存 Schema 到后端
+  await api.saveSchema(pageId, schema);
+
+  // 2. 编译：收集用到的组件，生成按需加载的 HTML
+  const usedComponents = collectComponents(schema);
+  const html = generateHTML(schema, usedComponents);
+
+  // 3. 上传到 CDN / 静态托管
+  await cdn.upload(`pages/${pageId}/index.html`, html);
+  await cdn.upload(`pages/${pageId}/schema.json`, JSON.stringify(schema));
+
+  // 4. 返回访问 URL
+  return `https://your-domain.com/pages/${pageId}`;
+}
+
+// 生成最终 HTML
+function generateHTML(schema: SchemaNode, components: string[]): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${schema.props?.title || 'Low-Code Page'}</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="/runtime.js"></script>
+  <script>
+    window.__SCHEMA__ = ${JSON.stringify(schema)};
+    window.__COMPONENTS__ = ${JSON.stringify(components)};
+    window.renderPage(window.__SCHEMA__, window.__COMPONENTS__);
+  </script>
+</body>
+</html>`;
+}
+```
+
+## 版本管理与回滚
+
+每次发布创建版本记录，支持回滚到任意历史版本：
+
+```ts
+interface PageVersion {
+  id: string;
+  pageId: string;
+  schema: SchemaNode;
+  status: 'draft' | 'published';
+  createdAt: Date;
+  createdBy: string;
+  comment?: string;
+}
+
+// 发布新版本
+async function publishVersion(pageId: string, schema: SchemaNode, comment?: string) {
+  // 保存为新版本
+  const version = await api.createVersion({
+    pageId,
+    schema: JSON.stringify(schema),
+    status: 'published',
+    comment,
+  });
+
+  // 更新页面当前版本指针
+  await api.updatePage(pageId, { currentVersionId: version.id });
+
+  return version;
+}
+
+// 回滚到指定版本
+async function rollbackToVersion(pageId: string, versionId: string) {
+  const version = await api.getVersion(versionId);
+  const schema = JSON.parse(version.schema);
+
+  // 创建新版本（内容为旧版本的 Schema）
+  await publishVersion(pageId, schema, `回滚到 ${version.createdAt}`);
+}
+```
+
+建议维护三种状态：
+
+* **草稿（Draft）**：编辑中的版本，不影响线上
+* **已发布（Published）**：当前线上运行的版本
+* **历史（Archived）**：所有过往发布版本，支持查看和回滚
+
+## 性能优化
+
+### 组件按需加载
+
+Schema 中用到哪些组件，就只加载哪些组件的代码：
+
+```ts
+// 根据 Schema 收集需要的组件
+function collectComponents(schema: SchemaNode): Set<string> {
+  const components = new Set<string>();
+  function walk(node: SchemaNode) {
+    components.add(node.componentName);
+    node.children?.forEach(walk);
+  }
+  walk(schema);
+  return components;
+}
+
+// 动态 import 实现按需加载
+const componentLoaders: Record<string, () => Promise<any>> = {
+  Button: () => import('antd').then(m => m.Button),
+  Table: () => import('antd').then(m => m.Table),
+  Chart: () => import('@ant-design/charts').then(m => m.Line),
+};
+
+async function loadComponents(names: string[]) {
+  const loads = names
+    .filter(name => componentLoaders[name])
+    .map(name => componentLoaders[name]());
+  await Promise.all(loads);
+}
+```
+
+### 预加载与缓存
+
+* 预加载常用组件（Button、Input、Form），减少首次渲染延迟
+* Schema JSON 走 CDN 缓存，配置短 TTL（如 60s）平衡实时性与性能
+* 对大页面（100+ 节点），Schema 按区块拆分，进入视口时才加载对应区块的渲染逻辑
