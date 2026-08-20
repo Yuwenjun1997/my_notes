@@ -1,0 +1,659 @@
+---
+url: >-
+  /my_notes/notes/前端学习路线/di-liu-jie-duan-react-kai-fa-jin-jie/13-nextjs-ru-men-ssr-ssg-isr/index.md
+---
+# Next.js 入门 - SSR、SSG、ISR
+
+Next.js 是 React 生态中最流行的全栈框架，提供了多种渲染模式、文件系统路由、API 路由等强大功能。本篇将带你全面了解 Next.js 的核心概念和最佳实践，从基础到进阶，帮助你构建高性能的 React 应用。
+
+## 为什么选择 Next.js
+
+| 特性 | 纯 React (Vite) | Next.js |
+|------|----------------|---------|
+| 渲染模式 | 仅 CSR | CSR + SSR + SSG + ISR |
+| SEO 支持 | 差（需额外配置） | 优秀 |
+| 首屏加载 | 慢（等待 JS 加载） | 快（服务端渲染） |
+| API 路由 | 需要单独后端 | 内置支持 |
+| 图片优化 | 手动配置 | 内置 next/image |
+| 字体优化 | 手动配置 | 内置 next/font |
+| 部署 | 需要静态托管 | 灵活部署 |
+| 学习曲线 | 低 | 中 |
+
+## 渲染模式对比
+
+| 模式 | 全称 | 渲染时机 | 适用场景 | 性能 |
+|------|------|---------|---------|------|
+| CSR | Client-Side Rendering | 浏览器端 | 仪表盘、后台管理 | 首屏慢 |
+| SSR | Server-Side Rendering | 每次请求 | 个性化页面、搜索结果 | 动态内容 |
+| SSG | Static Site Generation | 构建时 | 博客、文档、营销页 | 最快 |
+| ISR | Incremental Static Regeneration | 按需重新生成 | 电商产品页、新闻 | 平衡 |
+
+```tsx
+// app/page.tsx - 默认使用 React Server Components (RSC)
+// 服务端渲染，类似 SSR
+
+// app/blog/[slug]/page.tsx - 动态路由，SSR
+export default async function BlogPost({ params }: { params: { slug: string } }) {
+  const post = await fetch(`https://api.example.com/posts/${params.slug}`);
+  const data = await post.json();
+
+  return (
+    <article>
+      <h1>{data.title}</h1>
+      <div>{data.content}</div>
+    </article>
+  );
+}
+
+// app/about/page.tsx - 静态页面，SSG
+export default function About() {
+  return (
+    <div>
+      <h1>About Us</h1>
+      <p>This is a static page.</p>
+    </div>
+  );
+}
+```
+
+## App Router 文件系统路由
+
+### 目录结构
+
+```
+app/
+├── layout.tsx           # 根布局
+├── page.tsx            # 首页 (/)
+├── about/
+│   └── page.tsx        # /about
+├── blog/
+│   ├── page.tsx        # /blog
+│   └── [slug]/
+│       └── page.tsx    # /blog/:slug
+├── dashboard/
+│   ├── layout.tsx      # 嵌套布局
+│   ├── page.tsx        # /dashboard
+│   └── settings/
+│       └── page.tsx    # /dashboard/settings
+└── api/
+    └── users/
+        └── route.ts    # /api/users
+```
+
+### 动态路由
+
+```tsx
+// app/blog/[slug]/page.tsx
+interface BlogPostProps {
+  params: { slug: string };
+}
+
+export default async function BlogPost({ params }: BlogPostProps) {
+  const { slug } = params;
+
+  // 获取文章数据
+  const post = await getPost(slug);
+
+  if (!post) {
+    return <div>文章不存在</div>;
+  }
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <time>{post.date}</time>
+      <div>{post.content}</div>
+    </article>
+  );
+}
+
+// 生成静态参数（SSG）
+export async function generateStaticParams() {
+  const posts = await getAllPosts();
+
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
+}
+```
+
+### 路由组
+
+```
+app/
+├── (marketing)/
+│   ├── layout.tsx      # 营销页面布局
+│   ├── about/
+│   │   └── page.tsx    # /about
+│   └── pricing/
+│       └── page.tsx    # /pricing
+├── (dashboard)/
+│   ├── layout.tsx      # 后台布局
+│   ├── dashboard/
+│   │   └── page.tsx    # /dashboard
+│   └── settings/
+│       └── page.tsx    # /settings
+└── page.tsx            # /
+```
+
+## Server Components vs Client Components
+
+### Server Components（默认）
+
+```tsx
+// app/components/UserList.tsx
+// 默认是 Server Component
+import { db } from '@/lib/database';
+
+export default async function UserList() {
+  // 在服务端执行
+  const users = await db.user.findMany();
+
+  return (
+    <ul>
+      {users.map((user) => (
+        <li key={user.id}>
+          {user.name} - {user.email}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### Client Components
+
+```tsx
+// app/components/Counter.tsx
+'use client';  // 必须在文件顶部声明
+
+import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+### 组件划分原则
+
+```tsx
+// 好的划分：服务端组件处理数据，客户端组件处理交互
+// app/page.tsx (Server Component)
+import UserList from './components/UserList';
+import SearchBox from './components/SearchBox';
+
+export default async function HomePage() {
+  const initialData = await fetchData();
+
+  return (
+    <div>
+      <h1>用户列表</h1>
+      {/* 服务端组件：获取数据并渲染 */}
+      <UserList data={initialData} />
+      {/* 客户端组件：处理用户交互 */}
+      <SearchBox />
+    </div>
+  );
+}
+
+// app/components/SearchBox.tsx (Client Component)
+'use client';
+
+import { useState } from 'react';
+
+export default function SearchBox() {
+  const [query, setQuery] = useState('');
+
+  return (
+    <input
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      placeholder="搜索用户..."
+    />
+  );
+}
+```
+
+## 数据获取方式
+
+### Server Components 直接 fetch
+
+```tsx
+// app/posts/page.tsx
+export default async function PostsPage() {
+  // 在服务端直接使用 fetch
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+    cache: 'no-store',  // 禁用缓存（SSR）
+    // cache: 'force-cache',  // 启用缓存（SSG）
+    // next: { revalidate: 3600 },  // ISR：每小时重新验证
+  });
+
+  const posts = await response.json();
+
+  return (
+    <div>
+      <h1>文章列表</h1>
+      <ul>
+        {posts.map((post: any) => (
+          <li key={post.id}>
+            <h2>{post.title}</h2>
+            <p>{post.body}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### 页面级数据获取
+
+```tsx
+// 使用 async 组件
+export default async function ProductPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  // 并行数据获取
+  const [product, reviews] = await Promise.all([
+    getProduct(params.id),
+    getReviews(params.id),
+  ]);
+
+  return (
+    <div>
+      <h1>{product.name}</h1>
+      <p>{product.description}</p>
+      <Price value={product.price} />
+
+      <section>
+        <h2>用户评价</h2>
+        <ReviewList reviews={reviews} />
+      </section>
+    </div>
+  );
+}
+```
+
+## API Routes 创建
+
+### Route Handlers
+
+```tsx
+// app/api/users/route.ts
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/database';
+
+// GET /api/users
+export async function GET() {
+  const users = await db.user.findMany();
+  return NextResponse.json(users);
+}
+
+// POST /api/users
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // 验证数据
+  if (!body.name || !body.email) {
+    return NextResponse.json(
+      { error: '缺少必要字段' },
+      { status: 400 }
+    );
+  }
+
+  const user = await db.user.create({
+    data: {
+      name: body.name,
+      email: body.email,
+    },
+  });
+
+  return NextResponse.json(user, { status: 201 });
+}
+
+// app/api/users/[id]/route.ts
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/database';
+
+interface Context {
+  params: { id: string };
+}
+
+// GET /api/users/:id
+export async function GET(request: Request, { params }: Context) {
+  const user = await db.user.findUnique({
+    where: { id: params.id },
+  });
+
+  if (!user) {
+    return NextResponse.json(
+      { error: '用户不存在' },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json(user);
+}
+
+// PUT /api/users/:id
+export async function PUT(request: Request, { params }: Context) {
+  const body = await request.json();
+
+  const user = await db.user.update({
+    where: { id: params.id },
+    data: body,
+  });
+
+  return NextResponse.json(user);
+}
+
+// DELETE /api/users/:id
+export async function DELETE(request: Request, { params }: Context) {
+  await db.user.delete({
+    where: { id: params.id },
+  });
+
+  return new NextResponse(null, { status: 204 });
+}
+```
+
+## 布局与嵌套布局
+
+```tsx
+// app/layout.tsx - 根布局
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'My App',
+  description: 'A Next.js application',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <header>
+          <nav>{/* 导航栏 */}</nav>
+        </header>
+        <main>{children}</main>
+        <footer>{/* 页脚 */}</footer>
+      </body>
+    </html>
+  );
+}
+
+// app/dashboard/layout.tsx - 嵌套布局
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex">
+      <aside className="w-64 bg-gray-100">
+        <nav>{/* 侧边栏导航 */}</nav>
+      </aside>
+      <div className="flex-1 p-8">
+        {children}
+      </div>
+    </div>
+  );
+}
+```
+
+## 部署方式
+
+### Vercel 部署（推荐）
+
+```bash
+# 安装 Vercel CLI
+npm i -g vercel
+
+# 部署
+vercel
+
+# 部署到生产环境
+vercel --prod
+```
+
+### 自托管
+
+```bash
+# 构建
+npm run build
+
+# 启动生产服务器
+npm start
+
+# 或使用 Docker
+# Dockerfile
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN npm ci
+RUN npm run build
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./
+
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+## 实战：创建一个简单的博客页面
+
+```tsx
+// app/page.tsx - 博客首页
+import Link from 'next/link';
+import { getPosts } from '@/lib/posts';
+
+export default async function HomePage() {
+  const posts = await getPosts();
+
+  return (
+    <div className="max-w-4xl mx-auto py-8">
+      <h1 className="text-4xl font-bold mb-8">我的博客</h1>
+
+      <div className="grid gap-6">
+        {posts.map((post) => (
+          <article
+            key={post.slug}
+            className="border rounded-lg p-6 hover:shadow-lg transition-shadow"
+          >
+            <Link href={`/blog/${post.slug}`}>
+              <h2 className="text-2xl font-semibold mb-2">
+                {post.title}
+              </h2>
+              <time className="text-gray-500 text-sm">
+                {post.date}
+              </time>
+              <p className="mt-2 text-gray-700">
+                {post.excerpt}
+              </p>
+            </Link>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// app/blog/[slug]/page.tsx - 文章详情页
+import { notFound } from 'next/navigation';
+import { getPost, getPosts } from '@/lib/posts';
+import { MDXRemote } from 'next-mdx-remote/rsc';
+
+interface PostPageProps {
+  params: { slug: string };
+}
+
+export async function generateMetadata({ params }: PostPageProps) {
+  const post = await getPost(params.slug);
+
+  if (!post) {
+    return { title: '文章不存在' };
+  }
+
+  return {
+    title: post.title,
+    description: post.excerpt,
+  };
+}
+
+export default async function PostPage({ params }: PostPageProps) {
+  const post = await getPost(params.slug);
+
+  if (!post) {
+    notFound();
+  }
+
+  return (
+    <article className="max-w-3xl mx-auto py-8">
+      <header className="mb-8">
+        <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
+        <div className="flex items-center gap-4 text-gray-600">
+          <time>{post.date}</time>
+          <span>·</span>
+          <span>{post.readingTime}</span>
+        </div>
+      </header>
+
+      <div className="prose prose-lg max-w-none">
+        <MDXRemote source={post.content} />
+      </div>
+
+      <footer className="mt-8 pt-8 border-t">
+        <Link
+          href="/"
+          className="text-blue-600 hover:text-blue-800"
+        >
+          ← 返回首页
+        </Link>
+      </footer>
+    </article>
+  );
+}
+
+// 生成静态参数
+export async function generateStaticParams() {
+  const posts = await getPosts();
+
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
+}
+
+// lib/posts.ts - 数据获取
+import { readFile, readdir } from 'fs/promises';
+import { join } from 'path';
+import matter from 'gray-matter';
+import { remark } from 'remark';
+import html from 'remark-html';
+
+const postsDirectory = join(process.cwd(), 'content/posts');
+
+export interface Post {
+  slug: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  content: string;
+  readingTime: string;
+}
+
+export async function getPosts(): Promise<Post[]> {
+  const fileNames = await readdir(postsDirectory);
+
+  const posts = await Promise.all(
+    fileNames
+      .filter((name) => name.endsWith('.md'))
+      .map(async (fileName) => {
+        const slug = fileName.replace(/\.md$/, '');
+        const fullPath = join(postsDirectory, fileName);
+        const fileContents = await readFile(fullPath, 'utf8');
+        const { data, content } = matter(fileContents);
+
+        const processedContent = await remark()
+          .use(html)
+          .process(content);
+        const contentHtml = processedContent.toString();
+
+        const wordCount = content.split(/\s+/).length;
+        const readingTime = `约 ${Math.ceil(wordCount / 200)} 分钟`;
+
+        return {
+          slug,
+          title: data.title,
+          date: data.date,
+          excerpt: data.excerpt || content.substring(0, 150) + '...',
+          content: contentHtml,
+          readingTime,
+        };
+      })
+  );
+
+  return posts.sort((a, b) => (a.date > b.date ? -1 : 1));
+}
+
+export async function getPost(slug: string): Promise<Post | null> {
+  try {
+    const fullPath = join(postsDirectory, `${slug}.md`);
+    const fileContents = await readFile(fullPath, 'utf8');
+    const { data, content } = matter(fileContents);
+
+    const processedContent = await remark()
+      .use(html)
+      .process(content);
+    const contentHtml = processedContent.toString();
+
+    const wordCount = content.split(/\s+/).length;
+    const readingTime = `约 ${Math.ceil(wordCount / 200)} 分钟`;
+
+    return {
+      slug,
+      title: data.title,
+      date: data.date,
+      excerpt: data.excerpt || content.substring(0, 150) + '...',
+      content: contentHtml,
+      readingTime,
+    };
+  } catch {
+    return null;
+  }
+}
+```
+
+## 最佳实践总结
+
+1. **优先使用 Server Components** - 默认在服务端渲染，减少客户端 JS 体积
+2. **谨慎使用 'use client'** - 只在需要交互、浏览器 API 时使用
+3. **利用 ISR** - 对于频繁更新但不要求实时性的内容
+4. **使用 next/image** - 自动优化图片加载
+5. **使用 next/font** - 优化字体加载
+6. **合理使用缓存** - 根据数据特性选择缓存策略
+7. **使用 Route Handlers** - 替代传统 API 路由
+8. **嵌套布局** - 复用 UI 组件，减少重复代码
+9. **类型安全** - 使用 TypeScript 和 Zod 进行数据验证
+10. **监控性能** - 使用 Next.js 内置的分析工具
+
+Next.js 为 React 开发提供了强大的全栈能力，掌握这些核心概念将帮助你构建高性能、可维护的现代 Web 应用。
