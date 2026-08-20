@@ -21310,6 +21310,1152 @@ slave_parallel_type = LOGICAL_CLOCK  -- 基于组提交的并行复制
 
 ---
 url: >-
+  /my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/4-wei-fu-wu-ri-zhi-zhui-zong-fang-an/index.md
+---
+# 微服务日志追踪方案
+
+## 一、日志追踪核心概念
+
+### 1.1 为什么需要日志追踪
+
+在单体应用中，一个请求的所有日志都在同一个进程内，通过线程 ID 或请求 ID 就能串联日志。但在微服务架构中：
+
+```text
+用户请求 → API 网关 → 用户服务 → 订单服务 → 支付服务 → 库存服务
+                        ↓           ↓           ↓
+                      日志A       日志B       日志C
+
+问题：
+1. 日志分散在不同服务，如何关联同一请求的所有日志？
+2. 请求跨多个服务，如何快速定位问题所在服务？
+3. 异步调用（消息队列）场景，如何追踪完整链路？
+```
+
+**日志追踪的核心目标**：为每个请求生成全局唯一的 `TraceId`，贯穿整个调用链路，使分散在各服务的日志能够被关联查询。
+
+### 1.2 TraceId / SpanId 的作用
+
+| 概念 | 说明 | 示例 |
+|------|------|------|
+| **TraceId** | 整个请求链路的唯一标识，全局唯一 | `a1b2c3d4e5f67890` |
+| **SpanId** | 单个服务内的一次操作标识 | `span-001` |
+| **ParentSpanId** | 父级 Span 的 ID，表示调用关系 | `span-000` |
+
+**日志输出示例**：
+
+```text
+# 用户服务日志
+2026-08-20 10:00:01.123 [http-nio-8080-exec-1] [traceId=a1b2c3] INFO  UserService - 查询用户信息, userId=1001
+
+# 订单服务日志（通过同一 TraceId 关联）
+2026-08-20 10:00:01.456 [http-nio-8081-exec-2] [traceId=a1b2c3] INFO  OrderService - 创建订单, orderId=20001
+
+# 支付服务日志
+2026-08-20 10:00:02.789 [http-nio-8082-exec-3] [traceId=a1b2c3] INFO  PaymentService - 处理支付, amount=99.00
+```
+
+通过 `traceId=a1b2c3` 即可关联同一请求在三个服务中的所有日志。
+
+### 1.3 日志与链路追踪的关系
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                      链路追踪（SkyWalking）                   │
+│  - 记录服务调用关系、耗时、状态                                │
+│  - 生成 Trace/Span 树形结构                                  │
+│  - 适合性能分析、调用链可视化                                  │
+└─────────────────────────────────────────────────────────────┘
+                           ↓ 关联
+┌─────────────────────────────────────────────────────────────┐
+│                        日志追踪（ELK）                       │
+│  - 记录详细的业务信息、异常堆栈                                │
+│  - 支持全文检索、条件过滤                                     │
+│  - 适合问题排查、业务审计                                     │
+└─────────────────────────────────────────────────────────────┘
+
+最佳实践：两者结合使用
+- 链路追踪提供宏观视图（哪个服务慢、调用关系）
+- 日志追踪提供微观细节（具体错误信息、业务数据）
+```
+
+***
+
+## 二、TraceId 传播机制
+
+### 2.1 HTTP 请求头传播
+
+在微服务调用中，通过 HTTP 请求头传递 TraceId：
+
+**标准请求头**：
+
+| 请求头 | 说明 | 使用框架 |
+|--------|------|----------|
+| `X-Trace-Id` | 自定义 TraceId | 通用 |
+| `X-B3-TraceId` | Zipkin 格式 | Spring Cloud Sleuth |
+| `traceparent` | W3C 标准 | OpenTelemetry |
+
+**实现代码**：
+
+```java
+/**
+ * TraceId 传播 Filter
+ * 从请求头提取 TraceId，存入 MDC 供日志输出
+ */
+@Component
+@Order(1)
+@Slf4j
+public class TraceIdFilter implements Filter {
+
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+    private static final String TRACE_ID_KEY = "traceId";
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        try {
+            // 1. 从请求头获取 TraceId
+            String traceId = httpRequest.getHeader(TRACE_ID_HEADER);
+
+            // 2. 如果没有，则生成新的 TraceId
+            if (traceId == null || traceId.isEmpty()) {
+                traceId = generateTraceId();
+            }
+
+            // 3. 存入 MDC（Mapped Diagnostic Context）
+            MDC.put(TRACE_ID_KEY, traceId);
+
+            // 4. 将 TraceId 放入响应头（便于前端或调用方排查）
+            httpResponse.setHeader(TRACE_ID_HEADER, traceId);
+
+            // 5. 继续执行后续 Filter 和业务逻辑
+            chain.doFilter(request, response);
+        } finally {
+            // 6. 清理 MDC，防止线程池复用时数据污染
+            MDC.remove(TRACE_ID_KEY);
+        }
+    }
+
+    /**
+     * 生成 TraceId（32 位十六进制字符串）
+     */
+    private String generateTraceId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+}
+```
+
+### 2.2 Feign/RestTemplate 传播
+
+在微服务间调用时，需要在 Feign 或 RestTemplate 中传递 TraceId：
+
+**Feign 拦截器**：
+
+```java
+@Component
+public class FeignTraceIdInterceptor implements RequestInterceptor {
+
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+
+    @Override
+    public void apply(RequestTemplate template) {
+        // 从当前线程的 MDC 中获取 TraceId
+        String traceId = MDC.get("traceId");
+
+        if (traceId != null && !traceId.isEmpty()) {
+            // 将 TraceId 添加到 Feign 请求头
+            template.header(TRACE_ID_HEADER, traceId);
+        }
+    }
+}
+```
+
+**RestTemplate 拦截器**：
+
+```java
+@Component
+public class RestTemplateTraceIdInterceptor implements ClientHttpRequestInterceptor {
+
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+
+    @Override
+    public ClientHttpResponse intercept(HttpRequest request, byte[] body,
+                                        ClientHttpRequestExecution execution) throws IOException {
+        // 从 MDC 获取 TraceId
+        String traceId = MDC.get("traceId");
+
+        if (traceId != null && !traceId.isEmpty()) {
+            // 添加到请求头
+            request.getHeaders().add(TRACE_ID_HEADER, traceId);
+        }
+
+        return execution.execute(request, body);
+    }
+}
+
+// 配置 RestTemplate
+@Bean
+public RestTemplate restTemplate(RestTemplateBuilder builder) {
+    return builder
+            .interceptors(new RestTemplateTraceIdInterceptor())
+            .build();
+}
+```
+
+### 2.3 消息队列传播
+
+在 Kafka、RabbitMQ 等消息队列中传递 TraceId：
+
+**Kafka Producer/Consumer**：
+
+```java
+// Producer：发送消息时传递 TraceId
+@Component
+@Slf4j
+public class KafkaTraceIdProducer {
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    public void sendMessage(String topic, String message) {
+        String traceId = MDC.get("traceId");
+
+        // 将 TraceId 放入 Kafka Header
+        Headers headers = new RecordHeaders();
+        headers.add("X-Trace-Id", traceId.getBytes(StandardCharsets.UTF_8));
+
+        ProducerRecord<String, String> record = new ProducerRecord<>(
+                topic, null, null, message, headers);
+
+        kafkaTemplate.send(record);
+    }
+}
+
+// Consumer：消费消息时提取 TraceId
+@Component
+@Slf4j
+public class KafkaTraceIdConsumer {
+
+    @KafkaListener(topics = "order-topic")
+    public void consume(ConsumerRecord<String, String> record) {
+        try {
+            // 从 Kafka Header 提取 TraceId
+            String traceId = null;
+            for (Header header : record.headers()) {
+                if ("X-Trace-Id".equals(header.key())) {
+                    traceId = new String(header.value(), StandardCharsets.UTF_8);
+                    break;
+                }
+            }
+
+            // 存入 MDC
+            if (traceId != null) {
+                MDC.put("traceId", traceId);
+            }
+
+            // 处理业务逻辑
+            log.info("收到消息: {}", record.value());
+            // ... 业务处理 ...
+        } finally {
+            MDC.remove("traceId");
+        }
+    }
+}
+```
+
+**RabbitMQ**：
+
+```java
+// Producer
+@Component
+public class RabbitTraceIdProducer {
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    public void sendMessage(String routingKey, String message) {
+        String traceId = MDC.get("traceId");
+
+        // 通过 MessageProperties 传递 TraceId
+        MessageProperties properties = new MessageProperties();
+        properties.setHeader("X-Trace-Id", traceId);
+
+        Message messageObj = MessageBuilder
+                .withBody(message.getBytes(StandardCharsets.UTF_8))
+                .andProperties(properties)
+                .build();
+
+        rabbitTemplate.convertAndSend("exchange", routingKey, messageObj);
+    }
+}
+
+// Consumer
+@Component
+@RabbitListener(queues = "order-queue")
+public class RabbitTraceIdConsumer {
+
+    public void consume(@Payload String message,
+                        @Header(name = "X-Trace-Id", required = false) String traceId) {
+        try {
+            if (traceId != null) {
+                MDC.put("traceId", traceId);
+            }
+
+            log.info("收到消息: {}", message);
+            // ... 业务处理 ...
+        } finally {
+            MDC.remove("traceId");
+        }
+    }
+}
+```
+
+### 2.4 异步线程上下文传递
+
+在使用线程池、CompletableFuture 等异步场景时，需要特殊处理 TraceId 传递：
+
+**问题场景**：
+
+```java
+// ❌ 错误示例：MDC 上下文丢失
+CompletableFuture.runAsync(() -> {
+    // 这里 MDC.get("traceId") 返回 null！
+    log.info("异步任务执行");  // 日志中没有 traceId
+});
+```
+
+**解决方案 1：InheritableThreadLocal**
+
+```java
+// 自定义 MDC 上下文装饰器
+public class MDCDecoration {
+
+    public static Map<String, String> getCopyOfContextMap() {
+        return MDC.getCopyOfContextMap();
+    }
+
+    public static void setContextMap(Map<String, String> contextMap) {
+        if (contextMap != null) {
+            MDC.setContextMap(contextMap);
+        }
+    }
+}
+
+// 使用
+Map<String, String> mdcContext = MDCDecoration.getCopyOfContextMap();
+
+CompletableFuture.runAsync(() -> {
+    MDCDecoration.setContextMap(mdcContext);
+    try {
+        log.info("异步任务执行");  // ✅ traceId 正确传递
+    } finally {
+        MDC.clear();
+    }
+});
+```
+
+**解决方案 2：TransmittableThreadLocal（推荐）**
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>transmittable-thread-local</artifactId>
+    <version>2.14.5</version>
+</dependency>
+```
+
+```java
+// 使用 TTL 包装线程池
+import com.alibaba.ttl.TransmittableThreadLocal;
+import com.alibaba.ttl.TtlExecutors;
+
+// 替换 MDC 的存储方式
+public class TraceIdContextHolder {
+    private static final TransmittableThreadLocal<String> TRACE_ID =
+            new TransmittableThreadLocal<>();
+
+    public static void setTraceId(String traceId) {
+        TRACE_ID.set(traceId);
+    }
+
+    public static String getTraceId() {
+        return TRACE_ID.get();
+    }
+
+    public static void clear() {
+        TRACE_ID.remove();
+    }
+}
+
+// 创建支持 TTL 的线程池
+ExecutorService executorService = TtlExecutors.getTtlExecutorService(
+        Executors.newFixedThreadPool(10)
+);
+
+// 使用
+CompletableFuture.runAsync(() -> {
+    String traceId = TraceIdContextHolder.getTraceId();  // ✅ 正确获取
+    log.info("异步任务执行, traceId={}", traceId);
+}, executorService);
+```
+
+**解决方案 3：自定义线程池装饰器**
+
+```java
+@Component
+public class ThreadPoolMdcDecoration {
+
+    /**
+     * 包装 Runnable，自动传递 MDC 上下文
+     */
+    public static Runnable decorate(Runnable runnable) {
+        Map<String, String> contextMap = MDC.getCopyOfContextMap();
+        return () -> {
+            try {
+                if (contextMap != null) {
+                    MDC.setContextMap(contextMap);
+                }
+                runnable.run();
+            } finally {
+                MDC.clear();
+            }
+        };
+    }
+}
+
+// 使用
+@Autowired
+private ThreadPoolExecutor taskExecutor;
+
+public void asyncProcess() {
+    taskExecutor.execute(ThreadPoolMdcDecoration.decorate(() -> {
+        log.info("异步任务执行");  // ✅ traceId 正确传递
+    }));
+}
+```
+
+***
+
+## 三、MDC 日志上下文
+
+### 3.1 Logback MDC 原理
+
+MDC（Mapped Diagnostic Context）是 Logback 提供的线程级上下文存储机制：
+
+```text
+┌─────────────────────────────────────────────────┐
+│                 Thread-1                         │
+│  MDC: {                                         │
+│    "traceId": "a1b2c3",                         │
+│    "userId": "1001",                             │
+│    "service": "user-service"                     │
+│  }                                               │
+│                                                  │
+│  log.info("查询用户");  → 自动附加 MDC 字段        │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
+│                 Thread-2                         │
+│  MDC: {                                         │
+│    "traceId": "d4e5f6",                         │
+│    "userId": "1002",                             │
+│    "service": "order-service"                    │
+│  }                                               │
+│                                                  │
+│  log.info("创建订单");  → 自动附加 MDC 字段        │
+└─────────────────────────────────────────────────┘
+```
+
+### 3.2 统一日志格式设计
+
+推荐的日志格式（包含 TraceId、服务名、用户 ID 等关键信息）：
+
+```text
+时间 线程 [TraceId] 级别 类名 - 消息
+
+示例：
+2026-08-20 10:00:01.123 [http-nio-8080-exec-1] [a1b2c3d4] [user-service] [userId=1001] INFO  UserService - 查询用户信息成功
+```
+
+### 3.3 Logback 完整配置
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds">
+
+    <!-- 属性定义 -->
+    <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <property name="LOG_HOME" value="/var/log/${appName}"/>
+
+    <!-- 日志格式：包含 traceId、service、userId 等 MDC 字段 -->
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-}] [%X{service:-}] [%X{userId:-}] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %clr([%thread]){magenta} %clr([%X{traceId:-]){cyan} %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出（按天滚动） -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${appName}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${appName}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- JSON 格式输出（推荐 ELK 收集） -->
+    <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${appName}-json.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${appName}-json.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","thread":"%thread","traceId":"%X{traceId:-}","service":"%X{service:-}","userId":"%X{userId:-}","level":"%level","logger":"%logger{36}","message":"%msg","exception":"%exception"}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 异步输出 -->
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="FILE"/>
+    </appender>
+
+    <!-- 根日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC"/>
+        <appender-ref ref="JSON_FILE"/>
+    </root>
+</configuration>
+```
+
+***
+
+## 四、方案对比与选型
+
+### 4.1 主流方案对比
+
+| 方案 | 侵入性 | 功能 | 适用场景 | 学习成本 |
+|------|--------|------|----------|----------|
+| **Sleuth + Zipkin** | 低 | 链路追踪 + 日志关联 | 轻量级微服务 | 低 |
+| **SkyWalking** | 无 | APM + 日志 + 指标 + 告警 | 企业级微服务 | 中 |
+| **ELK + 自定义 TraceId** | 中 | 纯日志追踪 | 日志分析为主 | 中 |
+| **Jaeger** | 低 | 链路追踪 | Kubernetes 环境 | 中 |
+| **OpenTelemetry** | 低 | 统一标准 + 多后端 | 云原生应用 | 高 |
+
+### 4.2 选型建议
+
+```text
+场景 1：已有 ELK，只需日志追踪
+→ 推荐：ELK + 自定义 TraceId
+→ 优点：无需引入新组件，现有架构改动小
+→ 缺点：需要手动实现 TraceId 传播
+
+场景 2：需要完整的 APM（应用性能监控）
+→ 推荐：SkyWalking
+→ 优点：无侵入、功能全面（日志 + 链路 + 指标）
+→ 缺点：需要部署 OAP Server + UI
+
+场景 3：轻量级微服务，快速上手
+→ 推荐：Sleuth + Zipkin
+→ 优点：Spring 官方集成、配置简单
+→ 缺点：功能相对单一
+
+场景 4：Kubernetes 环境，云原生架构
+→ 推荐：Jaeger + OpenTelemetry
+→ 优点：K8s 原生支持、符合 CNCF 标准
+→ 缺点：学习曲线较陡
+
+场景 5：需要长期演进，避免厂商锁定
+→ 推荐：OpenTelemetry
+→ 优点：行业标准、支持多后端切换
+→ 缺点：配置复杂、需要深入理解
+```
+
+***
+
+## 五、SkyWalking 日志追踪实战
+
+### 5.1 架构说明
+
+SkyWalking 通过 Java Agent 无侵入方式收集日志，并自动注入 TraceId：
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                     SkyWalking 日志追踪架构                   │
+│                                                             │
+│  微服务（挂载 SkyWalking Agent）                              │
+│      ↓ 自动注入 TraceId                                     │
+│  Logback 输出日志 → 日志文件                                  │
+│      ↓                                                      │
+│  SkyWalking Agent 收集日志文件                                │
+│      ↓ gRPC                                                 │
+│  SkyWalking OAP Server                                      │
+│      ↓                                                      │
+│  Elasticsearch 存储                                         │
+│      ↓                                                      │
+│  SkyWalking UI / Kibana 可视化                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 Agent 配置
+
+**方式 1：JVM 启动参数**
+
+```bash
+java -javaagent:/path/to/skywalking-agent/skywalking-agent.jar \
+     -DSW_AGENT_NAME=user-service \
+     -DSW_AGENT_COLLECTOR_BACKEND_SERVICES=127.0.0.1:11800 \
+     -DSW_LOGGING_FILE_PATH=/var/log/user-service/skywalking-api.log \
+     -DSW_LOGGING_LEVEL=INFO \
+     -jar user-service.jar
+```
+
+**方式 2：SkyWalking Agent 配置文件**
+
+```properties
+# agent/config/agent.conf
+
+# 服务名称
+agent.service_name=user-service
+
+# OAP Server 地址
+agent.collector.backend_services=127.0.0.1:11800
+
+# 日志配置
+logging.file_path=/var/log/${agent.service_name}/skywalking-api.log
+logging.level=INFO
+```
+
+### 5.3 Logback 日志格式（配合 SkyWalking）
+
+```xml
+<!-- logback-spring.xml -->
+<configuration>
+    <!-- SkyWalking 自动注入的 MDC 字段 -->
+    <!-- %X{tid} - SkyWalking TraceId -->
+    <!-- %X{sw3} - SkyWalking Propagation Context -->
+
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [traceId=%X{tid:-}] [%-5level] %logger{36} - %msg%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
+```
+
+**日志输出效果**：
+
+```text
+2026-08-20 10:00:01.123 [http-nio-8080-exec-1] [traceId=abc123def456] [INFO ] UserService - 查询用户信息
+2026-08-20 10:00:01.456 [http-nio-8081-exec-2] [traceId=abc123def456] [INFO ] OrderService - 创建订单
+```
+
+### 5.4 Kibana 中查询 TraceId 日志
+
+如果使用 ELK 收集 SkyWalking 日志，可以在 Kibana 中：
+
+```text
+// 按 TraceId 过滤
+traceId: "abc123def456"
+
+// 按服务 + TraceId 过滤
+service: "user-service" and traceId: "abc123def456"
+
+// 按时间范围 + TraceId 查询
+@timestamp: [2026-08-20T02:00:00 TO 2026-08-20T03:00:00] AND traceId: "abc123def456"
+```
+
+***
+
+## 六、ELK + TraceId 方案实战
+
+### 6.1 架构说明
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                   ELK + TraceId 日志追踪架构                  │
+│                                                             │
+│  微服务 A                                                    │
+│      ↓ TraceId Filter 注入 MDC                              │
+│  Logback 输出 JSON 日志 → /var/log/app/app-json.log          │
+│      ↓                                                      │
+│  Filebeat 收集日志文件                                        │
+│      ↓                                                      │
+│  Logstash 解析 + 添加字段                                    │
+│      ↓                                                      │
+│  Elasticsearch 存储                                         │
+│      ↓                                                      │
+│  Kibana 可视化 + 按 TraceId 查询                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 自定义 TraceId 生成工具
+
+```java
+/**
+ * TraceId 工具类
+ */
+public class TraceIdUtils {
+
+    /**
+     * 生成 TraceId（32 位十六进制字符串）
+     */
+    public static String generateTraceId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /**
+     * 生成 SpanId
+     */
+    public static String generateSpanId() {
+        return Long.toHexString(System.nanoTime());
+    }
+}
+
+/**
+ * TraceId 上下文持有者（使用 TransmittableThreadLocal 支持异步场景）
+ */
+@Component
+public class TraceIdContextHolder {
+
+    private static final TransmittableThreadLocal<String> TRACE_ID =
+            new TransmittableThreadLocal<>();
+
+    private static final TransmittableThreadLocal<String> SPAN_ID =
+            new TransmittableThreadLocal<>();
+
+    public static void setTraceId(String traceId) {
+        TRACE_ID.set(traceId);
+        MDC.put("traceId", traceId);  // 同时存入 MDC
+    }
+
+    public static String getTraceId() {
+        return TRACE_ID.get();
+    }
+
+    public static void setSpanId(String spanId) {
+        SPAN_ID.set(spanId);
+        MDC.put("spanId", spanId);
+    }
+
+    public static String getSpanId() {
+        return SPAN_ID.get();
+    }
+
+    public static void clear() {
+        TRACE_ID.remove();
+        SPAN_ID.remove();
+        MDC.remove("traceId");
+        MDC.remove("spanId");
+    }
+}
+```
+
+### 6.3 Filebeat 配置
+
+```yaml
+# filebeat.yml
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/*-json.log
+    json.keys_under_root: true
+    json.overwrite_keys: true
+    json.add_error_key: true
+    multiline:
+      pattern: '^\{"timestamp"'
+      negate: true
+      match: after
+
+    # 添加自定义字段
+    fields:
+      env: production
+    fields_under_root: true
+
+output.logstash:
+  hosts: ["logstash:5044"]
+
+# 或直接输出到 Elasticsearch
+# output.elasticsearch:
+#   hosts: ["elasticsearch:9200"]
+#   index: "app-logs-%{+yyyy.MM.dd}"
+```
+
+### 6.4 Logstash 配置
+
+```ruby
+# logstash.conf
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  # 如果是 JSON 格式日志，Logstash 会自动解析
+  # 如果是纯文本格式，使用 grok 解析
+
+  # grok 解析示例（针对非 JSON 日志）
+  if ![timestamp] {
+    grok {
+      match => {
+        "message" => "%{TIMESTAMP_ISO8601:timestamp} \[%{DATA:thread}\] \[traceId=%{DATA:traceId}\] \[%{LOGLEVEL:level}\] %{DATA:logger} - %{GREEDYDATA:logMessage}"
+      }
+    }
+  }
+
+  # 添加服务名（从文件路径或配置读取）
+  mutate {
+    add_field => { "service" => "%{[agent][hostname]}" }
+  }
+
+  # 时间戳处理
+  if [timestamp] {
+    date {
+      match => ["timestamp", "yyyy-MM-dd HH:mm:ss.SSS"]
+      target => "@timestamp"
+    }
+  }
+
+  # 移除多余字段
+  mutate {
+    remove_field => ["agent", "ecs", "host"]
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://elasticsearch:9200"]
+    index => "app-logs-%{+YYYY.MM.dd}"
+  }
+}
+```
+
+### 6.5 Kibana 查询示例
+
+```text
+// 1. 按 TraceId 查询完整链路日志
+traceId: "a1b2c3d4e5f6"
+
+// 2. 按服务名 + TraceId 查询
+service: "order-service" AND traceId: "a1b2c3d4e5f6"
+
+// 3. 查询某个 TraceId 的所有错误日志
+traceId: "a1b2c3d4e5f6" AND level: "ERROR"
+
+// 4. 按时间范围查询某个用户的日志
+userId: "1001" AND @timestamp: [2026-08-20T00:00:00 TO 2026-08-20T23:59:59]
+
+// 5. 查询响应时间超过 1 秒的请求（需要应用层记录耗时）
+responseTime: > 1000
+```
+
+***
+
+## 七、日志脱敏与安全
+
+### 7.1 敏感信息识别
+
+| 敏感信息 | 示例 | 脱敏规则 |
+|----------|------|----------|
+| 手机号 | 13812345678 | 13&#x38;****5678 |
+| 身份证 | 110101199001011234 | 110101****&#x31;234 |
+| 银行卡 | 6222021234567890123 | 6222\*\***0123 |
+| 密码 | 123456 | \*\*\*\*\*\* |
+| 邮箱 | test@example.com | t**\*@example.com |
+
+### 7.2 Logback 脱敏 Filter
+
+```java
+/**
+ * 日志脱敏 Filter
+ */
+@Component
+@Order(2)
+public class LogSanitizeFilter extends Filter<ILoggingEvent> {
+
+    // 手机号正则
+    private static final Pattern PHONE_PATTERN =
+            Pattern.compile("(1[3-9]\\d)\\d{4}(\\d{4})");
+
+    // 身份证正则
+    private static final Pattern ID_CARD_PATTERN =
+            Pattern.compile("(\\d{6})\\d{8}(\\d{3}[0-9Xx])");
+
+    @Override
+    public ILoggingEvent filter(ILoggingEvent event) {
+        String message = event.getFormattedMessage();
+        String sanitizedMessage = sanitize(message);
+
+        // 创建新的日志事件（Logback 不支持修改原有事件，需要包装）
+        return new SanitizedLoggingEvent(
+                event.getLoggerName(),
+                event.getMarker(),
+                event.getLevel(),
+                sanitizedMessage,
+                event.getArgumentArray(),
+                event.getThrowable()
+        );
+    }
+
+    private String sanitize(String message) {
+        if (message == null) {
+            return null;
+        }
+
+        // 脱敏手机号
+        message = PHONE_PATTERN.matcher(message)
+                .replaceAll("$1****$2");
+
+        // 脱敏身份证
+        message = ID_CARD_PATTERN.matcher(message)
+                .replaceAll("$1****$2");
+
+        // 脱敏密码字段
+        message = message.replaceAll("(password[\"\\s]*[:=][\"\\s]*)([\"\\s]*)(\\S+)",
+                "$1$2******");
+
+        return message;
+    }
+}
+
+/**
+ * 脱敏后的 LoggingEvent
+ */
+class SanitizedLoggingEvent extends LoggingEvent {
+
+    private final String formattedMessage;
+
+    SanitizedLoggingEvent(String fqcn, Marker marker, Level level,
+                          String msg, Object[] argArray, Throwable throwable) {
+        super(fqcn, null, level, msg, throwable);
+        this.formattedMessage = msg;
+    }
+
+    @Override
+    public String getFormattedMessage() {
+        return formattedMessage;
+    }
+}
+```
+
+### 7.3 Logback 配置启用脱敏
+
+```xml
+<configuration>
+    <!-- 自定义脱敏 Appender -->
+    <appender name="SANITIZE_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="com.example.log.LogSanitizeFilter"/>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="SANITIZE_CONSOLE"/>
+    </root>
+</configuration>
+```
+
+### 7.4 日志存储安全策略
+
+```text
+1. 访问控制
+   - 日志文件权限设置为 640（所有者可读写，组可读）
+   - 日志目录权限设置为 750
+   - 限制日志服务器的访问 IP
+
+2. 传输安全
+   - Filebeat → Logstash 使用 TLS 加密
+   - Kibana 启用 HTTPS
+
+3. 存储安全
+   - Elasticsearch 启用 X-Pack Security
+   - 日志保留策略（自动清理过期日志）
+   - 敏感日志单独存储、加密存储
+
+4. 审计日志
+   - 记录谁在什么时间访问了日志
+   - 记录日志查询操作
+```
+
+***
+
+## 八、最佳实践总结
+
+### 8.1 日志格式规范
+
+```text
+推荐日志格式：
+[时间] [线程] [TraceId] [服务名] [用户ID] [级别] [类名] - 消息
+
+示例：
+2026-08-20 10:00:01.123 [http-nio-8080-exec-1] [traceId=abc123] [user-service] [userId=1001] [INFO] [UserService] - 查询用户信息成功
+
+关键字段：
+- 时间：yyyy-MM-dd HH:mm:ss.SSS（毫秒精度）
+- TraceId：32 位十六进制字符串
+- 服务名：spring.application.name
+- 用户 ID：从登录上下文获取（可选）
+```
+
+### 8.2 日志级别管理
+
+```text
+ERROR：系统错误、异常（需要立即处理）
+  - 数据库连接失败
+  - 外部服务调用异常
+  - 业务规则校验失败
+
+WARN：警告信息（需要关注但不影响当前请求）
+  - 降级策略触发
+  - 配置使用默认值
+  - 接近阈值
+
+INFO：关键业务流程（正常运行时的必要记录）
+  - 用户登录/登出
+  - 订单创建/支付
+  - 定时任务执行
+
+DEBUG：调试信息（开发环境开启）
+  - SQL 语句
+  - 请求参数
+  - 中间结果
+
+TRACE：详细追踪（仅排查问题时开启）
+  - 方法入参/出参
+  - 详细执行步骤
+```
+
+### 8.3 日志存储与清理策略
+
+```text
+日志保留策略：
+├── 应用日志
+│   ├── 保留时间：30 天
+│   ├── 单文件大小：100MB
+│   └── 总大小限制：10GB
+│
+├── 错误日志
+│   ├── 保留时间：90 天
+│   └── 单独存储，便于快速定位
+│
+├── 审计日志
+│   ├── 保留时间：180 天
+│   └── 加密存储，不可修改
+│
+└── 调试日志
+    ├── 保留时间：7 天
+    └── 仅在排查问题时开启
+```
+
+### 8.4 常见问题排查流程
+
+```text
+问题：用户反馈"下单失败"
+
+排查步骤：
+1. 获取用户反馈的时间范围和 TraceId（如有）
+
+2. 在 Kibana 中按 TraceId 查询
+   traceId: "xxx" AND service: "order-service"
+
+3. 查看完整调用链路日志
+   用户服务 → 订单服务 → 支付服务 → 库存服务
+
+4. 定位错误发生的服务和具体异常
+   - 查看 ERROR 级别日志
+   - 查看异常堆栈
+
+5. 分析根本原因
+   - 数据库超时？
+   - 外部服务不可用？
+   - 业务规则校验失败？
+
+6. 修复并验证
+   - 修复代码
+   - 添加监控告警
+   - 更新知识库
+```
+
+***
+
+## 九、实践项目
+
+### 项目：微服务日志追踪平台搭建
+
+**目标**：为微服务系统搭建完整的日志追踪能力。
+
+**要求**：
+
+1. **TraceId 注入**
+   * 实现 TraceId Filter（请求头提取/生成）
+   * 实现 Feign/RestTemplate 拦截器（跨服务传播）
+   * 实现 Kafka/RabbitMQ 拦截器（消息队列传播）
+
+2. **日志格式**
+   * 配置 Logback 输出 JSON 格式日志
+   * 日志包含 TraceId、服务名、用户 ID 等关键字段
+
+3. **ELK 收集**
+   * 配置 Filebeat 收集日志文件
+   * 配置 Logstash 解析日志
+   * 配置 Elasticsearch 存储
+
+4. **Kibana 查询**
+   * 按 TraceId 查询完整链路日志
+   * 按服务名、时间范围、日志级别过滤
+   * 创建常用的 Dashboard
+
+**架构部署**：
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    微服务日志追踪平台架构                          │
+│                                                                 │
+│  用户服务 ──→ Logback ──→ app-json.log ──┐                      │
+│  订单服务 ──→ Logback ──→ app-json.log ──┼→ Filebeat            │
+│  支付服务 ──→ Logback ──→ app-json.log ──┘     ↓                │
+│                                              Logstash           │
+│  所有服务 ←── X-Trace-Id 请求头 ←── Feign/RestTemplate 拦截器   │
+│                                                 ↓               │
+│                                           Elasticsearch         │
+│                                                 ↓               │
+│                                              Kibana             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+---
+url: >-
   /my_notes/notes/JAVA学习路线/di-yi-jie-duan-he-xin-ji-chu/1-gou-jian-gong-ju-yu-xiang-mu-guan-li/index.md
 ---
 # 构建工具与项目管理

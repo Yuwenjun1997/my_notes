@@ -64,6 +64,7 @@
 - [1-微服务架构](/my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/1-wei-fu-wu-jia-gou/index.md)
 - [2-可观测性](/my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/2-ke-guan-ce-xing/index.md)
 - [3-数据库进阶](/my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/3-shu-ju-ku-jin-jie/index.md)
+- [4-微服务日志追踪方案](/my_notes/notes/JAVA学习路线/di-si-jie-duan-fen-bu-shi-yu-xi-tong-she-ji/4-wei-fu-wu-ri-zhi-zhui-zong-fang-an/index.md)
 - [1-构建工具与项目管理](/my_notes/notes/JAVA学习路线/di-yi-jie-duan-he-xin-ji-chu/1-gou-jian-gong-ju-yu-xiang-mu-guan-li/index.md)
 - [2-数据库基础](/my_notes/notes/JAVA学习路线/di-yi-jie-duan-he-xin-ji-chu/2-shu-ju-ku-ji-chu/index.md)
 - [3-网络与HTTP](/my_notes/notes/JAVA学习路线/di-yi-jie-duan-he-xin-ji-chu/3-wang-luo-yu-http/index.md)

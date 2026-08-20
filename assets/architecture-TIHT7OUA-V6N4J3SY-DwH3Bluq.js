@@ -1,0 +1,1 @@
+import{Bt as e}from"./common-BNt5lKxJ.js";export{e as createArchitectureServices};
