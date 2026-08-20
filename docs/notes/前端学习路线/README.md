@@ -6,7 +6,7 @@ createTime: 2026/08/17 10:30:00
 
 # 🌐 前端开发学习路线
 
-> 一份面向 Web 初学者的系统化前端学习指南，涵盖 **网页基础 → JavaScript 核心 → TypeScript → 工程化与实战 → 可视化编辑器与低代码技术** 五个阶段，从零到能独立搭建并维护一个现代前端项目，并具备低代码平台开发能力。
+> 一份面向 Web 初学者的系统化前端学习指南，涵盖 **网页基础 → JavaScript 核心 → TypeScript → 工程化与实战 → 可视化编辑器与低代码技术 → React开发进阶** 六个阶段，从零到能独立搭建并维护一个现代前端项目，并具备低代码平台开发能力与 React 进阶开发能力。
 
 ---
 
@@ -17,6 +17,7 @@ createTime: 2026/08/17 10:30:00
 - [第三阶段：TypeScript](#-第三阶段typescript)
 - [第四阶段：工程化与实战](#-第四阶段工程化与实战)
 - [第五阶段：可视化编辑器与低代码技术](#-第五阶段可视化编辑器与低代码技术)
+- [第六阶段：React开发进阶](#-第六阶段react开发进阶)
 - [学习路线总览](#-学习路线总览)
 
 ---
@@ -109,6 +110,31 @@ createTime: 2026/08/17 10:30:00
 
 ---
 
+## ⚛️ 第六阶段：React开发进阶
+
+> **学习周期**：6-8 周 | **每日建议**：3-4 小时
+> **目标**：深入掌握 React 进阶特性与现代生态工具（TanStack 系列），具备构建复杂 React 应用与团队协作开发的能力。
+
+| 模块 | 核心内容 | 文档 |
+|:-----|:---------|:----:|
+| **6.1 React 核心概念与组件模式** | 组件设计原则、受控/非受控、复合组件、HOC、Render Props | [📖 查看](./第六阶段-React开发进阶/6.1-React核心概念与组件模式.md) |
+| **6.2 React Hooks 进阶** | Hook 原理、自定义 Hook、useLayoutEffect、useImperativeHandle | [📖 查看](./第六阶段-React开发进阶/6.2-React-Hooks进阶.md) |
+| **6.3 组件设计模式与代码复用** | 策略模式、HOC vs Render Props vs Hook、组件库设计 | [📖 查看](./第六阶段-React开发进阶/6.3-组件设计模式与代码复用.md) |
+| **6.4 React 状态管理方案** | Context 优化、Zustand、Jotai、状态管理选型 | [📖 查看](./第六阶段-React开发进阶/6.4-React状态管理方案.md) |
+| **6.5 React 性能优化实战** | memo/useMemo/useCallback、虚拟列表、代码分割、React.lazy | [📖 查看](./第六阶段-React开发进阶/6.5-React性能优化实战.md) |
+| **6.6 React 表单处理** | React Hook Form、Zod Schema、复杂表单、动态表单 | [📖 查看](./第六阶段-React开发进阶/6.6-React表单处理-React-Hook-Form与Zod校验.md) |
+| **6.7 React 路由进阶** | React Router v6、路由守卫、懒加载、TanStack Router | [📖 查看](./第六阶段-React开发进阶/6.7-React路由-React-Router进阶.md) |
+| **6.8 服务端数据管理** | TanStack Query、缓存策略、乐观更新、分页查询 | [📖 查看](./第六阶段-React开发进阶/6.8-服务端数据管理-TanStack-Query.md) |
+| **6.9 表格解决方案** | TanStack Table、排序/筛选/分页、虚拟滚动、无头模式 | [📖 查看](./第六阶段-React开发进阶/6.9-表格解决方案-TanStack-Table.md) |
+| **6.10 TypeScript 与 React 集成** | 组件类型、Props 类型、Hooks 类型、类型工具 | [📖 查看](./第六阶段-React开发进阶/6.10-TypeScript与React深度集成.md) |
+| **6.11 React 测试** | RTL 基础、异步测试、Mock、测试覆盖率 | [📖 查看](./第六阶段-React开发进阶/6.11-React测试-React-Testing-Library.md) |
+| **6.12 React 调试与常见问题** | DevTools、常见错误、Hooks 陷阱、性能排查 | [📖 查看](./第六阶段-React开发进阶/6.12-React调试技巧与常见问题.md) |
+| **6.13 Next.js 入门** | SSR/SSG/ISR、App Router、Server Components、部署 | [📖 查看](./第六阶段-React开发进阶/6.13-Next.js入门-SSR-SSG-ISR.md) |
+| **6.14 React Fiber 架构与并发模式** | Fiber 树、双缓冲、并发特性、startTransition | [📖 查看](./第六阶段-React开发进阶/6.14-React-Fiber架构与并发模式.md) |
+| **6.15 React 项目实战与最佳实践** | 项目结构、代码规范、错误处理、部署 CI/CD | [📖 查看](./第六阶段-React开发进阶/6.15-React项目实战与最佳实践.md) |
+
+---
+
 ## 📐 学习路线总览
 
 ```
@@ -128,6 +154,11 @@ createTime: 2026/08/17 10:30:00
     低代码架构 → dnd-kit拖拽 → Schema渲染 → Formily表单引擎
     → 页面编辑器架构 → 编辑器实战 → TipTap富文本 → React Flow流程图
     → 组件生态与案例 → 预览发布与沙箱
+    ▼
+第六阶段：React开发进阶（6-8周）
+    │  核心概念 → Hooks进阶 → 设计模式 → 状态管理 → 性能优化
+    │  表单处理 → 路由 → TanStack Query → TanStack Table
+    │  TypeScript集成 → 测试 → 调试 → Next.js → Fiber架构 → 实战
 ```
 
 ### 💡 学习建议
