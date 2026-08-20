@@ -47,6 +47,7 @@ export default defineUserConfig({
           { text: '第二阶段 · JavaScript核心', link: '/notes/前端学习路线/第二阶段-JavaScript核心/' },
           { text: '第三阶段 · TypeScript', link: '/notes/前端学习路线/第三阶段-TypeScript/' },
           { text: '第四阶段 · 工程化与实战', link: '/notes/前端学习路线/第四阶段-工程化与实战/' },
+          { text: '第五阶段 · 可视化编辑器与低代码技术', link: '/notes/前端学习路线/第五阶段-可视化编辑器与低代码技术/' },
         ],
       },
       {
