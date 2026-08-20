@@ -1,0 +1,1317 @@
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/5-wei-fu-wu-tong-yi-ren-zheng-zhong-xin/index.md
+---
+# 微服务统一认证中心学习文档
+
+> 微服务架构下，将认证职责从各业务服务剥离，集中到独立的认证中心，是实现安全、可扩展、可维护的身份管理体系的核心实践。
+
+***
+
+## 目录
+
+1. [微服务统一认证的必要性](#1-微服务统一认证的必要性)
+2. [统一认证中心架构](#2-统一认证中心架构)
+3. [OAuth2 + JWT 在微服务中的落地](#3-oauth2--jwt-在微服务中的落地)
+4. [Spring Authorization Server 实现认证中心](#4-spring-authorization-server-实现认证中心)
+5. [网关统一鉴权](#5-网关统一鉴权)
+6. [Token 生命周期管理](#6-token-生命周期管理)
+7. [单点登录（SSO）与跨域认证](#7-单点登录sso与跨域认证)
+8. [与现有组件的集成](#8-与现有组件的集成)
+9. [安全加固](#9-安全加固)
+10. [方案对比与选型](#10-方案对比与选型)
+
+***
+
+## 1. 微服务统一认证的必要性
+
+### 1.1 单体架构下的认证方式
+
+在单体应用中，认证与授权逻辑集中在同一个进程内：
+
+* 基于 Session + Cookie：服务端维护会话状态，浏览器自动携带 Cookie
+* 基于 JWT：客户端持有 Token，服务端无状态校验
+
+这两种方式在单体架构下都能良好运作，因为所有请求由同一个应用处理。
+
+### 1.2 微服务架构下的认证困境
+
+当系统拆分为多个独立服务后，传统的认证方式面临根本性挑战：
+
+| 问题 | 说明 |
+|------|------|
+| 认证逻辑分散 | 每个服务自行实现登录、Token 校验，代码重复且不一致 |
+| Session 无法共享 | 基于 Session 的认证无法跨服务边界，用户在 A 服务登录后访问 B 服务需要重新认证 |
+| Token 管理混乱 | 各服务独立签发 Token，无法统一吊销和刷新 |
+| 安全风险增加 | 每个服务都持有密钥，密钥泄露面扩大 |
+| 审计困难 | 无法统一追踪用户的认证行为和访问日志 |
+
+### 1.3 统一认证中心的价值
+
+引入独立的认证中心（Auth Center）解决上述问题：
+
+* **认证职责单一化**：所有登录、Token 签发、Token 校验逻辑集中在一个服务
+* **统一 Token 签发**：业务服务只负责校验 Token，不负责签发
+* **集中吊销能力**：通过 Token 黑名单实现统一的 Token 吊销
+* **标准化协议**：基于 OAuth2 标准，第三方接入无障碍
+* **安全集中管理**：密钥统一管理，减少泄露面
+
+***
+
+## 2. 统一认证中心架构
+
+### 2.1 整体架构图
+
+```
+                            +-------------------+
+                            |   Browser / App   |
+                            +--------+----------+
+                                     |
+                                     | 1. 请求登录 / 携带 Token
+                                     v
+                            +-------------------+
+                            |     Gateway       |
+                            | (路由 + 鉴权过滤) |
+                            +---+-----------+---+
+                                |           |
+                    2. 无 Token |           | 3. 携带有效 Token
+                    跳转登录页   |           | 转发到业务服务
+                                v           v
+                     +----------+--+   +----+------------------+
+                     | Auth Server |   | Business Services     |
+                     | 认证中心     |   | (订单/用户/商品...)   |
+                     +------+------+   +-----------+-----------+
+                            |                      |
+                   4. 签发 Token         5. 携带 Token 访问
+                            |                      |
+                            v                      v
+                     +------+------+     +---------+---------+
+                     | Token Store |     | Auth Server       |
+                     |  (Redis)    |     | (Token 校验端点)  |
+                     +-------------+     +-------------------+
+```
+
+### 2.2 核心组件职责
+
+| 组件 | 职责 | 技术选型 |
+|------|------|---------|
+| Auth Server | 认证中心，负责登录认证、Token 签发与吊销 | Spring Authorization Server |
+| Gateway | 统一入口，负责路由转发和 Token 鉴权 | Spring Cloud Gateway |
+| Business Services | 业务服务，信任网关转发的已鉴权请求 | Spring Boot |
+| Token Store | Token 黑名单 / 刷新 Token 存储 | Redis |
+
+***
+
+## 3. OAuth2 + JWT 在微服务中的落地
+
+### 3.1 协议选型分析
+
+| 特性 | Session | JWT（自签发） | OAuth2 + JWT |
+|------|--------|--------------|-------------|
+| 无状态 | 否 | 是 | 是 |
+| 跨服务 | 困难 | 可行 | 原生支持 |
+| 第三方接入 | 不支持 | 不支持 | 原生支持 |
+| 吊销能力 | 删除 Session 即可 | 困难（需黑名单） | 标准化吊销端点 |
+| 标准化程度 | 低 | 中 | 高 |
+| 微服务推荐度 | 低 | 中 | 高 |
+
+### 3.2 OAuth2 授权码流程 + JWT
+
+```
+1. 用户访问业务页面 → 重定向到 Auth Server 登录页
+2. 用户输入账号密码 → Auth Server 验证通过
+3. Auth Server 返回授权码 (code) 给浏览器
+4. 浏览器携带 code 回调 Auth Server
+5. Auth Server 验证 code，签发 Access Token (JWT) + Refresh Token
+6. 浏览器携带 Access Token 访问 Gateway
+7. Gateway 从 JWT 中提取用户信息，转发到业务服务
+8. Access Token 过期时，使用 Refresh Token 换取新 Token
+```
+
+### 3.3 JWT Token 结构
+
+```json
+// Header
+{
+  "alg": "RS256",
+  "typ": "JWT"
+}
+
+// Payload
+{
+  "sub": "user123",
+  "aud": "order-service",
+  "iss": "auth-server",
+  "exp": 1735689600,
+  "iat": 1735686000,
+  "jti": "unique-token-id-001",
+  "scope": "openid profile",
+  "user_name": "zhangsan",
+  "authorities": ["ROLE_ADMIN", "ROLE_USER"]
+}
+
+// Signature
+RSA-SHA256(
+  base64(header) + "." + base64(payload),
+  privateKey
+)
+```
+
+### 3.4 Token 刷新策略
+
+```
+Access Token 过期 → 客户端检测到 401
+       |
+       v
+使用 Refresh Token 请求 /oauth2/token (grant_type=refresh_token)
+       |
+       v
+Auth Server 验证 Refresh Token 有效性
+       |
+       ├── 有效 → 签发新的 Access Token + 新的 Refresh Token（Token 轮转）
+       |
+       └── 无效 → 返回 401，要求用户重新登录
+```
+
+***
+
+## 4. Spring Authorization Server 实现认证中心
+
+### 4.1 Maven 依赖
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.security.oauth</groupId>
+            <artifactId>spring-security-oauth2-authorization-server</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <!-- Spring Authorization Server -->
+    <dependency>
+        <groupId>org.springframework.security.oauth</groupId>
+        <artifactId>spring-security-oauth2-authorization-server</artifactId>
+    </dependency>
+
+    <!-- Spring Security -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- Web -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Redis -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+
+    <!-- Nacos Discovery -->
+    <dependency>
+        <groupId>com.alibaba.cloud</groupId>
+        <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+    </dependency>
+</dependencies>
+```
+
+### 4.2 AuthorizationServerConfig 配置
+
+```java
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
+import java.util.UUID;
+
+@Configuration
+@EnableWebSecurity
+public class AuthorizationServerConfig {
+
+    /**
+     * 认证服务器 SecurityFilterChain
+     * 负责 OAuth2 端点和表单登录
+     */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain authorizationServerSecurityFilterChain(
+            HttpSecurity http) throws Exception {
+
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+            // 启用 OIDC（可选）
+            .oidcConfig(Customizer.withDefaults())
+            // 自定义 Token 端点，添加自定义 Claims
+            .tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                .accessTokenRequestConverter(
+                    new org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeGrantAuthenticationConverter())
+                .accessTokenResponseHandler(
+                    new org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken())
+            )
+            // 未认证时跳转登录页
+            .exceptionHandling(exceptions -> exceptions
+                .defaultAuthenticationEntryPointFor(
+                    new LoginUrlAuthenticationEntryPoint("/login"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+                )
+            );
+
+        return http.build();
+    }
+
+    /**
+     * 默认 SecurityFilterChain
+     * 负责登录页面等普通请求
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain defaultSecurityFilterChain(
+            HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/login", "/css/**", "/js/**", "/actuator/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            .formLogin(Customizer.withDefaults());
+        return http.build();
+    }
+
+    /**
+     * 注册 OAuth2 客户端
+     */
+    @Bean
+    public RegisteredClientRepository registeredClientRepository(
+            PasswordEncoder passwordEncoder) {
+
+        // Web 前端客户端（授权码模式）
+        RegisteredClient webClient = RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId("web-client")
+            .clientSecret(passwordEncoder.encode("web-secret"))
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            .redirectUri("http://localhost:3000/callback")
+            .scope(OidcScopes.OPENID)
+            .scope(OidcScopes.PROFILE)
+            .scope("read")
+            .scope("write")
+            .tokenSettings(TokenSettings.builder()
+                .accessTokenTimeToLive(Duration.ofHours(2))
+                .refreshTokenTimeToLive(Duration.ofDays(7))
+                .reuseRefreshTokens(false) // 启用 Token 轮转
+                .build())
+            .clientSettings(ClientSettings.builder()
+                .requireAuthorizationConsent(false)
+                .build())
+            .build();
+
+        // 内部微服务客户端（客户端凭证模式）
+        RegisteredClient serviceClient = RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId("service-client")
+            .clientSecret(passwordEncoder.encode("service-secret"))
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+            .scope("read")
+            .scope("write")
+            .tokenSettings(TokenSettings.builder()
+                .accessTokenTimeToLive(Duration.ofHours(1))
+                .build())
+            .build();
+
+        return new InMemoryRegisteredClientRepository(webClient, serviceClient);
+    }
+
+    /**
+     * JWT Token 自定义器 —— 向 Token 中添加自定义 Claims
+     */
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+        return context -> {
+            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+                context.getClaims().claims(claims -> {
+                    // 添加用户角色信息
+                    var principal = context.getPrincipal();
+                    if (principal.getAuthorities() != null) {
+                        claims.put("authorities", principal.getAuthorities()
+                            .stream()
+                            .map(Object::toString)
+                            .toList());
+                    }
+                    // 添加自定义业务字段
+                    claims.put("user_name", principal.getName());
+                    claims.put("tenant_id", "tenant_001");
+                });
+            }
+        };
+    }
+
+    /**
+     * JWK 密钥源 —— RSA 非对称加密签发 Token
+     */
+    @Bean
+    public JWKSource<SecurityContext> jwkSource() {
+        KeyPair keyPair = generateRsaKey();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+        RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+        RSAKey rsaKey = new RSAKey.Builder(publicKey)
+            .privateKey(privateKey)
+            .keyID(UUID.randomUUID().toString())
+            .build();
+        JWKSet jwkSet = new JWKSet(rsaKey);
+        return new ImmutableJWKSet<>(jwkSet);
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+    }
+
+    @Bean
+    public AuthorizationServerSettings authorizationServerSettings() {
+        return AuthorizationServerSettings.builder()
+            .issuer("http://auth-server:9000")
+            .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    private static KeyPair generateRsaKey() {
+        try {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            return keyPairGenerator.generateKeyPair();
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+}
+```
+
+### 4.3 UserDetailsService 实现
+
+```java
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Map;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    // 实际项目中注入 Mapper 查询数据库
+    // @Autowired
+    // private UserMapper userMapper;
+
+    // 模拟数据库存储
+    private static final Map<String, String> USER_DB = Map.of(
+        "admin", "$2a$10$encoded_password_hash",
+        "user", "$2a$10$encoded_password_hash"
+    );
+
+    @Override
+    public UserDetails loadUserByUsername(String username)
+            throws UsernameNotFoundException {
+
+        String password = USER_DB.get(username);
+        if (password == null) {
+            throw new UsernameNotFoundException("用户不存在: " + username);
+        }
+
+        // 实际项目中根据用户角色动态构建权限列表
+        return User.builder()
+            .username(username)
+            .password(password)
+            .authorities(Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER")))
+            .accountExpired(false)
+            .accountLocked(false)
+            .credentialsExpired(false)
+            .disabled(false)
+            .build();
+    }
+}
+```
+
+### 4.4 application.yml 配置
+
+```yaml
+server:
+  port: 9000
+
+spring:
+  application:
+    name: auth-server
+  datasource:
+    url: jdbc:mysql://localhost:3306/auth_db?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  redis:
+    host: localhost
+    port: 6379
+    password: ""
+    database: 0
+
+  # Spring Authorization Server 配置
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: http://auth-server:9000
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+        group: DEFAULT_GROUP
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+```
+
+***
+
+## 5. 网关统一鉴权
+
+### 5.1 架构原理
+
+```
+请求到达 Gateway
+       |
+       v
+JwtAuthGlobalFilter 执行
+       |
+       ├── 白名单路径？ → 直接放行
+       |
+       └── 需要鉴权 → 从 Header 中提取 Token
+              |
+              ├── Token 不存在 → 返回 401
+              |
+              └── Token 存在 → 校验签名 + 过期时间
+                     |
+                     ├── 校验失败 → 返回 401
+                     |
+                     └── 校验成功 → 将用户信息写入请求头，转发到下游服务
+```
+
+### 5.2 GlobalFilter 完整实现
+
+```java
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+
+@Slf4j
+@Component
+public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
+
+    @Value("${jwt.secret:your-256-bit-secret-key-here-must-be-long-enough}")
+    private String jwtSecret;
+
+    @Value("${jwt.issuer:auth-server}")
+    private String expectedIssuer;
+
+    private final StringRedisTemplate redisTemplate;
+
+    // 白名单路径配置（免认证）
+    private static final List<String> WHITE_LIST = Arrays.asList(
+        "/auth/**",
+        "/oauth2/**",
+        "/actuator/**",
+        "/public/**",
+        "/swagger-ui/**",
+        "/v3/api-docs/**"
+    );
+
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    public JwtAuthGlobalFilter(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getURI().getPath();
+
+        // 1. 白名单路径直接放行
+        if (isWhiteListed(path)) {
+            return chain.filter(exchange);
+        }
+
+        // 2. 从 Authorization Header 中提取 Token
+        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return unauthorized(exchange, "缺少认证令牌");
+        }
+
+        String token = authHeader.substring(7);
+
+        // 3. 校验 Token 是否在黑名单中
+        if (isTokenBlacklisted(token)) {
+            return unauthorized(exchange, "令牌已被吊销");
+        }
+
+        // 4. 解析和校验 Token
+        Claims claims;
+        try {
+            claims = parseToken(token);
+        } catch (ExpiredJwtException e) {
+            return unauthorized(exchange, "令牌已过期");
+        } catch (Exception e) {
+            log.error("Token 校验失败: {}", e.getMessage());
+            return unauthorized(exchange, "无效令牌");
+        }
+
+        // 5. 将用户信息写入请求头，传递给下游服务
+        ServerHttpRequest mutatedRequest = request.mutate()
+            .header("X-User-Id", claims.getSubject())
+            .header("X-User-Name", claims.get("user_name", String.class))
+            .header("X-Tenant-Id", claims.get("tenant_id", String.class))
+            .header("X-User-Authorities", String.join(",",
+                claims.get("authorities", List.class)))
+            .build();
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+    }
+
+    private boolean isWhiteListed(String path) {
+        return WHITE_LIST.stream()
+            .anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+
+    private boolean isTokenBlacklisted(String token) {
+        String blacklisted = redisTemplate.opsForValue()
+            .get("token:blacklist:" + token);
+        return blacklisted != null;
+    }
+
+    private Claims parseToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parser()
+            .verifyWith(key)
+            .requireIssuer(expectedIssuer)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
+    }
+
+    private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = String.format(
+            "{\"code\":401,\"message\":\"%s\"}", message);
+        DataBuffer buffer = response.bufferFactory()
+            .wrap(body.getBytes(StandardCharsets.UTF_8));
+        return response.writeWith(Mono.just(buffer));
+    }
+
+    @Override
+    public int getOrder() {
+        return -100; // 高优先级
+    }
+}
+```
+
+### 5.3 Gateway 路由配置
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        # 认证服务路由（白名单）
+        - id: auth-server
+          uri: lb://auth-server
+          predicates:
+            - Path=/auth/**,/oauth2/**
+
+        # 订单服务路由（需要鉴权）
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/order/**
+
+        # 用户服务路由（需要鉴权）
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**
+
+        # 商品服务路由（需要鉴权）
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/product/**
+
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+```
+
+***
+
+## 6. Token 生命周期管理
+
+### 6.1 Redis Token 黑名单机制
+
+```java
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class TokenBlacklistService {
+
+    private final StringRedisTemplate redisTemplate;
+
+    // Token 黑名单 Key 前缀
+    private static final String BLACKLIST_PREFIX = "token:blacklist:";
+
+    // Refresh Token 存储 Key 前缀
+    private static final String REFRESH_PREFIX = "token:refresh:";
+
+    // Token 绑定信息前缀
+    private static final String BINDING_PREFIX = "token:binding:";
+
+    public TokenBlacklistService(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    /**
+     * 将 Token 加入黑名单
+     * @param token  JWT Token 字符串
+     * @param ttl    过期时间（秒），通常等于 Token 剩余有效期
+     */
+    public void addToBlacklist(String token, long ttl) {
+        String key = BLACKLIST_PREFIX + token;
+        redisTemplate.opsForValue().set(key, "revoked", ttl, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 检查 Token 是否在黑名单中
+     */
+    public boolean isBlacklisted(String token) {
+        String key = BLACKLIST_PREFIX + token;
+        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    /**
+     * 吊销用户的全部 Token（用于密码修改、安全事件等场景）
+     * @param userId 用户 ID
+     */
+    public void revokeAllTokens(String userId) {
+        String bindingKey = BINDING_PREFIX + userId;
+        String currentToken = redisTemplate.opsForValue().get(bindingKey);
+        if (currentToken != null) {
+            addToBlacklist(currentToken, 7200); // 2小时过期
+            redisTemplate.delete(bindingKey);
+        }
+    }
+
+    /**
+     * 存储 Refresh Token 与用户的绑定关系
+     */
+    public void storeRefreshToken(String userId, String refreshToken, long ttl) {
+        String key = REFRESH_PREFIX + userId;
+        redisTemplate.opsForValue().set(key, refreshToken, ttl, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 校验 Refresh Token 是否有效（未被轮转）
+     */
+    public boolean validateRefreshToken(String userId, String refreshToken) {
+        String key = REFRESH_PREFIX + userId;
+        String storedToken = redisTemplate.opsForValue().get(key);
+        return refreshToken.equals(storedToken);
+    }
+
+    /**
+     * Token 轮转：签发新 Token 时吊销旧的 Refresh Token
+     */
+    public void rotateRefreshToken(String userId, String oldRefreshToken,
+                                    String newRefreshToken, long ttl) {
+        // 验证旧 Token 是否匹配
+        if (!validateRefreshToken(userId, oldRefreshToken)) {
+            throw new RuntimeException("Refresh Token 已被轮转，可能存在安全风险");
+        }
+        // 存储新的 Refresh Token
+        storeRefreshToken(userId, newRefreshToken, ttl);
+    }
+}
+```
+
+### 6.2 Token 刷新服务
+
+```java
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Service
+public class TokenRefreshService {
+
+    private final TokenBlacklistService blacklistService;
+    private final JwtEncoder jwtEncoder;
+
+    public TokenRefreshService(TokenBlacklistService blacklistService,
+                                JwtEncoder jwtEncoder) {
+        this.blacklistService = blacklistService;
+        this.jwtEncoder = jwtEncoder;
+    }
+
+    /**
+     * 执行 Token 刷新（轮转策略）
+     * @param userId        用户 ID
+     * @param oldRefreshToken 旧的 Refresh Token
+     * @return 新的 Token 对
+     */
+    public TokenPair refreshTokens(String userId, String oldRefreshToken) {
+        // 1. 验证旧 Refresh Token 是否有效
+        if (!blacklistService.validateRefreshToken(userId, oldRefreshToken)) {
+            throw new RuntimeException("Refresh Token 无效或已被轮转");
+        }
+
+        // 2. 生成新的 Access Token
+        Instant now = Instant.now();
+        Jwt newAccessToken = jwtEncoder.encode(JwtEncoderParameters.from(
+            org.springframework.security.oauth2.jwt.JwtClaimsSet.builder()
+                .subject(userId)
+                .issuer("auth-server")
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(7200))
+                .id(UUID.randomUUID().toString())
+                .claim("user_name", userId)
+                .build()
+        ));
+
+        // 3. 生成新的 Refresh Token
+        String newRefreshToken = UUID.randomUUID().toString();
+
+        // 4. 执行轮转：验证旧 Token 并存储新 Token
+        blacklistService.rotateRefreshToken(
+            userId, oldRefreshToken, newRefreshToken, 604800); // 7天
+
+        return new TokenPair(newAccessToken.getTokenValue(), newRefreshToken);
+    }
+
+    public record TokenPair(String accessToken, String refreshToken) {}
+}
+```
+
+### 6.3 Token 吊销端点
+
+```java
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class TokenRevocationController {
+
+    private final TokenBlacklistService blacklistService;
+    private final TokenRefreshService refreshService;
+
+    public TokenRevocationController(TokenBlacklistService blacklistService,
+                                      TokenRefreshService refreshService) {
+        this.blacklistService = blacklistService;
+        this.refreshService = refreshService;
+    }
+
+    /**
+     * 吊销当前 Token（用户主动登出）
+     */
+    @PostMapping("/auth/revoke")
+    public ResponseEntity<String> revokeToken(JwtAuthenticationToken auth) {
+        String token = auth.getToken().getTokenValue();
+        // 计算 Token 剩余有效期
+        long remainingTtl = auth.getToken().getExpiresAt().getEpochSecond()
+            - java.time.Instant.now().getEpochSecond();
+
+        blacklistService.addToBlacklist(token, Math.max(remainingTtl, 0));
+        blacklistService.revokeAllTokens(auth.getName());
+
+        return ResponseEntity.ok("令牌已吊销");
+    }
+
+    /**
+     * 刷新 Token
+     */
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<?> refreshToken(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-Refresh-Token") String refreshToken) {
+        try {
+            TokenRefreshService.TokenPair newTokens =
+                refreshService.refreshTokens(userId, refreshToken);
+            return ResponseEntity.ok(newTokens);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
+        }
+    }
+}
+```
+
+***
+
+## 7. 单点登录（SSO）与跨域认证
+
+### 7.1 SSO 核心概念
+
+单点登录（Single Sign-On）允许用户在一处登录后，访问所有互信系统时无需再次认证。
+
+```
+用户登录 Auth Server
+       |
+       v
+获取统一 Token
+       |
+       +----> 访问订单系统（Token 有效，直接放行）
+       |
+       +----> 访问用户系统（Token 有效，直接放行）
+       |
+       +----> 访问商品系统（Token 有效，直接放行）
+```
+
+### 7.2 OAuth2 如何实现 SSO
+
+1. Auth Server 作为统一认证入口，签发标准 JWT
+2. 所有业务服务共享同一个 Auth Server 的公钥
+3. 用户登录一次后，Token 在所有服务间通用
+4. 结合 Gateway 的统一鉴 Token，实现跨服务的无感认证
+
+### 7.3 CAS 与 OAuth2 SSO 对比
+
+| 特性 | CAS | OAuth2 SSO |
+|------|-----|-----------|
+| 协议标准 | CAS Protocol | OAuth2 / OIDC |
+| Token 类型 | Service Ticket (ST) | JWT / Access Token |
+| 无状态支持 | 依赖 Session | 原生无状态 |
+| 微服务适配 | 一般 | 优秀 |
+| 第三方接入 | 需要适配 | 原生支持 |
+| 社交登录 | 需要扩展 | 原生支持（OIDC） |
+| 社区生态 | 中等 | 丰富 |
+| 实现复杂度 | 中等 | 中等 |
+| 生产推荐度 | 中 | 高 |
+
+***
+
+## 8. 与现有组件的集成
+
+### 8.1 Nacos 注册与配置
+
+认证中心作为微服务注册到 Nacos，其他服务通过服务名发现认证中心：
+
+```yaml
+# auth-server application.yml
+spring:
+  application:
+    name: auth-server
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+        group: DEFAULT_GROUP
+        metadata:
+          version: v1
+          type: auth
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+        file-extension: yml
+        shared-configs:
+          - data-id: common.yml
+            group: DEFAULT_GROUP
+            refresh: true
+```
+
+业务服务通过 Nacos 发现认证中心并校验 Token：
+
+```java
+@Service
+public class TokenValidationService {
+
+    private final RestTemplate restTemplate;
+
+    public TokenValidationService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    /**
+     * 通过认证中心校验 Token（适用于无法本地校验的场景）
+     */
+    public boolean validateToken(String token) {
+        try {
+            String url = "http://auth-server/auth/introspect";
+            var request = new java.util.HashMap<String, String>();
+            request.put("token", token);
+            var response = restTemplate.postForObject(url, request, Boolean.class);
+            return Boolean.TRUE.equals(response);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+```
+
+### 8.2 Sentinel 限流保护
+
+对认证端点实施限流保护，防止暴力破解和 DDoS 攻击：
+
+```java
+import com.alibaba.csp.sentinel.slots.block.RuleConstant;
+import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
+import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
+import org.springframework.context.annotation.Configuration;
+
+import jakarta.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.List;
+
+@Configuration
+public class AuthSentinelConfig {
+
+    @PostConstruct
+    public void initAuthFlowRules() {
+        List<FlowRule> rules = new ArrayList<>();
+
+        // 登录端点限流：每秒最多 10 次
+        FlowRule loginRule = new FlowRule("POST:/auth/login");
+        loginRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        loginRule.setCount(10);
+        rules.add(loginRule);
+
+        // Token 刷新限流：每秒最多 20 次
+        FlowRule refreshRule = new FlowRule("POST:/auth/refresh");
+        refreshRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        refreshRule.setCount(20);
+        rules.add(refreshRule);
+
+        // Token 签发限流：每秒最多 30 次
+        FlowRule tokenRule = new FlowRule("POST:/oauth2/token");
+        tokenRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        tokenRule.setCount(30);
+        rules.add(tokenRule);
+
+        FlowRuleManager.loadRules(rules);
+    }
+}
+```
+
+### 8.3 Sentinel + Nacos 规则持久化
+
+```yaml
+spring:
+  cloud:
+    sentinel:
+      datasource:
+        auth-flow:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: auth-server-flow-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: flow
+```
+
+***
+
+## 9. 安全加固
+
+### 9.1 Token 防重放（jti 唯一标识）
+
+每个 Token 包含唯一的 `jti`（JWT ID），签发时存入 Redis：
+
+```java
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+
+@Component
+public class TokenReplayGuard {
+
+    private final StringRedisTemplate redisTemplate;
+    private static final String JTI_PREFIX = "token:jti:";
+
+    public TokenReplayGuard(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    /**
+     * 记录已签发的 jti
+     */
+    public void recordJti(String jti, long ttlSeconds) {
+        redisTemplate.opsForValue().set(
+            JTI_PREFIX + jti, "1", ttlSeconds, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 检查 jti 是否已被使用（防重放）
+     */
+    public boolean isJtiUsed(String jti) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(JTI_PREFIX + jti));
+    }
+}
+```
+
+### 9.2 密钥轮转（RSA 非对称密钥）
+
+使用 JWK 端点实现密钥轮转，支持多个密钥共存：
+
+```java
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.List;
+
+@Configuration
+public class KeyRotationConfig {
+
+    /**
+     * 支持多密钥的 JWK 源（密钥轮转场景）
+     */
+    @Bean
+    public JWKSource<SecurityContext> jwkSource() {
+        List<RSAKey> keys = new ArrayList<>();
+
+        // 当前使用的密钥
+        KeyPair currentKeyPair = generateRsaKey();
+        keys.add(buildRsaKey(currentKeyPair, "current-key-2026"));
+
+        // 上一个密钥（用于验证旧 Token，过渡期保留）
+        KeyPair previousKeyPair = generateRsaKey();
+        keys.add(buildRsaKey(previousKeyPair, "previous-key-2025"));
+
+        JWKSet jwkSet = new JWKSet(keys);
+        return new ImmutableJWKSet<>(jwkSet);
+    }
+
+    private RSAKey buildRsaKey(KeyPair keyPair, String keyId) {
+        return new RSAKey.Builder((RSAPublicKey) keyPair.getPublic())
+            .privateKey((RSAPrivateKey) keyPair.getPrivate())
+            .keyID(keyId)
+            .build();
+    }
+
+    private KeyPair generateRsaKey() {
+        try {
+            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+            gen.initialize(2048);
+            return gen.generateKeyPair();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}
+```
+
+### 9.3 HTTPS 强制与 CORS 配置
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+
+@Configuration
+public class SecurityHardeningConfig {
+
+    /**
+     * CORS 跨域配置
+     */
+    @Bean
+    public CorsWebFilter corsWebFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        // 仅允许受信任的前端域名
+        config.setAllowedOrigins(Arrays.asList(
+            "https://your-frontend.com",
+            "https://admin.your-frontend.com"
+        ));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return new CorsWebFilter(source);
+    }
+}
+```
+
+```yaml
+# Nginx 层面强制 HTTPS
+server {
+    listen 80;
+    server_name auth-server.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name auth-server.example.com;
+
+    ssl_certificate     /etc/ssl/certs/auth-server.pem;
+    ssl_certificate_key /etc/ssl/private/auth-server.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    location / {
+        proxy_pass http://localhost:9000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+```
+
+### 9.4 常见攻击防御
+
+| 攻击类型 | 防御措施 | 实现方式 |
+|---------|---------|---------|
+| Token 重放攻击 | jti 唯一标识 + Redis 去重 | 签发时记录 jti，校验时检查是否已使用 |
+| Token 暴力破解 | 认证端点限流 | Sentinel 限制登录接口 QPS |
+| 中间人攻击 | 强制 HTTPS | Nginx 301 重定向 + TLS 配置 |
+| 密钥泄露 | RSA 非对称密钥 | 私钥仅认证中心持有，业务服务只持有公钥 |
+| CSRF 攻击 | SameSite Cookie + State 参数 | OAuth2 授权码流程中的 state 参数 |
+| XSS 攻击 | HttpOnly Cookie + CSP | 前端安全头配置 |
+| JWT 算法混淆 | 指定签名算法 | 解析时强制指定 `RS256`，禁用 `none` 算法 |
+| 刷新令牌被盗 | Token 轮转 + 绑定设备 | 每次刷新生成新的 Refresh Token |
+
+***
+
+## 10. 方案对比与选型
+
+### 10.1 四种认证方案对比
+
+| 特性 | Session + Cookie | JWT 自签发 | OAuth2 + JWT | SAML 2.0 |
+|------|-----------------|-----------|-------------|----------|
+| 无状态 | 否 | 是 | 是 | 是 |
+| 跨服务支持 | 困难 | 可行 | 原生支持 | 支持 |
+| 第三方接入 | 不支持 | 不支持 | 原生支持 | 支持 |
+| 标准化程度 | 低 | 低 | 高 | 高 |
+| 实现复杂度 | 低 | 低 | 中 | 高 |
+| Token 吊销 | 删除 Session | 需黑名单 | 标准化端点 | 简单 |
+| 微服务推荐度 | 不推荐 | 中等 | 推荐 | 一般 |
+| 前后端分离 | 需额外处理 | 天然适配 | 天然适配 | 不适配 |
+| 生态丰富度 | 高 | 中 | 高 | 中 |
+| 典型场景 | 单体 Web 应用 | 小型微服务 | 企业级微服务 | 企业 SSO |
+
+### 10.2 选型建议
+
+| 场景 | 推荐方案 | 理由 |
+|------|---------|------|
+| 单体应用 + 传统 Web | Session + Cookie | 最简单，成熟度高 |
+| 小型微服务（5 个服务以内） | JWT 自签发 | 简单无状态，无需额外组件 |
+| 中大型微服务（10+ 服务） | OAuth2 + JWT | 标准化、可扩展、支持第三方接入 |
+| 企业级 SSO + 多系统集成 | OAuth2 + JWT + OIDC | 功能最全，支持社交登录 |
+| 传统企业（已有 SAML 基础设施） | SAML 2.0 | 兼容现有系统 |
+
+***
+
+> **参考资源：**
+>
+> * Spring Authorization Server 官方文档: https://docs.spring.io/spring-authorization-server/reference/
+> * OAuth 2.0 RFC 6749: https://datatracker.ietf.org/doc/html/rfc6749
+> * JWT RFC 7519: https://datatracker.ietf.org/doc/html/rfc7519
+> * Spring Cloud Gateway 文档: https://docs.spring.io/spring-cloud-gateway/reference/

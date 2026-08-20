@@ -45,7 +45,9 @@ url: /my_notes/notes/JAVA学习路线/深度学习/index.md
 │   ├── 2.1-Sentinel限流降级.md
 │   ├── 2.2-Seata分布式事务.md
 │   ├── 2.3-Nacos Config动态配置.md
-│   └── 2.4-Service Mesh入门.md
+│   ├── 2.4-Service Mesh入门.md
+│   ├── 2.5-微服务统一认证中心.md
+│   └── 2.6-多租户隔离.md
 │
 ├── 🛒 03-电商系统实战/
 │   ├── 3.1-系统架构设计.md

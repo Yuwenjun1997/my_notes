@@ -75,6 +75,8 @@
 - [2-Seata分布式事务](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/2-seata-fen-bu-shi-shi-wu/index.md)
 - [3-Nacos Config动态配置](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/3-nacos-config-dong-tai-pei-zhi/index.md)
 - [4-Service Mesh入门](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/4-service-mesh-ru-men/index.md)
+- [5-微服务统一认证中心](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/5-wei-fu-wu-tong-yi-ren-zheng-zhong-xin/index.md)
+- [6-多租户隔离](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/6-duo-zu-hu-ge-li/index.md)
 - [1-系统架构设计](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/03-dian-shang-xi-tong-shi-zhan/1-xi-tong-jia-gou-she-ji/index.md)
 - [2-订单与支付系统](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/03-dian-shang-xi-tong-shi-zhan/2-ding-dan-yu-zhi-fu-xi-tong/index.md)
 - [3-库存系统与秒杀](/my_notes/notes/JAVA学习路线/shen-du-xue-xi/03-dian-shang-xi-tong-shi-zhan/3-ku-cun-xi-tong-yu-miao-sha/index.md)

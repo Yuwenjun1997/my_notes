@@ -12065,6 +12065,8 @@ url: /my_notes/notes/JAVA学习路线/index.md
 | 2.2 Seata 分布式事务 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.2-Seata分布式事务.md) |
 | 2.3 Nacos Config 动态配置 | \[📖 查看]\(./深度学习/02-SpringCloudAlibaba深入/2.3-Nacos Config动态配置.md) |
 | 2.4 Service Mesh 入门 | \[📖 查看]\(./深度学习/02-SpringCloudAlibaba深入/2.4-Service Mesh入门.md) |
+| 2.5 微服务统一认证中心 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.5-微服务统一认证中心.md) |
+| 2.6 多租户隔离 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.6-多租户隔离.md) |
 
 ### 🛒 03 — 电商系统实战
 
@@ -12179,7 +12181,9 @@ url: /my_notes/notes/JAVA学习路线/深度学习/index.md
 │   ├── 2.1-Sentinel限流降级.md
 │   ├── 2.2-Seata分布式事务.md
 │   ├── 2.3-Nacos Config动态配置.md
-│   └── 2.4-Service Mesh入门.md
+│   ├── 2.4-Service Mesh入门.md
+│   ├── 2.5-微服务统一认证中心.md
+│   └── 2.6-多租户隔离.md
 │
 ├── 🛒 03-电商系统实战/
 │   ├── 3.1-系统架构设计.md
@@ -12257,12 +12261,14 @@ url: /my_notes/notes/JAVA学习路线/深度学习/02-SpringCloudAlibaba深入/i
 ---
 # Spring Cloud Alibaba 深入
 
-> 精通微服务生态核心组件：限流降级、分布式事务、动态配置与 Service Mesh 入门。
+> 精通微服务生态核心组件：限流降级、分布式事务、动态配置、Service Mesh、统一认证与多租户隔离。
 
 * [Sentinel 限流降级](./2.1-Sentinel限流降级.md)
 * [Seata 分布式事务](./2.2-Seata分布式事务.md)
 * [Nacos Config 动态配置](./2.3-Nacos%20Config动态配置.md)
 * [Service Mesh 入门](./2.4-Service%20Mesh入门.md)
+* [微服务统一认证中心](./2.5-微服务统一认证中心.md)
+* [多租户隔离](./2.6-多租户隔离.md)
 
 ---
 
@@ -34847,6 +34853,2816 @@ Istio = 当前最成熟的 Service Mesh 实现
     ↓
 不是银弹，需要根据团队规模和技术栈评估是否引入
 ```
+
+---
+
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/5-wei-fu-wu-tong-yi-ren-zheng-zhong-xin/index.md
+---
+# 微服务统一认证中心学习文档
+
+> 微服务架构下，将认证职责从各业务服务剥离，集中到独立的认证中心，是实现安全、可扩展、可维护的身份管理体系的核心实践。
+
+***
+
+## 目录
+
+1. [微服务统一认证的必要性](#1-微服务统一认证的必要性)
+2. [统一认证中心架构](#2-统一认证中心架构)
+3. [OAuth2 + JWT 在微服务中的落地](#3-oauth2--jwt-在微服务中的落地)
+4. [Spring Authorization Server 实现认证中心](#4-spring-authorization-server-实现认证中心)
+5. [网关统一鉴权](#5-网关统一鉴权)
+6. [Token 生命周期管理](#6-token-生命周期管理)
+7. [单点登录（SSO）与跨域认证](#7-单点登录sso与跨域认证)
+8. [与现有组件的集成](#8-与现有组件的集成)
+9. [安全加固](#9-安全加固)
+10. [方案对比与选型](#10-方案对比与选型)
+
+***
+
+## 1. 微服务统一认证的必要性
+
+### 1.1 单体架构下的认证方式
+
+在单体应用中，认证与授权逻辑集中在同一个进程内：
+
+* 基于 Session + Cookie：服务端维护会话状态，浏览器自动携带 Cookie
+* 基于 JWT：客户端持有 Token，服务端无状态校验
+
+这两种方式在单体架构下都能良好运作，因为所有请求由同一个应用处理。
+
+### 1.2 微服务架构下的认证困境
+
+当系统拆分为多个独立服务后，传统的认证方式面临根本性挑战：
+
+| 问题 | 说明 |
+|------|------|
+| 认证逻辑分散 | 每个服务自行实现登录、Token 校验，代码重复且不一致 |
+| Session 无法共享 | 基于 Session 的认证无法跨服务边界，用户在 A 服务登录后访问 B 服务需要重新认证 |
+| Token 管理混乱 | 各服务独立签发 Token，无法统一吊销和刷新 |
+| 安全风险增加 | 每个服务都持有密钥，密钥泄露面扩大 |
+| 审计困难 | 无法统一追踪用户的认证行为和访问日志 |
+
+### 1.3 统一认证中心的价值
+
+引入独立的认证中心（Auth Center）解决上述问题：
+
+* **认证职责单一化**：所有登录、Token 签发、Token 校验逻辑集中在一个服务
+* **统一 Token 签发**：业务服务只负责校验 Token，不负责签发
+* **集中吊销能力**：通过 Token 黑名单实现统一的 Token 吊销
+* **标准化协议**：基于 OAuth2 标准，第三方接入无障碍
+* **安全集中管理**：密钥统一管理，减少泄露面
+
+***
+
+## 2. 统一认证中心架构
+
+### 2.1 整体架构图
+
+```
+                            +-------------------+
+                            |   Browser / App   |
+                            +--------+----------+
+                                     |
+                                     | 1. 请求登录 / 携带 Token
+                                     v
+                            +-------------------+
+                            |     Gateway       |
+                            | (路由 + 鉴权过滤) |
+                            +---+-----------+---+
+                                |           |
+                    2. 无 Token |           | 3. 携带有效 Token
+                    跳转登录页   |           | 转发到业务服务
+                                v           v
+                     +----------+--+   +----+------------------+
+                     | Auth Server |   | Business Services     |
+                     | 认证中心     |   | (订单/用户/商品...)   |
+                     +------+------+   +-----------+-----------+
+                            |                      |
+                   4. 签发 Token         5. 携带 Token 访问
+                            |                      |
+                            v                      v
+                     +------+------+     +---------+---------+
+                     | Token Store |     | Auth Server       |
+                     |  (Redis)    |     | (Token 校验端点)  |
+                     +-------------+     +-------------------+
+```
+
+### 2.2 核心组件职责
+
+| 组件 | 职责 | 技术选型 |
+|------|------|---------|
+| Auth Server | 认证中心，负责登录认证、Token 签发与吊销 | Spring Authorization Server |
+| Gateway | 统一入口，负责路由转发和 Token 鉴权 | Spring Cloud Gateway |
+| Business Services | 业务服务，信任网关转发的已鉴权请求 | Spring Boot |
+| Token Store | Token 黑名单 / 刷新 Token 存储 | Redis |
+
+***
+
+## 3. OAuth2 + JWT 在微服务中的落地
+
+### 3.1 协议选型分析
+
+| 特性 | Session | JWT（自签发） | OAuth2 + JWT |
+|------|--------|--------------|-------------|
+| 无状态 | 否 | 是 | 是 |
+| 跨服务 | 困难 | 可行 | 原生支持 |
+| 第三方接入 | 不支持 | 不支持 | 原生支持 |
+| 吊销能力 | 删除 Session 即可 | 困难（需黑名单） | 标准化吊销端点 |
+| 标准化程度 | 低 | 中 | 高 |
+| 微服务推荐度 | 低 | 中 | 高 |
+
+### 3.2 OAuth2 授权码流程 + JWT
+
+```
+1. 用户访问业务页面 → 重定向到 Auth Server 登录页
+2. 用户输入账号密码 → Auth Server 验证通过
+3. Auth Server 返回授权码 (code) 给浏览器
+4. 浏览器携带 code 回调 Auth Server
+5. Auth Server 验证 code，签发 Access Token (JWT) + Refresh Token
+6. 浏览器携带 Access Token 访问 Gateway
+7. Gateway 从 JWT 中提取用户信息，转发到业务服务
+8. Access Token 过期时，使用 Refresh Token 换取新 Token
+```
+
+### 3.3 JWT Token 结构
+
+```json
+// Header
+{
+  "alg": "RS256",
+  "typ": "JWT"
+}
+
+// Payload
+{
+  "sub": "user123",
+  "aud": "order-service",
+  "iss": "auth-server",
+  "exp": 1735689600,
+  "iat": 1735686000,
+  "jti": "unique-token-id-001",
+  "scope": "openid profile",
+  "user_name": "zhangsan",
+  "authorities": ["ROLE_ADMIN", "ROLE_USER"]
+}
+
+// Signature
+RSA-SHA256(
+  base64(header) + "." + base64(payload),
+  privateKey
+)
+```
+
+### 3.4 Token 刷新策略
+
+```
+Access Token 过期 → 客户端检测到 401
+       |
+       v
+使用 Refresh Token 请求 /oauth2/token (grant_type=refresh_token)
+       |
+       v
+Auth Server 验证 Refresh Token 有效性
+       |
+       ├── 有效 → 签发新的 Access Token + 新的 Refresh Token（Token 轮转）
+       |
+       └── 无效 → 返回 401，要求用户重新登录
+```
+
+***
+
+## 4. Spring Authorization Server 实现认证中心
+
+### 4.1 Maven 依赖
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.security.oauth</groupId>
+            <artifactId>spring-security-oauth2-authorization-server</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <!-- Spring Authorization Server -->
+    <dependency>
+        <groupId>org.springframework.security.oauth</groupId>
+        <artifactId>spring-security-oauth2-authorization-server</artifactId>
+    </dependency>
+
+    <!-- Spring Security -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- Web -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Redis -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+
+    <!-- Nacos Discovery -->
+    <dependency>
+        <groupId>com.alibaba.cloud</groupId>
+        <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+    </dependency>
+</dependencies>
+```
+
+### 4.2 AuthorizationServerConfig 配置
+
+```java
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
+import java.util.UUID;
+
+@Configuration
+@EnableWebSecurity
+public class AuthorizationServerConfig {
+
+    /**
+     * 认证服务器 SecurityFilterChain
+     * 负责 OAuth2 端点和表单登录
+     */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain authorizationServerSecurityFilterChain(
+            HttpSecurity http) throws Exception {
+
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+            // 启用 OIDC（可选）
+            .oidcConfig(Customizer.withDefaults())
+            // 自定义 Token 端点，添加自定义 Claims
+            .tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                .accessTokenRequestConverter(
+                    new org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeGrantAuthenticationConverter())
+                .accessTokenResponseHandler(
+                    new org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken())
+            )
+            // 未认证时跳转登录页
+            .exceptionHandling(exceptions -> exceptions
+                .defaultAuthenticationEntryPointFor(
+                    new LoginUrlAuthenticationEntryPoint("/login"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+                )
+            );
+
+        return http.build();
+    }
+
+    /**
+     * 默认 SecurityFilterChain
+     * 负责登录页面等普通请求
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain defaultSecurityFilterChain(
+            HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/login", "/css/**", "/js/**", "/actuator/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            .formLogin(Customizer.withDefaults());
+        return http.build();
+    }
+
+    /**
+     * 注册 OAuth2 客户端
+     */
+    @Bean
+    public RegisteredClientRepository registeredClientRepository(
+            PasswordEncoder passwordEncoder) {
+
+        // Web 前端客户端（授权码模式）
+        RegisteredClient webClient = RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId("web-client")
+            .clientSecret(passwordEncoder.encode("web-secret"))
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            .redirectUri("http://localhost:3000/callback")
+            .scope(OidcScopes.OPENID)
+            .scope(OidcScopes.PROFILE)
+            .scope("read")
+            .scope("write")
+            .tokenSettings(TokenSettings.builder()
+                .accessTokenTimeToLive(Duration.ofHours(2))
+                .refreshTokenTimeToLive(Duration.ofDays(7))
+                .reuseRefreshTokens(false) // 启用 Token 轮转
+                .build())
+            .clientSettings(ClientSettings.builder()
+                .requireAuthorizationConsent(false)
+                .build())
+            .build();
+
+        // 内部微服务客户端（客户端凭证模式）
+        RegisteredClient serviceClient = RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId("service-client")
+            .clientSecret(passwordEncoder.encode("service-secret"))
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+            .scope("read")
+            .scope("write")
+            .tokenSettings(TokenSettings.builder()
+                .accessTokenTimeToLive(Duration.ofHours(1))
+                .build())
+            .build();
+
+        return new InMemoryRegisteredClientRepository(webClient, serviceClient);
+    }
+
+    /**
+     * JWT Token 自定义器 —— 向 Token 中添加自定义 Claims
+     */
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+        return context -> {
+            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+                context.getClaims().claims(claims -> {
+                    // 添加用户角色信息
+                    var principal = context.getPrincipal();
+                    if (principal.getAuthorities() != null) {
+                        claims.put("authorities", principal.getAuthorities()
+                            .stream()
+                            .map(Object::toString)
+                            .toList());
+                    }
+                    // 添加自定义业务字段
+                    claims.put("user_name", principal.getName());
+                    claims.put("tenant_id", "tenant_001");
+                });
+            }
+        };
+    }
+
+    /**
+     * JWK 密钥源 —— RSA 非对称加密签发 Token
+     */
+    @Bean
+    public JWKSource<SecurityContext> jwkSource() {
+        KeyPair keyPair = generateRsaKey();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+        RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+        RSAKey rsaKey = new RSAKey.Builder(publicKey)
+            .privateKey(privateKey)
+            .keyID(UUID.randomUUID().toString())
+            .build();
+        JWKSet jwkSet = new JWKSet(rsaKey);
+        return new ImmutableJWKSet<>(jwkSet);
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+    }
+
+    @Bean
+    public AuthorizationServerSettings authorizationServerSettings() {
+        return AuthorizationServerSettings.builder()
+            .issuer("http://auth-server:9000")
+            .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    private static KeyPair generateRsaKey() {
+        try {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            return keyPairGenerator.generateKeyPair();
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+}
+```
+
+### 4.3 UserDetailsService 实现
+
+```java
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Map;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    // 实际项目中注入 Mapper 查询数据库
+    // @Autowired
+    // private UserMapper userMapper;
+
+    // 模拟数据库存储
+    private static final Map<String, String> USER_DB = Map.of(
+        "admin", "$2a$10$encoded_password_hash",
+        "user", "$2a$10$encoded_password_hash"
+    );
+
+    @Override
+    public UserDetails loadUserByUsername(String username)
+            throws UsernameNotFoundException {
+
+        String password = USER_DB.get(username);
+        if (password == null) {
+            throw new UsernameNotFoundException("用户不存在: " + username);
+        }
+
+        // 实际项目中根据用户角色动态构建权限列表
+        return User.builder()
+            .username(username)
+            .password(password)
+            .authorities(Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER")))
+            .accountExpired(false)
+            .accountLocked(false)
+            .credentialsExpired(false)
+            .disabled(false)
+            .build();
+    }
+}
+```
+
+### 4.4 application.yml 配置
+
+```yaml
+server:
+  port: 9000
+
+spring:
+  application:
+    name: auth-server
+  datasource:
+    url: jdbc:mysql://localhost:3306/auth_db?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  redis:
+    host: localhost
+    port: 6379
+    password: ""
+    database: 0
+
+  # Spring Authorization Server 配置
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: http://auth-server:9000
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+        group: DEFAULT_GROUP
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+```
+
+***
+
+## 5. 网关统一鉴权
+
+### 5.1 架构原理
+
+```
+请求到达 Gateway
+       |
+       v
+JwtAuthGlobalFilter 执行
+       |
+       ├── 白名单路径？ → 直接放行
+       |
+       └── 需要鉴权 → 从 Header 中提取 Token
+              |
+              ├── Token 不存在 → 返回 401
+              |
+              └── Token 存在 → 校验签名 + 过期时间
+                     |
+                     ├── 校验失败 → 返回 401
+                     |
+                     └── 校验成功 → 将用户信息写入请求头，转发到下游服务
+```
+
+### 5.2 GlobalFilter 完整实现
+
+```java
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+
+@Slf4j
+@Component
+public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
+
+    @Value("${jwt.secret:your-256-bit-secret-key-here-must-be-long-enough}")
+    private String jwtSecret;
+
+    @Value("${jwt.issuer:auth-server}")
+    private String expectedIssuer;
+
+    private final StringRedisTemplate redisTemplate;
+
+    // 白名单路径配置（免认证）
+    private static final List<String> WHITE_LIST = Arrays.asList(
+        "/auth/**",
+        "/oauth2/**",
+        "/actuator/**",
+        "/public/**",
+        "/swagger-ui/**",
+        "/v3/api-docs/**"
+    );
+
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    public JwtAuthGlobalFilter(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getURI().getPath();
+
+        // 1. 白名单路径直接放行
+        if (isWhiteListed(path)) {
+            return chain.filter(exchange);
+        }
+
+        // 2. 从 Authorization Header 中提取 Token
+        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return unauthorized(exchange, "缺少认证令牌");
+        }
+
+        String token = authHeader.substring(7);
+
+        // 3. 校验 Token 是否在黑名单中
+        if (isTokenBlacklisted(token)) {
+            return unauthorized(exchange, "令牌已被吊销");
+        }
+
+        // 4. 解析和校验 Token
+        Claims claims;
+        try {
+            claims = parseToken(token);
+        } catch (ExpiredJwtException e) {
+            return unauthorized(exchange, "令牌已过期");
+        } catch (Exception e) {
+            log.error("Token 校验失败: {}", e.getMessage());
+            return unauthorized(exchange, "无效令牌");
+        }
+
+        // 5. 将用户信息写入请求头，传递给下游服务
+        ServerHttpRequest mutatedRequest = request.mutate()
+            .header("X-User-Id", claims.getSubject())
+            .header("X-User-Name", claims.get("user_name", String.class))
+            .header("X-Tenant-Id", claims.get("tenant_id", String.class))
+            .header("X-User-Authorities", String.join(",",
+                claims.get("authorities", List.class)))
+            .build();
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+    }
+
+    private boolean isWhiteListed(String path) {
+        return WHITE_LIST.stream()
+            .anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+
+    private boolean isTokenBlacklisted(String token) {
+        String blacklisted = redisTemplate.opsForValue()
+            .get("token:blacklist:" + token);
+        return blacklisted != null;
+    }
+
+    private Claims parseToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parser()
+            .verifyWith(key)
+            .requireIssuer(expectedIssuer)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
+    }
+
+    private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = String.format(
+            "{\"code\":401,\"message\":\"%s\"}", message);
+        DataBuffer buffer = response.bufferFactory()
+            .wrap(body.getBytes(StandardCharsets.UTF_8));
+        return response.writeWith(Mono.just(buffer));
+    }
+
+    @Override
+    public int getOrder() {
+        return -100; // 高优先级
+    }
+}
+```
+
+### 5.3 Gateway 路由配置
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        # 认证服务路由（白名单）
+        - id: auth-server
+          uri: lb://auth-server
+          predicates:
+            - Path=/auth/**,/oauth2/**
+
+        # 订单服务路由（需要鉴权）
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/order/**
+
+        # 用户服务路由（需要鉴权）
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**
+
+        # 商品服务路由（需要鉴权）
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/product/**
+
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+```
+
+***
+
+## 6. Token 生命周期管理
+
+### 6.1 Redis Token 黑名单机制
+
+```java
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class TokenBlacklistService {
+
+    private final StringRedisTemplate redisTemplate;
+
+    // Token 黑名单 Key 前缀
+    private static final String BLACKLIST_PREFIX = "token:blacklist:";
+
+    // Refresh Token 存储 Key 前缀
+    private static final String REFRESH_PREFIX = "token:refresh:";
+
+    // Token 绑定信息前缀
+    private static final String BINDING_PREFIX = "token:binding:";
+
+    public TokenBlacklistService(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    /**
+     * 将 Token 加入黑名单
+     * @param token  JWT Token 字符串
+     * @param ttl    过期时间（秒），通常等于 Token 剩余有效期
+     */
+    public void addToBlacklist(String token, long ttl) {
+        String key = BLACKLIST_PREFIX + token;
+        redisTemplate.opsForValue().set(key, "revoked", ttl, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 检查 Token 是否在黑名单中
+     */
+    public boolean isBlacklisted(String token) {
+        String key = BLACKLIST_PREFIX + token;
+        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    /**
+     * 吊销用户的全部 Token（用于密码修改、安全事件等场景）
+     * @param userId 用户 ID
+     */
+    public void revokeAllTokens(String userId) {
+        String bindingKey = BINDING_PREFIX + userId;
+        String currentToken = redisTemplate.opsForValue().get(bindingKey);
+        if (currentToken != null) {
+            addToBlacklist(currentToken, 7200); // 2小时过期
+            redisTemplate.delete(bindingKey);
+        }
+    }
+
+    /**
+     * 存储 Refresh Token 与用户的绑定关系
+     */
+    public void storeRefreshToken(String userId, String refreshToken, long ttl) {
+        String key = REFRESH_PREFIX + userId;
+        redisTemplate.opsForValue().set(key, refreshToken, ttl, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 校验 Refresh Token 是否有效（未被轮转）
+     */
+    public boolean validateRefreshToken(String userId, String refreshToken) {
+        String key = REFRESH_PREFIX + userId;
+        String storedToken = redisTemplate.opsForValue().get(key);
+        return refreshToken.equals(storedToken);
+    }
+
+    /**
+     * Token 轮转：签发新 Token 时吊销旧的 Refresh Token
+     */
+    public void rotateRefreshToken(String userId, String oldRefreshToken,
+                                    String newRefreshToken, long ttl) {
+        // 验证旧 Token 是否匹配
+        if (!validateRefreshToken(userId, oldRefreshToken)) {
+            throw new RuntimeException("Refresh Token 已被轮转，可能存在安全风险");
+        }
+        // 存储新的 Refresh Token
+        storeRefreshToken(userId, newRefreshToken, ttl);
+    }
+}
+```
+
+### 6.2 Token 刷新服务
+
+```java
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Service
+public class TokenRefreshService {
+
+    private final TokenBlacklistService blacklistService;
+    private final JwtEncoder jwtEncoder;
+
+    public TokenRefreshService(TokenBlacklistService blacklistService,
+                                JwtEncoder jwtEncoder) {
+        this.blacklistService = blacklistService;
+        this.jwtEncoder = jwtEncoder;
+    }
+
+    /**
+     * 执行 Token 刷新（轮转策略）
+     * @param userId        用户 ID
+     * @param oldRefreshToken 旧的 Refresh Token
+     * @return 新的 Token 对
+     */
+    public TokenPair refreshTokens(String userId, String oldRefreshToken) {
+        // 1. 验证旧 Refresh Token 是否有效
+        if (!blacklistService.validateRefreshToken(userId, oldRefreshToken)) {
+            throw new RuntimeException("Refresh Token 无效或已被轮转");
+        }
+
+        // 2. 生成新的 Access Token
+        Instant now = Instant.now();
+        Jwt newAccessToken = jwtEncoder.encode(JwtEncoderParameters.from(
+            org.springframework.security.oauth2.jwt.JwtClaimsSet.builder()
+                .subject(userId)
+                .issuer("auth-server")
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(7200))
+                .id(UUID.randomUUID().toString())
+                .claim("user_name", userId)
+                .build()
+        ));
+
+        // 3. 生成新的 Refresh Token
+        String newRefreshToken = UUID.randomUUID().toString();
+
+        // 4. 执行轮转：验证旧 Token 并存储新 Token
+        blacklistService.rotateRefreshToken(
+            userId, oldRefreshToken, newRefreshToken, 604800); // 7天
+
+        return new TokenPair(newAccessToken.getTokenValue(), newRefreshToken);
+    }
+
+    public record TokenPair(String accessToken, String refreshToken) {}
+}
+```
+
+### 6.3 Token 吊销端点
+
+```java
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class TokenRevocationController {
+
+    private final TokenBlacklistService blacklistService;
+    private final TokenRefreshService refreshService;
+
+    public TokenRevocationController(TokenBlacklistService blacklistService,
+                                      TokenRefreshService refreshService) {
+        this.blacklistService = blacklistService;
+        this.refreshService = refreshService;
+    }
+
+    /**
+     * 吊销当前 Token（用户主动登出）
+     */
+    @PostMapping("/auth/revoke")
+    public ResponseEntity<String> revokeToken(JwtAuthenticationToken auth) {
+        String token = auth.getToken().getTokenValue();
+        // 计算 Token 剩余有效期
+        long remainingTtl = auth.getToken().getExpiresAt().getEpochSecond()
+            - java.time.Instant.now().getEpochSecond();
+
+        blacklistService.addToBlacklist(token, Math.max(remainingTtl, 0));
+        blacklistService.revokeAllTokens(auth.getName());
+
+        return ResponseEntity.ok("令牌已吊销");
+    }
+
+    /**
+     * 刷新 Token
+     */
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<?> refreshToken(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-Refresh-Token") String refreshToken) {
+        try {
+            TokenRefreshService.TokenPair newTokens =
+                refreshService.refreshTokens(userId, refreshToken);
+            return ResponseEntity.ok(newTokens);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
+        }
+    }
+}
+```
+
+***
+
+## 7. 单点登录（SSO）与跨域认证
+
+### 7.1 SSO 核心概念
+
+单点登录（Single Sign-On）允许用户在一处登录后，访问所有互信系统时无需再次认证。
+
+```
+用户登录 Auth Server
+       |
+       v
+获取统一 Token
+       |
+       +----> 访问订单系统（Token 有效，直接放行）
+       |
+       +----> 访问用户系统（Token 有效，直接放行）
+       |
+       +----> 访问商品系统（Token 有效，直接放行）
+```
+
+### 7.2 OAuth2 如何实现 SSO
+
+1. Auth Server 作为统一认证入口，签发标准 JWT
+2. 所有业务服务共享同一个 Auth Server 的公钥
+3. 用户登录一次后，Token 在所有服务间通用
+4. 结合 Gateway 的统一鉴 Token，实现跨服务的无感认证
+
+### 7.3 CAS 与 OAuth2 SSO 对比
+
+| 特性 | CAS | OAuth2 SSO |
+|------|-----|-----------|
+| 协议标准 | CAS Protocol | OAuth2 / OIDC |
+| Token 类型 | Service Ticket (ST) | JWT / Access Token |
+| 无状态支持 | 依赖 Session | 原生无状态 |
+| 微服务适配 | 一般 | 优秀 |
+| 第三方接入 | 需要适配 | 原生支持 |
+| 社交登录 | 需要扩展 | 原生支持（OIDC） |
+| 社区生态 | 中等 | 丰富 |
+| 实现复杂度 | 中等 | 中等 |
+| 生产推荐度 | 中 | 高 |
+
+***
+
+## 8. 与现有组件的集成
+
+### 8.1 Nacos 注册与配置
+
+认证中心作为微服务注册到 Nacos，其他服务通过服务名发现认证中心：
+
+```yaml
+# auth-server application.yml
+spring:
+  application:
+    name: auth-server
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+        group: DEFAULT_GROUP
+        metadata:
+          version: v1
+          type: auth
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: dev
+        file-extension: yml
+        shared-configs:
+          - data-id: common.yml
+            group: DEFAULT_GROUP
+            refresh: true
+```
+
+业务服务通过 Nacos 发现认证中心并校验 Token：
+
+```java
+@Service
+public class TokenValidationService {
+
+    private final RestTemplate restTemplate;
+
+    public TokenValidationService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    /**
+     * 通过认证中心校验 Token（适用于无法本地校验的场景）
+     */
+    public boolean validateToken(String token) {
+        try {
+            String url = "http://auth-server/auth/introspect";
+            var request = new java.util.HashMap<String, String>();
+            request.put("token", token);
+            var response = restTemplate.postForObject(url, request, Boolean.class);
+            return Boolean.TRUE.equals(response);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+```
+
+### 8.2 Sentinel 限流保护
+
+对认证端点实施限流保护，防止暴力破解和 DDoS 攻击：
+
+```java
+import com.alibaba.csp.sentinel.slots.block.RuleConstant;
+import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
+import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
+import org.springframework.context.annotation.Configuration;
+
+import jakarta.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.List;
+
+@Configuration
+public class AuthSentinelConfig {
+
+    @PostConstruct
+    public void initAuthFlowRules() {
+        List<FlowRule> rules = new ArrayList<>();
+
+        // 登录端点限流：每秒最多 10 次
+        FlowRule loginRule = new FlowRule("POST:/auth/login");
+        loginRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        loginRule.setCount(10);
+        rules.add(loginRule);
+
+        // Token 刷新限流：每秒最多 20 次
+        FlowRule refreshRule = new FlowRule("POST:/auth/refresh");
+        refreshRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        refreshRule.setCount(20);
+        rules.add(refreshRule);
+
+        // Token 签发限流：每秒最多 30 次
+        FlowRule tokenRule = new FlowRule("POST:/oauth2/token");
+        tokenRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        tokenRule.setCount(30);
+        rules.add(tokenRule);
+
+        FlowRuleManager.loadRules(rules);
+    }
+}
+```
+
+### 8.3 Sentinel + Nacos 规则持久化
+
+```yaml
+spring:
+  cloud:
+    sentinel:
+      datasource:
+        auth-flow:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: auth-server-flow-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: flow
+```
+
+***
+
+## 9. 安全加固
+
+### 9.1 Token 防重放（jti 唯一标识）
+
+每个 Token 包含唯一的 `jti`（JWT ID），签发时存入 Redis：
+
+```java
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+
+@Component
+public class TokenReplayGuard {
+
+    private final StringRedisTemplate redisTemplate;
+    private static final String JTI_PREFIX = "token:jti:";
+
+    public TokenReplayGuard(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    /**
+     * 记录已签发的 jti
+     */
+    public void recordJti(String jti, long ttlSeconds) {
+        redisTemplate.opsForValue().set(
+            JTI_PREFIX + jti, "1", ttlSeconds, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 检查 jti 是否已被使用（防重放）
+     */
+    public boolean isJtiUsed(String jti) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(JTI_PREFIX + jti));
+    }
+}
+```
+
+### 9.2 密钥轮转（RSA 非对称密钥）
+
+使用 JWK 端点实现密钥轮转，支持多个密钥共存：
+
+```java
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.List;
+
+@Configuration
+public class KeyRotationConfig {
+
+    /**
+     * 支持多密钥的 JWK 源（密钥轮转场景）
+     */
+    @Bean
+    public JWKSource<SecurityContext> jwkSource() {
+        List<RSAKey> keys = new ArrayList<>();
+
+        // 当前使用的密钥
+        KeyPair currentKeyPair = generateRsaKey();
+        keys.add(buildRsaKey(currentKeyPair, "current-key-2026"));
+
+        // 上一个密钥（用于验证旧 Token，过渡期保留）
+        KeyPair previousKeyPair = generateRsaKey();
+        keys.add(buildRsaKey(previousKeyPair, "previous-key-2025"));
+
+        JWKSet jwkSet = new JWKSet(keys);
+        return new ImmutableJWKSet<>(jwkSet);
+    }
+
+    private RSAKey buildRsaKey(KeyPair keyPair, String keyId) {
+        return new RSAKey.Builder((RSAPublicKey) keyPair.getPublic())
+            .privateKey((RSAPrivateKey) keyPair.getPrivate())
+            .keyID(keyId)
+            .build();
+    }
+
+    private KeyPair generateRsaKey() {
+        try {
+            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+            gen.initialize(2048);
+            return gen.generateKeyPair();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}
+```
+
+### 9.3 HTTPS 强制与 CORS 配置
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+
+@Configuration
+public class SecurityHardeningConfig {
+
+    /**
+     * CORS 跨域配置
+     */
+    @Bean
+    public CorsWebFilter corsWebFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        // 仅允许受信任的前端域名
+        config.setAllowedOrigins(Arrays.asList(
+            "https://your-frontend.com",
+            "https://admin.your-frontend.com"
+        ));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return new CorsWebFilter(source);
+    }
+}
+```
+
+```yaml
+# Nginx 层面强制 HTTPS
+server {
+    listen 80;
+    server_name auth-server.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name auth-server.example.com;
+
+    ssl_certificate     /etc/ssl/certs/auth-server.pem;
+    ssl_certificate_key /etc/ssl/private/auth-server.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    location / {
+        proxy_pass http://localhost:9000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+```
+
+### 9.4 常见攻击防御
+
+| 攻击类型 | 防御措施 | 实现方式 |
+|---------|---------|---------|
+| Token 重放攻击 | jti 唯一标识 + Redis 去重 | 签发时记录 jti，校验时检查是否已使用 |
+| Token 暴力破解 | 认证端点限流 | Sentinel 限制登录接口 QPS |
+| 中间人攻击 | 强制 HTTPS | Nginx 301 重定向 + TLS 配置 |
+| 密钥泄露 | RSA 非对称密钥 | 私钥仅认证中心持有，业务服务只持有公钥 |
+| CSRF 攻击 | SameSite Cookie + State 参数 | OAuth2 授权码流程中的 state 参数 |
+| XSS 攻击 | HttpOnly Cookie + CSP | 前端安全头配置 |
+| JWT 算法混淆 | 指定签名算法 | 解析时强制指定 `RS256`，禁用 `none` 算法 |
+| 刷新令牌被盗 | Token 轮转 + 绑定设备 | 每次刷新生成新的 Refresh Token |
+
+***
+
+## 10. 方案对比与选型
+
+### 10.1 四种认证方案对比
+
+| 特性 | Session + Cookie | JWT 自签发 | OAuth2 + JWT | SAML 2.0 |
+|------|-----------------|-----------|-------------|----------|
+| 无状态 | 否 | 是 | 是 | 是 |
+| 跨服务支持 | 困难 | 可行 | 原生支持 | 支持 |
+| 第三方接入 | 不支持 | 不支持 | 原生支持 | 支持 |
+| 标准化程度 | 低 | 低 | 高 | 高 |
+| 实现复杂度 | 低 | 低 | 中 | 高 |
+| Token 吊销 | 删除 Session | 需黑名单 | 标准化端点 | 简单 |
+| 微服务推荐度 | 不推荐 | 中等 | 推荐 | 一般 |
+| 前后端分离 | 需额外处理 | 天然适配 | 天然适配 | 不适配 |
+| 生态丰富度 | 高 | 中 | 高 | 中 |
+| 典型场景 | 单体 Web 应用 | 小型微服务 | 企业级微服务 | 企业 SSO |
+
+### 10.2 选型建议
+
+| 场景 | 推荐方案 | 理由 |
+|------|---------|------|
+| 单体应用 + 传统 Web | Session + Cookie | 最简单，成熟度高 |
+| 小型微服务（5 个服务以内） | JWT 自签发 | 简单无状态，无需额外组件 |
+| 中大型微服务（10+ 服务） | OAuth2 + JWT | 标准化、可扩展、支持第三方接入 |
+| 企业级 SSO + 多系统集成 | OAuth2 + JWT + OIDC | 功能最全，支持社交登录 |
+| 传统企业（已有 SAML 基础设施） | SAML 2.0 | 兼容现有系统 |
+
+***
+
+> **参考资源：**
+>
+> * Spring Authorization Server 官方文档: https://docs.spring.io/spring-authorization-server/reference/
+> * OAuth 2.0 RFC 6749: https://datatracker.ietf.org/doc/html/rfc6749
+> * JWT RFC 7519: https://datatracker.ietf.org/doc/html/rfc7519
+> * Spring Cloud Gateway 文档: https://docs.spring.io/spring-cloud-gateway/reference/
+
+---
+
+---
+url: >-
+  /my_notes/notes/JAVA学习路线/shen-du-xue-xi/02-spring-cloud-alibaba-shen-ru/6-duo-zu-hu-ge-li/index.md
+---
+# 多租户隔离深入学习文档
+
+> 在 SaaS 架构下，多租户（Multi-Tenancy）是核心设计模式。本篇从数据库、应用层、MyBatis、JPA、微服务传递、缓存、消息队列、安全权限到性能优化，全面讲解多租户隔离方案。
+
+***
+
+## 目录
+
+1. [多租户架构背景](#1-多租户架构背景)
+2. [三种隔离模型对比](#2-三种隔离模型对比)
+3. [数据库层隔离方案实现](#3-数据库层隔离方案实现)
+4. [应用层多租户实现](#4-应用层多租户实现)
+5. [MyBatis 多租户拦截器](#5-mybatis-多租户拦截器)
+6. [JPA 多租户实现](#6-jpa-多租户实现)
+7. [租户上下文传递（微服务间）](#7-租户上下文传递微服务间)
+8. [缓存隔离](#8-缓存隔离)
+9. [消息队列隔离](#9-消息队列隔离)
+10. [安全与权限](#10-安全与权限)
+11. [性能与扩展](#11-性能与扩展)
+12. [方案对比总结](#12-方案对比总结)
+
+***
+
+## 1. 多租户架构背景
+
+### 1.1 什么是 SaaS 与多租户
+
+**SaaS（Software as a Service）** 是一种软件交付模式，多个租户（Tenant）共享同一套应用实例，但各自的数据和配置相互隔离。租户可以是一个企业、一个组织、一个部门，甚至一个终端用户。
+
+**多租户的核心挑战：** 在共享资源的前提下，保证每个租户的数据安全、性能稳定、功能定制，同时控制运营成本。
+
+### 1.2 单租户 vs 多租户架构
+
+```
+=== 单租户架构（每租户独立部署） ===
+
+  租户A                    租户B                    租户C
+┌──────────┐            ┌──────────┐            ┌──────────┐
+│ App 实例  │            │ App 实例  │            │ App 实例  │
+└────┬─────┘            └────┬─────┘            └────┬─────┘
+     │                       │                       │
+┌────▼─────┐            ┌────▼─────┐            ┌────▼─────┐
+│ 数据库A  │            │ 数据库B  │            │ 数据库C  │
+└──────────┘            └──────────┘            └──────────┘
+
+  特点：完全隔离，成本高，运维复杂
+
+=== 多租户架构（共享部署） ===
+
+  租户A    租户B    租户C
+   │        │        │
+   └────┬───┘────────┘
+        │
+   ┌────▼─────┐
+   │ 共享 App  │  ← 路由层根据 tenant-id 分发
+   └────┬─────┘
+        │
+   ┌────▼─────────────┐
+   │  共享数据库集群    │  ← 按隔离策略分库/分表
+   └──────────────────┘
+
+  特点：成本低，运维简单，隔离需设计
+```
+
+### 1.3 多租户需要解决的核心问题
+
+| 问题维度 | 具体内容 |
+|---------|---------|
+| 数据隔离 | 防止租户间数据泄露和非法访问 |
+| 资源隔离 | CPU、内存、连接池、带宽等资源不被单租户耗尽 |
+| 功能隔离 | 租户间的定制化功能互不影响 |
+| 性能隔离 | 一个租户的高负载不影响其他租户的响应时间 |
+| 安全隔离 | 认证、授权、审计均需租户维度区分 |
+
+***
+
+## 2. 三种隔离模型对比
+
+### 2.1 三种模型概述
+
+#### 模型一：独立数据库（Database per Tenant）
+
+```
+  租户A          租户B          租户C
+   │              │              │
+   ▼              ▼              ▼
+┌────────┐   ┌────────┐   ┌────────┐
+│ DB-A   │   │ DB-B   │   │ DB-C   │
+│ users  │   │ users  │   │ users  │
+│ orders │   │ orders │   │ orders │
+└────────┘   └────────┘   └────────┘
+```
+
+* 每个租户拥有独立的数据库实例或独立的 database
+* 数据库级别的物理隔离
+* 可以对单个租户做独立备份、恢复、调优
+
+#### 模型二：共享数据库独立 Schema（Shared DB, Separate Schemas）
+
+```
+  租户A          租户B          租户C
+   │              │              │
+   └──────┬───────┘──────────────┘
+          ▼
+  ┌──────────────────────┐
+  │     共享数据库实例      │
+  │ ┌────────┐┌────────┐ │
+  │ │Schema-A││Schema-B│ │  ← 不同 Schema
+  │ │ users  ││ users  │ │
+  │ │ orders ││ orders │ │
+  │ └────────┘└────────┘ │
+  └──────────────────────┘
+```
+
+* 多个租户共享数据库实例，但使用独立的 Schema
+* Schema 级别的逻辑隔离
+* 可通过 MySQL `USE schema_name` 切换
+
+#### 模型三：共享表（Shared Tables with tenant\_id）
+
+```
+  租户A          租户B          租户C
+   │              │              │
+   └──────┬───────┘──────────────┘
+          ▼
+  ┌──────────────────────┐
+  │     共享数据库实例      │
+  │ ┌──────────────────┐ │
+  │ │  共享表 users     │ │
+  │ │  id | name | tenant_id │ │
+  │ │  1  | Alice | A  │ │
+  │ │  2  | Bob   | B  │ │
+  │ │  3  | Carol | A  │ │
+  │ └──────────────────┘ │
+  └──────────────────────┘
+```
+
+* 所有租户共享同一组表，通过 `tenant_id` 字段区分
+* 成本最低，但隔离级别最低
+* 需要在应用层强制附加 `tenant_id` 条件
+
+### 2.2 三种模型详细对比
+
+| 对比维度 | 独立数据库 | 共享库独立 Schema | 共享表（tenant\_id） |
+|---------|-----------|------------------|-------------------|
+| 隔离级别 | 物理隔离（最高） | 逻辑隔离（中等） | 字段隔离（最低） |
+| 数据安全性 | 最高，天然隔离 | 较高，Schema 隔离 | 依赖应用层过滤 |
+| 运维成本 | 最高（N 套数据库） | 中等（N 个 Schema） | 最低（1 套表） |
+| 开发复杂度 | 低（逻辑简单） | 中等（需路由 Schema） | 高（全局过滤） |
+| 资源利用率 | 最低 | 中等 | 最高 |
+| 单租户扩展 | 容易（独立调优） | 较容易 | 较难 |
+| 数据迁移 | 简单（整体迁移） | 中等 | 复杂（需过滤） |
+| Schema 变更 | 独立变更 | 逐 Schema 变更 | 统一变更 |
+| 单租户备份恢复 | 独立操作 | 独立 Schema 操作 | 需过滤导出 |
+| 适合租户规模 | 小规模（<50） | 中规模（50-500） | 大规模（500+） |
+| 适合客户类型 | 企业大客户、政府 | 中型企业客户 | 中小企业/个人用户 |
+
+### 2.3 选型决策矩阵
+
+```
+是否需要最强数据隔离？ ──── 是 ──→ 独立数据库
+        │
+        否
+        │
+租户数量是否超过 100？ ──── 是 ──→ 共享表（tenant_id）
+        │
+        否
+        │
+是否需要单租户定制 Schema？── 是 ──→ 共享库独立 Schema
+        │
+        否
+        │
+  运营成本是否敏感？ ──── 是 ──→ 共享表（tenant_id）
+        │
+        否 ──→ 共享库独立 Schema（折中方案）
+```
+
+实际项目中常见**混合方案**：大客户使用独立数据库，中小客户使用共享表，通过路由层自动分发。
+
+***
+
+## 3. 数据库层隔离方案实现
+
+### 3.1 Schema 级隔离（MySQL）
+
+```sql
+-- 为每个租户创建独立 Schema
+CREATE DATABASE IF NOT EXISTS `tenant_a` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS `tenant_b` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 在指定 Schema 下创建表
+USE tenant_a;
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(64) NOT NULL,
+    email VARCHAR(128),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+USE tenant_b;
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(64) NOT NULL,
+    email VARCHAR(128),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 3.2 共享表 tenant\_id 设计
+
+```sql
+-- 所有租户共享的表结构
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    tenant_id VARCHAR(32) NOT NULL COMMENT '租户标识',
+    user_id BIGINT NOT NULL,
+    amount DECIMAL(12, 2) NOT NULL,
+    status TINYINT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- 复合索引：优先 tenant_id 以保证查询走索引
+    INDEX idx_tenant_user (tenant_id, user_id),
+    INDEX idx_tenant_status (tenant_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 查询时必须携带 tenant_id
+SELECT * FROM orders WHERE tenant_id = 'tenant_a' AND user_id = 1001;
+```
+
+### 3.3 AbstractRoutingDataSource 动态数据源
+
+```java
+import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
+import javax.sql.DataSource;
+
+/**
+ * 动态数据源路由器
+ * 根据当前线程绑定的租户标识，路由到对应的数据源
+ */
+public class DynamicDataSource extends AbstractRoutingDataSource {
+
+    @Override
+    protected Object determineCurrentLookupKey() {
+        return TenantContextHolder.getTenantId();
+    }
+}
+```
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 多数据源配置类
+ * 为每个租户创建独立的 DataSource，并注册到动态路由中
+ */
+@Configuration
+public class DataSourceConfig {
+
+    @Bean
+    public DataSource dynamicDataSource() {
+        DynamicDataSource dynamicDataSource = new DynamicDataSource();
+
+        // 创建各租户数据源
+        Map<Object, Object> targetDataSources = new HashMap<>();
+
+        targetDataSources.put("tenant_a", createDataSource(
+                "jdbc:mysql://localhost:3306/tenant_a?useSSL=false&serverTimezone=Asia/Shanghai",
+                "root", "root123"));
+        targetDataSources.put("tenant_b", createDataSource(
+                "jdbc:mysql://localhost:3306/tenant_b?useSSL=false&serverTimezone=Asia/Shanghai",
+                "root", "root123"));
+
+        dynamicDataSource.setTargetDataSources(targetDataSources);
+        dynamicDataSource.setDefaultTargetDataSource(targetDataSources.get("tenant_a"));
+        return dynamicDataSource;
+    }
+
+    private DataSource createDataSource(String url, String username, String password) {
+        DriverManagerDataSource ds = new DriverManagerDataSource();
+        ds.setUrl(url);
+        ds.setUsername(username);
+        ds.setPassword(password);
+        return ds;
+    }
+}
+```
+
+### 3.4 TenantContextHolder（ThreadLocal 持有者）
+
+```java
+/**
+ * 租户上下文持有者
+ * 使用 ThreadLocal 在当前线程中保存/读取租户标识
+ */
+public class TenantContextHolder {
+
+    private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
+
+    public static void setTenantId(String tenantId) {
+        TENANT_ID.set(tenantId);
+    }
+
+    public static String getTenantId() {
+        return TENANT_ID.get();
+    }
+
+    public static void clear() {
+        TENANT_ID.remove();
+    }
+}
+```
+
+***
+
+## 4. 应用层多租户实现
+
+### 4.1 TenantContext（统一上下文）
+
+```java
+/**
+ * 多租户上下文
+ * 封装租户标识的存取，提供默认租户兜底
+ */
+public class TenantContext {
+
+    private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();
+    private static final String DEFAULT_TENANT = "default";
+
+    public static void setTenantId(String tenantId) {
+        CURRENT_TENANT.set(tenantId);
+    }
+
+    public static String getTenantId() {
+        String tenantId = CURRENT_TENANT.get();
+        return tenantId != null ? tenantId : DEFAULT_TENANT;
+    }
+
+    public static String getRawTenantId() {
+        return CURRENT_TENANT.get();
+    }
+
+    public static boolean isTenantSet() {
+        return CURRENT_TENANT.get() != null;
+    }
+
+    public static void clear() {
+        CURRENT_TENANT.remove();
+    }
+}
+```
+
+### 4.2 TenantInterceptor（拦截器提取 Header 中的租户信息）
+
+```java
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+/**
+ * HTTP 拦截器：从请求 Header 中提取 X-Tenant-Id，注入到上下文
+ */
+@Component
+public class TenantInterceptor implements HandlerInterceptor {
+
+    private static final String TENANT_HEADER = "X-Tenant-Id";
+
+    @Override
+    public boolean preHandle(HttpServletRequest request,
+                             HttpServletResponse response,
+                             Object handler) {
+        String tenantId = request.getHeader(TENANT_HEADER);
+        if (tenantId == null || tenantId.isBlank()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return false;
+        }
+        TenantContext.setTenantId(tenantId);
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request,
+                                HttpServletResponse response,
+                                Object handler, Exception ex) {
+        TenantContext.clear();
+    }
+}
+```
+
+### 4.3 TenantFilter（Servlet Filter，确保所有请求都经过租户校验）
+
+```java
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+
+/**
+ * Servlet 过滤器：优先级最高，确保在拦截器之前完成租户识别
+ * 适用于非 Spring MVC 路径（如 Actuator 端点）
+ */
+@Component
+@Order(1)
+public class TenantFilter implements Filter {
+
+    private static final String TENANT_HEADER = "X-Tenant-Id";
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain chain) throws IOException, ServletException {
+
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        String tenantId = httpRequest.getHeader(TENANT_HEADER);
+        if (tenantId == null || tenantId.isBlank()) {
+            httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            httpResponse.getWriter().write("{\"error\": \"Missing X-Tenant-Id header\"}");
+            return;
+        }
+
+        TenantContext.setTenantId(tenantId);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+}
+```
+
+### 4.4 WebMvcConfigurer 注册拦截器
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private TenantInterceptor tenantInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(tenantInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/actuator/**", "/health");
+    }
+}
+```
+
+***
+
+## 5. MyBatis 多租户拦截器
+
+### 5.1 MyBatis-Plus TenantLineInnerInterceptor
+
+MyBatis-Plus 内置了 `TenantLineInnerInterceptor`，自动在 SQL 语句中追加 `tenant_id` 条件。
+
+```java
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.LongValue;
+
+/**
+ * MyBatis-Plus 多租户插件配置
+ */
+@org.springframework.context.annotation.Configuration
+public class MybatisPlusConfig {
+
+    @org.springframework.context.annotation.Bean
+    public MybatisPlusInterceptor mybatisPlusInterceptor() {
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+
+        TenantLineInnerInterceptor tenantInterceptor = new TenantLineInnerInterceptor(
+                new TenantLineHandler() {
+                    @Override
+                    public Expression getTenantId() {
+                        // 返回当前租户 ID 作为 SQL 条件值
+                        return new LongValue(TenantContext.getTenantId());
+                    }
+
+                    @Override
+                    public String getTenantIdColumn() {
+                        return "tenant_id";
+                    }
+
+                    @Override
+                    public boolean ignoreTable(String tableName) {
+                        // 需要忽略租户隔离的表（全局配置）
+                        return ignoreTenantTable(tableName);
+                    }
+                }
+        );
+
+        interceptor.addInnerInterceptor(tenantInterceptor);
+        return interceptor;
+    }
+
+    /**
+     * 忽略租户隔离的白名单表
+     * 这些表不追加 tenant_id 条件（如租户配置表、公共字典表）
+     */
+    private boolean ignoreTenantTable(String tableName) {
+        Set<String> ignoreTables = Set.of(
+                "sys_tenant",           // 租户信息表
+                "sys_dict",             // 公共字典表
+                "sys_config",           // 全局配置表
+                "sys_region"            // 行政区划表
+        );
+        return ignoreTables.contains(tableName);
+    }
+}
+```
+
+### 5.2 自定义 SqlParser 手动追加条件
+
+```java
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
+
+/**
+ * 手动 SQL 解析追加 tenant_id 条件
+ * 用于需要精细控制的场景（如直接写 SQL 的查询）
+ */
+public class TenantSqlParser {
+
+    private static final Set<String> IGNORE_TABLES = Set.of(
+            "sys_tenant", "sys_dict", "sys_config"
+    );
+
+    /**
+     * 自动在 SQL 中追加 tenant_id 条件
+     */
+    public static String parse(String sql) throws Exception {
+        Statement statement = CCJSqlParserUtil.parse(sql);
+
+        if (statement instanceof Select select) {
+            if (select.getSelectBody() instanceof PlainSelect plainSelect) {
+                String tableName = plainSelect.getFromItem().toString();
+                if (IGNORE_TABLES.contains(tableName)) {
+                    return sql;
+                }
+
+                Expression tenantCondition = new LongValue(
+                        "tenant_id = " + TenantContext.getTenantId());
+                Expression where = plainSelect.getWhere();
+                if (where == null) {
+                    plainSelect.setWhere(tenantCondition);
+                } else {
+                    plainSelect.setWhere(new AndExpression(where, tenantCondition));
+                }
+            }
+        }
+        return statement.toString();
+    }
+}
+```
+
+***
+
+## 6. JPA 多租户实现
+
+### 6.1 Hibernate Filter + @FilterDef
+
+```java
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
+
+@Entity
+@Table(name = "orders")
+@FilterDef(
+    name = "tenantFilter",
+    parameters = @ParamDef(name = "tenantId", type = Long.class)
+)
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+public class Order {
+
+    @jakarta.persistence.Id
+    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "tenant_id")
+    private Long tenantId;
+
+    private String orderNo;
+    private java.math.BigDecimal amount;
+
+    // getter/setter 省略
+}
+```
+
+### 6.2 CurrentTenantIdentifierResolver
+
+```java
+import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
+import org.springframework.stereotype.Component;
+
+/**
+ * Hibernate 多租户标识解析器
+ * 每次 Hibernate 操作时获取当前租户 ID
+ */
+@Component
+public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver {
+
+    @Override
+    public String resolveCurrentTenantIdentifier() {
+        String tenantId = TenantContext.getRawTenantId();
+        return tenantId != null ? tenantId : "default";
+    }
+
+    @Override
+    public boolean validateExistingCurrentSessions() {
+        return true;
+    }
+}
+```
+
+### 6.3 MultiTenantConnectionProvider
+
+```java
+import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
+
+/**
+ * Hibernate 多租户连接提供者
+ * 根据租户 ID 从对应的数据源获取连接
+ */
+@Component
+public class TenantConnectionProvider implements MultiTenantConnectionProvider {
+
+    @Autowired
+    private DataSource dynamicDataSource;
+
+    private final Map<String, DataSource> tenantDataSources = Map.of(
+            "tenant_a", createDataSource("jdbc:mysql://localhost:3306/tenant_a"),
+            "tenant_b", createDataSource("jdbc:mysql://localhost:3306/tenant_b")
+    );
+
+    @Override
+    public Connection getAnyConnection() throws SQLException {
+        return dynamicDataSource.getConnection();
+    }
+
+    @Override
+    public void releaseAnyConnection(Connection connection) throws SQLException {
+        connection.close();
+    }
+
+    @Override
+    public Connection getConnection(String tenantIdentifier) throws SQLException {
+        DataSource ds = tenantDataSources.get(tenantIdentifier);
+        if (ds == null) {
+            throw new SQLException("Unknown tenant: " + tenantIdentifier);
+        }
+        return ds.getConnection();
+    }
+
+    @Override
+    public void releaseConnection(String tenantIdentifier, Connection connection)
+            throws SQLException {
+        connection.close();
+    }
+
+    @Override
+    public boolean supportsAggressiveRelease() {
+        return false;
+    }
+
+    @Override
+    public boolean isUnwrappableAs(Class<?> unwrapType) {
+        return false;
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> unwrapType) {
+        throw new UnsupportedOperationException("Unwrap not supported");
+    }
+
+    private DataSource createDataSource(String url) {
+        org.springframework.jdbc.datasource.DriverManagerDataSource ds =
+                new org.springframework.jdbc.datasource.DriverManagerDataSource();
+        ds.setUrl(url);
+        ds.setUsername("root");
+        ds.setPassword("root123");
+        return ds;
+    }
+}
+```
+
+### 6.4 application.yml Hibernate 多租户配置
+
+```yaml
+spring:
+  jpa:
+    hibernate:
+      dialect: org.hibernate.dialect.MySQLDialect
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        multiTenancy: SCHEMA          # 多租户策略：SCHEMA / DATABASE / DISCRIMINATOR
+        tenant_identifier_resolver: com.example.tenant.TenantIdentifierResolver
+        multi_tenant_connection_provider: com.example.tenant.TenantConnectionProvider
+        connection.provider_disables_autocommit: true
+        jdbc:
+          batch_size: 50
+          batch_versioned_data: true
+```
+
+***
+
+## 7. 租户上下文传递（微服务间）
+
+在微服务架构中，一个用户请求会经过多个服务。租户上下文必须在服务间自动传递。
+
+### 7.1 RestTemplate 拦截器
+
+```java
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
+
+import java.io.IOException;
+
+/**
+ * RestTemplate 拦截器：自动携带租户 Header
+ */
+public class TenantRestTemplateInterceptor implements ClientHttpRequestInterceptor {
+
+    private static final String TENANT_HEADER = "X-Tenant-Id";
+
+    @Override
+    public ClientHttpResponse intercept(HttpRequest request, byte[] body,
+                                        ClientHttpRequestExecution execution)
+            throws IOException {
+        String tenantId = TenantContext.getTenantId();
+        if (tenantId != null) {
+            request.getHeaders().set(TENANT_HEADER, tenantId);
+        }
+        return execution.execute(request, body);
+    }
+}
+```
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+
+@Configuration
+public class RestTemplateConfig {
+
+    @Bean
+    public RestTemplate restTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3000);
+        factory.setReadTimeout(5000);
+
+        RestTemplate restTemplate = new RestTemplate(factory);
+        restTemplate.setInterceptors(List.of(new TenantRestTemplateInterceptor()));
+        return restTemplate;
+    }
+}
+```
+
+### 7.2 OpenFeign RequestInterceptor
+
+```java
+import feign.RequestInterceptor;
+import feign.RequestTemplate;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * OpenFeign 拦截器：Feign 远程调用时自动传递租户 Header
+ */
+@Configuration
+public class FeignTenantConfig {
+
+    @Bean
+    public RequestInterceptor tenantRequestInterceptor() {
+        return (RequestTemplate template) -> {
+            String tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                template.header("X-Tenant-Id", tenantId);
+            }
+        };
+    }
+}
+```
+
+### 7.3 Spring Cloud Gateway 租户过滤器
+
+```java
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+/**
+ * 网关全局过滤器：从请求中提取租户 Header 并向下游传递
+ */
+@Component
+public class TenantGatewayFilter implements GlobalFilter, Ordered {
+
+    private static final String TENANT_HEADER = "X-Tenant-Id";
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String tenantId = exchange.getRequest()
+                .getHeaders()
+                .getFirst(TENANT_HEADER);
+
+        if (tenantId == null || tenantId.isBlank()) {
+            exchange.getResponse().setStatusCode(
+                    org.springframework.http.HttpStatus.BAD_REQUEST);
+            return exchange.getResponse().setComplete();
+        }
+
+        // 向下游服务传递租户 Header
+        ServerHttpRequest newRequest = exchange.getRequest().mutate()
+                .header(TENANT_HEADER, tenantId)
+                .build();
+
+        return chain.filter(exchange.mutate().request(newRequest).build());
+    }
+
+    @Override
+    public int getOrder() {
+        return -100; // 高优先级
+    }
+}
+```
+
+### 7.4 RabbitMQ 消息 Header 传递租户信息
+
+```java
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+/**
+ * RabbitMQ 租户感知生产者：消息发送时自动携带租户 Header
+ */
+@Component
+public class TenantAwareMessageProducer {
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    public void send(String exchange, String routingKey, Object payload) {
+        MessagePostProcessor messagePostProcessor = message -> {
+            org.springframework.amqp.core.MessageProperties props =
+                    message.getMessageProperties();
+            String tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                props.setHeader("X-Tenant-Id", tenantId);
+            }
+            return message;
+        };
+
+        rabbitTemplate.convertAndSend(exchange, routingKey, payload, messagePostProcessor);
+    }
+}
+```
+
+```java
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.stereotype.Component;
+
+/**
+ * RabbitMQ 租户感知消费者：从消息 Header 中恢复租户上下文
+ */
+@Component
+public class TenantAwareMessageConsumer {
+
+    @RabbitListener(queues = "order.queue")
+    public void onOrderMessage(String payload,
+                               @Header(value = "X-Tenant-Id", required = false) String tenantId) {
+        try {
+            if (tenantId != null) {
+                TenantContext.setTenantId(tenantId);
+            }
+            // 业务处理
+            processOrder(payload);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private void processOrder(String payload) {
+        System.out.println("[" + TenantContext.getTenantId() + "] 处理订单: " + payload);
+    }
+}
+```
+
+***
+
+## 8. 缓存隔离
+
+### 8.1 Redis Key 前缀策略
+
+在多租户场景下，Redis Key 必须加上租户前缀，防止不同租户的缓存数据混淆。
+
+```
+=== 无隔离的 Key ===
+  order:1001          ← 租户 A 和 B 可能冲突
+
+=== 带租户前缀的 Key ===
+  tenant:A:order:1001  ← 租户 A
+  tenant:B:order:1001  ← 租户 B
+```
+
+### 8.2 Spring Cache 自定义 KeyGenerator
+
+```java
+import org.springframework.cache.interceptor.KeyGenerator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.lang.reflect.Method;
+import java.util.StringJoiner;
+
+/**
+ * 租户感知的缓存 Key 生成器
+ * 缓存 Key 格式: tenant:{tenantId}:{className}:{methodName}:{参数}
+ */
+@Configuration
+public class TenantCacheConfig {
+
+    @Bean("tenantKeyGenerator")
+    public KeyGenerator tenantKeyGenerator() {
+        return (Object target, Method method, Object... params) -> {
+            StringJoiner joiner = new StringJoiner(":");
+            joiner.add("tenant");
+            joiner.add(TenantContext.getTenantId());
+            joiner.add(target.getClass().getSimpleName());
+            joiner.add(method.getName());
+            for (Object param : params) {
+                joiner.add(param.toString());
+            }
+            return joiner.toString();
+        };
+    }
+}
+```
+
+```java
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
+@Service
+public class OrderService {
+
+    /**
+     * 租户感知的缓存查询
+     * 缓存 Key 示例: tenant:tenant_a:OrderService:getOrder:1001
+     */
+    @Cacheable(value = "orders", keyGenerator = "tenantKeyGenerator")
+    public Order getOrder(Long orderId) {
+        // 查询数据库
+        return orderMapper.selectById(orderId);
+    }
+}
+```
+
+### 8.3 RedisTemplate 租户感知包装器
+
+```java
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 租户感知的 RedisTemplate 包装器
+ * 所有操作自动加租户前缀
+ */
+@Component
+public class TenantRedisTemplate {
+
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    public TenantRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    private String prefixKey(String key) {
+        return "tenant:" + TenantContext.getTenantId() + ":" + key;
+    }
+
+    public void set(String key, Object value) {
+        redisTemplate.opsForValue().set(prefixKey(key), value);
+    }
+
+    public void set(String key, Object value, long timeout, TimeUnit unit) {
+        redisTemplate.opsForValue().set(prefixKey(key), value, timeout, unit);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T get(String key) {
+        return (T) redisTemplate.opsForValue().get(prefixKey(key));
+    }
+
+    public Boolean delete(String key) {
+        return redisTemplate.delete(prefixKey(key));
+    }
+
+    public Boolean hasKey(String key) {
+        return redisTemplate.hasKey(prefixKey(key));
+    }
+
+    public Boolean expire(String key, long timeout, TimeUnit unit) {
+        return redisTemplate.expire(prefixKey(key), timeout, unit);
+    }
+
+    /**
+     * 批量删除当前租户的所有缓存（租户数据刷新时使用）
+     */
+    public Long deleteByTenant() {
+        String pattern = "tenant:" + TenantContext.getTenantId() + ":*";
+        var keys = redisTemplate.keys(pattern);
+        if (keys != null && !keys.isEmpty()) {
+            return redisTemplate.delete(keys);
+        }
+        return 0L;
+    }
+}
+```
+
+***
+
+## 9. 消息队列隔离
+
+### 9.1 Topic/Tag 按租户分区策略
+
+```
+=== 策略一：Topic 级隔离（推荐大租户） ===
+  tenant_a.order.topic    ← 租户 A 专用 Topic
+  tenant_b.order.topic    ← 租户 B 专用 Topic
+
+=== 策略二：Tag 级隔离（推荐中小租户） ===
+  order.topic + Tag:tenant_a   ← 同一 Topic，按 Tag 过滤
+  order.topic + Tag:tenant_b
+
+=== 策略三：Header 传递（最灵活） ===
+  order.topic + Header: X-Tenant-Id=tenant_a
+  消费者根据 Header 过滤
+```
+
+### 9.2 RocketMQ 租户感知生产者
+
+```java
+import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.stereotype.Component;
+
+/**
+ * RocketMQ 租户感知生产者
+ * 消息发送时自动携带 X-Tenant-Id Header
+ */
+@Component
+public class TenantAwareMqProducer {
+
+    @Autowired
+    private RocketMQTemplate rocketMQTemplate;
+
+    public SendResult sendOrder(String destination, Object payload) {
+        Message<Object> message = MessageBuilder
+                .withPayload(payload)
+                .setHeader("X-Tenant-Id", TenantContext.getTenantId())
+                .build();
+
+        return rocketMQTemplate.syncSend(destination, message);
+    }
+}
+```
+
+### 9.3 RocketMQ 租户感知消费者
+
+```java
+import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
+import org.apache.rocketmq.spring.core.RocketMQListener;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.stereotype.Component;
+
+/**
+ * RocketMQ 租户感知消费者
+ * 从消息 Header 中提取租户标识并注入上下文
+ */
+@Component
+@RocketMQMessageListener(
+        topic = "order-topic",
+        consumerGroup = "order-consumer-group"
+)
+public class TenantAwareMqConsumer implements RocketMQListener<Message<Object>> {
+
+    @Override
+    public void onMessage(Message<Object> message) {
+        MessageHeaders headers = message.getHeaders();
+        String tenantId = (String) headers.get("X-Tenant-Id");
+
+        try {
+            if (tenantId != null) {
+                TenantContext.setTenantId(tenantId);
+            }
+            processMessage(message.getPayload());
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private void processMessage(Object payload) {
+        System.out.println("[" + TenantContext.getTenantId() + "] 处理消息: " + payload);
+    }
+}
+```
+
+### 9.4 Kafka 租户感知生产者与消费者
+
+```java
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TenantAwareKafkaProducer {
+
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    public TenantAwareKafkaProducer(KafkaTemplate<String, Object> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void send(String topic, String key, Object payload) {
+        Message<Object> message = MessageBuilder
+                .withPayload(payload)
+                .setHeader(KafkaHeaders.TOPIC, topic)
+                .setHeader(KafkaHeaders.KEY, key)
+                .setHeader("X-Tenant-Id", TenantContext.getTenantId())
+                .build();
+
+        kafkaTemplate.send(message);
+    }
+}
+```
+
+```java
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TenantAwareKafkaConsumer {
+
+    @KafkaListener(topics = "order-topic", groupId = "order-group")
+    public void onMessage(String payload,
+                          @Header(value = "X-Tenant-Id", required = false) String tenantId) {
+        try {
+            if (tenantId != null) {
+                TenantContext.setTenantId(tenantId);
+            }
+            System.out.println("[" + TenantContext.getTenantId() + "] Kafka 消费: " + payload);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+}
+```
+
+***
+
+## 10. 安全与权限
+
+### 10.1 租户级 RBAC 扩展模型
+
+在传统 RBAC（用户-角色-权限）基础上增加**租户维度**：
+
+```
+  租户A（Tenant A）
+  ├── 用户: Alice (admin), Bob (user)
+  │     ├── Alice → 角色: 租户管理员 → 权限: [用户管理, 订单管理, 数据导出]
+  │     └── Bob   → 角色: 普通用户   → 权限: [订单查看]
+  └── 数据范围: 仅限 tenant_id = 'A' 的数据
+
+  租户B（Tenant B）
+  ├── 用户: Carol (admin)
+  │     └── Carol → 角色: 租户管理员 → 权限: [用户管理, 订单管理]
+  └── 数据范围: 仅限 tenant_id = 'B' 的数据
+```
+
+### 10.2 数据权限边界强制执行
+
+```java
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.stereotype.Component;
+
+/**
+ * 租户数据权限切面
+ * 在数据访问层强制校验租户边界
+ */
+@Aspect
+@Component
+public class TenantDataPermissionAspect {
+
+    /**
+     * 拦截所有 Mapper 方法，自动追加租户过滤
+     */
+    @Around("execution(* com.example.mapper.*.*(..))")
+    public Object enforceTenantBoundary(ProceedingJoinPoint joinPoint) throws Throwable {
+        String tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new SecurityException("未设置租户上下文，拒绝数据访问");
+        }
+
+        // 校验当前用户是否有权访问目标数据
+        validateTenantAccess(tenantId, joinPoint);
+
+        return joinPoint.proceed();
+    }
+
+    private void validateTenantAccess(String tenantId, ProceedingJoinPoint joinPoint) {
+        // 实际项目中可结合 Spring Security 的 Authentication 校验
+        // 确保当前登录用户属于该租户
+        // 此处为示例逻辑
+        String currentUserTenant = getCurrentUserTenant();
+        if (!tenantId.equals(currentUserTenant)) {
+            throw new SecurityException(
+                    "越权访问：当前用户属于租户 " + currentUserTenant
+                    + "，尝试访问租户 " + tenantId + " 的数据");
+        }
+    }
+
+    private String getCurrentUserTenant() {
+        // 从 Spring Security 上下文中获取当前用户的租户信息
+        return TenantContext.getTenantId();
+    }
+}
+```
+
+### 10.3 跨租户访问防护清单
+
+| 防护层级 | 措施 | 实现方式 |
+|---------|------|---------|
+| 网关层 | 校验 X-Tenant-Id Header 存在性 | Gateway Filter |
+| 应用层 | ThreadLocal 绑定租户 | TenantInterceptor |
+| SQL 层 | 自动追加 tenant\_id 条件 | MyBatis/JPA 拦截器 |
+| 接口层 | 校验资源归属 | AOP 切面 |
+| 数据层 | 数据库行级安全策略 | PostgreSQL RLS / MySQL 触发器 |
+
+***
+
+## 11. 性能与扩展
+
+### 11.1 租户路由索引优化
+
+共享表方案下，所有查询都必须携带 `tenant_id`，因此**复合索引**设计至关重要：
+
+```sql
+-- 错误：单独索引 tenant_id 无法优化具体查询
+CREATE INDEX idx_tenant ON orders(tenant_id);
+
+-- 正确：将 tenant_id 作为复合索引的前缀列
+CREATE INDEX idx_tenant_user ON orders(tenant_id, user_id);
+CREATE INDEX idx_tenant_status_time ON orders(tenant_id, status, create_time);
+
+-- 覆盖索引：避免回表查询
+CREATE INDEX idx_tenant_order_cover
+    ON orders(tenant_id, user_id, status, amount, create_time);
+```
+
+### 11.2 冷热数据分离
+
+```sql
+-- 热数据表（近 3 个月数据，存储在高性能磁盘）
+CREATE TABLE orders_hot (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    tenant_id VARCHAR(32) NOT NULL,
+    user_id BIGINT NOT NULL,
+    amount DECIMAL(12, 2),
+    status TINYINT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_tenant_user (tenant_id, user_id)
+) ENGINE=InnoDB;
+
+-- 冷数据表（3 个月前数据，存储在低成本磁盘）
+CREATE TABLE orders_cold (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    tenant_id VARCHAR(32) NOT NULL,
+    user_id BIGINT NOT NULL,
+    amount DECIMAL(12, 2),
+    status TINYINT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_tenant_time (tenant_id, create_time)
+) ENGINE=InnoDB;
+```
+
+```java
+/**
+ * 数据归档服务：定期将热数据迁移到冷表
+ */
+@Service
+public class DataArchiveService {
+
+    @Autowired
+    private OrderMapper orderMapper;
+
+    @Scheduled(cron = "0 0 2 * * ?") // 每天凌晨 2 点执行
+    public void archiveOldData() {
+        // 按租户分批归档，避免单次操作数据量过大
+        List<String> tenants = orderMapper.selectAllTenants();
+        for (String tenantId : tenants) {
+            archiveTenantData(tenantId, 90); // 归档 90 天前的数据
+        }
+    }
+
+    private void archiveTenantData(String tenantId, int daysOld) {
+        orderMapper.archiveToColdTable(tenantId, daysOld);
+        orderMapper.deleteArchivedFromHot(tenantId, daysOld);
+    }
+}
+```
+
+### 11.3 连接池按租户分配
+
+```yaml
+# 每个租户可配置独立的连接池参数
+spring:
+  datasource:
+    dynamic:
+      datasource:
+        tenant_a:
+          url: jdbc:mysql://localhost:3306/tenant_a
+          hikari:
+            maximum-pool-size: 20
+            minimum-idle: 5
+            connection-timeout: 30000
+        tenant_b:
+          url: jdbc:mysql://localhost:3306/tenant_b
+          hikari:
+            maximum-pool-size: 50    # 大租户分配更多连接
+            minimum-idle: 10
+            connection-timeout: 30000
+```
+
+### 11.4 租户维度监控指标
+
+```java
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.springframework.stereotype.Component;
+
+/**
+ * 租户维度的监控指标收集器
+ * 支持按租户分别统计请求量、响应时间、错误率
+ */
+@Component
+public class TenantMetricsCollector {
+
+    private final MeterRegistry meterRegistry;
+
+    public TenantMetricsCollector(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    public void recordRequest(String tenantId, String api, long durationMs, boolean success) {
+        // 按租户统计请求量
+        Counter.builder("tenant.requests.total")
+                .tag("tenant_id", tenantId)
+                .tag("api", api)
+                .tag("status", success ? "success" : "error")
+                .register(meterRegistry)
+                .increment();
+
+        // 按租户统计响应时间
+        Timer.builder("tenant.request.duration")
+                .tag("tenant_id", tenantId)
+                .tag("api", api)
+                .register(meterRegistry)
+                .record(java.time.Duration.ofMillis(durationMs));
+    }
+}
+```
+
+***
+
+## 12. 方案对比总结
+
+### 12.1 全层隔离策略对比
+
+| 隔离层级 | 方案 | 复杂度 | 隔离强度 | 性能影响 |
+|---------|------|:------:|:-------:|:-------:|
+| 数据库（结构） | 独立数据库 | 低 | 极强 | 无 |
+| 数据库（Schema） | 共享库独立 Schema | 中 | 强 | 低 |
+| 数据库（行级） | 共享表 + tenant\_id | 高 | 中 | 中（索引优化后低） |
+| ORM 拦截 | MyBatis-Plus 插件 | 低 | 中 | 低 |
+| ORM 拦截 | Hibernate Filter | 中 | 中 | 低 |
+| 应用层 | ThreadLocal + 拦截器 | 低 | 中 | 极低 |
+| 缓存 | Redis Key 前缀 | 低 | 强 | 极低 |
+| 消息队列 | Header 传递 | 低 | 强 | 极低 |
+| 网关层 | Gateway Filter | 低 | 强 | 极低 |
+| 安全层 | AOP + RBAC 扩展 | 中 | 强 | 低 |
+| 监控 | Micrometer 标签 | 低 | N/A | 极低 |
+
+### 12.2 不同场景推荐方案
+
+| 场景 | 推荐数据库模型 | 缓存策略 | MQ 策略 | 安全策略 |
+|------|--------------|---------|--------|---------|
+| SaaS 中小客户 | 共享表 + tenant\_id | Key 前缀 | Header 传递 | AOP 校验 |
+| SaaS 企业客户 | 共享库独立 Schema | Key 前缀 | Header + Tag | AOP + 数据库约束 |
+| 政府/金融 | 独立数据库 | 独立 Redis 实例 | 独立 Topic | 物理隔离 |
+| 混合模式 | 路由层按客户分发 | 按模型选择 | 按模型选择 | 分层防护 |
+
+### 12.3 关键注意事项
+
+| 注意事项 | 说明 |
+|---------|------|
+| ThreadLocal 泄露 | 异步线程、线程池场景必须手动传递和清理租户上下文 |
+| 数据库连接池 | 每个租户独立连接池可避免慢查询影响全局 |
+| Schema 变更 | 共享 Schema 模式下需自动化脚本批量变更 |
+| 缓存一致性 | 租户数据刷新时需精确清除对应前缀的缓存 |
+| 日志隔离 | 日志中必须包含 tenant\_id，便于排查问题 |
+| 租户配额 | 大租户需设置独立的 QPS/连接数配额 |
+| 数据导出 | 租户数据导出必须限制只导出当前租户数据 |
+
+***
+
+> **参考资源：**
+>
+> * MyBatis-Plus 多租户插件: https://baomidou.com/plugins/tenant/
+> * Hibernate 多租户: https://docs.jboss.org/hibernate/orm/6.2/userguide/html\_single/Hibernate\_User\_Guide.html#multitenacy
+> * Spring Cloud Gateway: https://docs.spring.io/spring-cloud-gateway/docs/current/reference/html/
+> * Alibaba Cloud 多租户方案: https://help.aliyun.com/zh/sae/
 
 ---
 
