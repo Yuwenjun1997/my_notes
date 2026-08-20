@@ -104,6 +104,8 @@ createTime: 2026/08/15 17:33:34
 | 2.2 Seata 分布式事务 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.2-Seata分布式事务.md) |
 | 2.3 Nacos Config 动态配置 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.3-Nacos Config动态配置.md) |
 | 2.4 Service Mesh 入门 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.4-Service Mesh入门.md) |
+| 2.5 微服务统一认证中心 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.5-微服务统一认证中心.md) |
+| 2.6 多租户隔离 | [📖 查看](./深度学习/02-SpringCloudAlibaba深入/2.6-多租户隔离.md) |
 
 ### 🛒 03 — 电商系统实战
 
